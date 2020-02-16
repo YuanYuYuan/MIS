@@ -1,0 +1,151 @@
+import numpy as np
+from tqdm import tqdm
+from pathos.multiprocessing import ProcessingPool as Pool
+import os
+import nibabel as nib
+from prettytable import from_csv
+import json
+import yaml
+from typing import Dict
+
+
+class ROIScoreWriter:
+
+    def __init__(self, log_file: str, ROIs: list):
+        self.log_file = log_file
+        self.ROIs = ROIs
+
+        # create log file and add the header
+        with open(log_file, 'w') as f:
+            f.write(','.join(['Epochs'] + ROIs + ['Average']))
+            f.write('\n')
+
+    def write(self, epoch: int, roi_score: Dict[str, float]):
+        # compute average score
+        avg_score: float = 0.0
+        for roi in self.ROIs:
+            avg_score += roi_score[roi]
+        avg_score /= len(self.ROIs)
+
+        # log into the file
+        info = ['%03d' % (epoch+1)]
+        info += ['%.5f' % roi_score[roi] for roi in self.ROIs]
+        info += ['%.5f' % avg_score]
+        with open(self.log_file, 'a') as f:
+            f.write(','.join(info))
+            f.write('\n')
+
+
+def load_config(config_file):
+    file_ext = os.path.splitext(config_file)[-1].split('.')[-1]
+    with open(config_file) as f:
+        if file_ext == 'json':
+            return json.load(f)
+        elif file_ext == 'yaml':
+            return yaml.safe_load(f)
+        else:
+            raise ValueError
+
+
+def score_dict_to_markdown(score_dict):
+    table = '| ID | Score | \n | - |- |'
+    for key in score_dict:
+        table += '\n| %s | %.5f |' % (key, score_dict[key])
+    return table
+
+
+def get_tty_columns():
+    rows, columns = os.popen('stty size', 'r').read().split()
+    return int(columns)
+
+
+def epoch_info(epoch, total_epochs, sep='-'):
+    n_cols = get_tty_columns()
+    info = '%s Epoch %02d/%d %s' % (sep, epoch+1, total_epochs, sep)
+    info = info + sep * ((n_cols - len(info))//2)
+    info = sep * (n_cols - len(info)) + info
+    print(info)
+
+
+def compute_weights(npz_dir, data_list):
+    def count(data_idx):
+        npz_file = os.path.join(npz_dir, data_idx + '.npz')
+        label = np.load(npz_file, mmap_mode='r')['label']
+        label = label.reshape((-1, label.shape[-1]))
+
+        # counts of each class
+        return np.sum(label, axis=0)
+
+    with Pool() as pool:
+        counts = list(tqdm(pool.imap(count, data_list), total=len(data_list)))
+
+    counts = np.mean(np.asarray(counts), axis=0)
+    s = np.sum(counts)
+    weights = [s/c for c in counts]
+    return weights
+
+
+def categorical_dice_score(label, pred):
+    # label & prediction are both in one hot
+    assert label.shape == pred.shape
+    n_classes = label.shape[-1]
+
+    # reshape for the computation
+    pred = pred.reshape((-1, n_classes))
+    label = label.reshape((-1, n_classes))
+
+    # score for each class: [n_classes]
+    score = 2 * np.sum(pred * label, axis=0)
+    score /= np.sum(pred + label, axis=0)
+
+    return score
+
+
+def scores_to_csv(scores):
+    '''
+    scores: {
+        data_idx: {
+            ROI: score
+        }
+    }
+    '''
+    indices = list(scores.keys())
+    ROIs = list(scores[indices[0]].keys())
+    header = ','.join(['ID'] + ROIs + ['AVG'])
+
+    content = ''
+    for idx in indices:
+        line = [idx]
+        line += ['%.5f' % scores[idx][roi] for roi in ROIs]
+        line += ['%.5f' % (sum(scores[idx][roi] for roi in ROIs) / len(ROIs))]
+        content += '\n' + ','.join(line)
+    return header + content
+
+
+def csv_to_table(csv_file):
+    table_file = os.path.splitext(csv_file)[0] + '.txt'
+    with open(csv_file, 'r') as f1:
+        with open(table_file, 'w') as f2:
+            f2.write(from_csv(f1).get_string())
+
+
+def save_nifti(image, nifti_file):
+    assert len(image.shape) == 3, image.shape
+    if np.issubdtype(image.dtype, np.floating):
+        image *= 255
+    image = image.astype(np.int16)
+    nifti_image = nib.Nifti1Image(image, affine=np.eye(4))
+    nib.save(nifti_image, nifti_file)
+
+
+def run_length_encode(label):
+    # ref: www.kaggle.com/lifa08/run-length-encode-and-decode
+
+    # make sure label containts only 0 and 1
+    label = label.flatten()
+    label = np.concatenate([[0], label, [0]])
+    runs = np.where(label[1:] != label[:-1])[0]
+    runs[1::2] -= runs[::2]
+
+    encode = ' '.join(str(x) for x in runs)
+    return encode

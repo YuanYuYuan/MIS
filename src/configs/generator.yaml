@@ -1,0 +1,21 @@
+BlockSampler   :
+  shuffle      : True
+  block_shape  : [128, 128, 30]
+  out_shape    : [96, 96, 20]
+  n_workers    : 2
+  n_samples    : 32
+  target_ratio : [0.1, 0.35, 0.35]
+  verbose      : False
+
+Augmentor      :
+  zoom_range   : [0.5, 1.2]
+  filter_range : [0.9, 1.0]
+  transpose    : False
+  flip         : False
+  n_workers    : 2
+  verbose      : False
+
+BatchGenerator :
+  batch_size   : 32
+  n_workers    : 2
+  verbose      : False

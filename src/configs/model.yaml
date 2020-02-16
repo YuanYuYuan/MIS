@@ -1,0 +1,12 @@
+name          : VNet
+in_channels   : 1
+base_channels : 32
+kernel_size   : 3
+depth         : 3
+n_labels      : 4
+n_dim         : 3
+in_shape      : [64, 64, 30]
+out_shape     : [64, 64, 30]
+norm          : BatchNorm
+block_type    : 2
+attention     : False
