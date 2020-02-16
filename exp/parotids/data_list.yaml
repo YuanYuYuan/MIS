@@ -60,7 +60,7 @@ loader:
   - BrainStem
   - Parotid_L
   - Parotid_R
-  data_dir: /tmp/data
+  data_dir: /tmp/PDDCA
   data_list: null
   name: PDDCAParser
   preprocess_image: true

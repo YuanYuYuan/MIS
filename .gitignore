@@ -7,3 +7,4 @@
 *.egg-info/
 __pycache__/
 _[a-zA-Z0-9]*
+MIDP
