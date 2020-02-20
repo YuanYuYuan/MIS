@@ -40,6 +40,10 @@ parser.add_argument(
     action='store_true',
     help='Small data test',
 )
+parser.add_argument(
+    '--pause-ckpt',
+    help='save model checkpoint if paused'
+)
 args = parser.parse_args()
 
 
@@ -236,12 +240,12 @@ for epoch in range(config['epochs']):
             model_state_dict = trainer.model.state_dict()
 
         # save temporary model into pause.pt
-        print('save temporary model into pause.pt')
+        print('save temporary model into %s' % args.pause_ckpt)
         torch.save({
             'epoch': epoch+1,
             'model_state_dict': model_state_dict,
             'step': trainer.global_step
-        }, 'pause.pt')
+        }, args.pause_ckpt)
 
         break
 
