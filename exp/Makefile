@@ -19,11 +19,13 @@ TRAINING_CONFIG = './training.yaml'
 TRAIN_LOG_DIR   = './_logs'
 CKPT_DIR  = './_ckpts'
 CKPT = '_ckpt.pt'
+PAUSE_CKPT = 'pause.pt'
 
 # train
 TRAIN_FLAGS += --config $(TRAINING_CONFIG)
 TRAIN_FLAGS += --log-dir $(TRAIN_LOG_DIR)
 TRAIN_FLAGS += --checkpoint-dir $(CKPT_DIR)
+TRAIN_FLAGS += --pause-ckpt $(PAUSE_CKPT)
 
 
 run: clean train
@@ -42,11 +44,11 @@ retrain:
 
 continue:
 	@echo "===== Training... ====="
-	$(EXECUTOR) $(SRC_DIR)/train.py $(TRAIN_FLAGS) --checkpoint ./pause.pt
+	$(EXECUTOR) $(SRC_DIR)/train.py $(TRAIN_FLAGS) --checkpoint $(PAUSE_CKPT)
 
 log:
 	@echo "===== Launch Tensorboard ====="
 	tensorboard --logdir $(TRAIN_LOG_DIR) > /dev/null 2>&1
 
 clean:
-	rm -rvf $(CKPT_DIR) $(TRAIN_LOG_DIR)
+	rm -rvf $(CKPT_DIR) $(TRAIN_LOG_DIR) $(PAUSE_CKPT)
