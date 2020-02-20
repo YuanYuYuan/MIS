@@ -14,7 +14,10 @@ class ConvBlock(nn.Module):
         block_type=1,
     ):
         super().__init__()
-        padding = kernel_size // 2
+        if isinstance(kernel_size, tuple):
+            padding = tuple(k // 2 for k in kernel_size)
+        else:
+            padding = kernel_size // 2
         if block_type == 1:
             self.block = nn.Sequential(
                 CONV_LAYER[n_dim](

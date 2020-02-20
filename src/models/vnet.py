@@ -15,7 +15,10 @@ class InputConv(nn.Module):
         norm,
     ):
         super().__init__()
-        padding = kernel_size // 2
+        if isinstance(kernel_size, tuple):
+            padding = tuple(k // 2 for k in kernel_size)
+        else:
+            padding = kernel_size // 2
         self.out_channels = out_channels
         self.conv = CONV_LAYER[n_dim](
             in_channels,
@@ -72,7 +75,14 @@ class VNet(nn.Module):
         attention=False,
         block_type=1,
     ):
-        assert kernel_size % 2 == 1
+
+        if isinstance(kernel_size, int):
+            assert kernel_size % 2 == 1
+        else:
+            if isinstance(kernel_size, list):
+                kernel_size = tuple(kernel_size)
+            for k in kernel_size:
+                assert k % 2 == 1
         super().__init__()
 
         self.input = InputConv(
