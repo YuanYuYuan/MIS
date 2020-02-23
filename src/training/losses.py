@@ -62,36 +62,42 @@ class MixedLoss:
         ]
 
         # decrease coefficeints of losses over iterations
-        if 'iter_decay' in self.config:
-            self.iter_decay = self.config['iter_decay']
-            self.coef = self.config['coef']
-            assert len(self.coef) == len(self.iter_decay)
-            self.iter = 0
+        if 'coef' in self.config:
+            if 'iter_decay' in self.config:
+                self.iter_decay = self.config['iter_decay']
+                self.coef = self.config['coef']
+                assert len(self.coef) == len(self.iter_decay)
+                self.iter = 0
+            else:
+                total = sum(self.config['coef'])
+                self.coef = [
+                    c / total
+                    for c in self.config['coef']
+                ]
+                self.iter_decay = None
+                self.iter = None
         else:
-            total = sum(self.config['coef'])
-            self.coef = [
-                c / total
-                for c in self.config['coef']
-            ]
-            self.iter_decay = None
-            self.iter = None
+            self.coef = None
 
     def __call__(self, predi, label):
-        if self.iter_decay:
-            factor = []
-            for c, d in zip(self.coef, self.iter_decay):
-                if c > 0 and d > 0:
-                    factor.append(max(c * (1 - self.iter/d), 0.0))
-                else:
-                    factor.append(c)
-            total = sum(factor)
-            factor = [f/total for f in factor]
-            self.iter += 1
+        if self.coef:
+            if self.iter_decay:
+                factor = []
+                for c, d in zip(self.coef, self.iter_decay):
+                    if c > 0 and d > 0:
+                        factor.append(max(c * (1 - self.iter/d), 0.0))
+                    else:
+                        factor.append(c)
+                total = sum(factor)
+                factor = [f/total for f in factor]
+                self.iter += 1
 
+            else:
+                factor = self.coef
+
+            return sum([
+                f * loss(predi, label)
+                for (f, loss) in zip(factor, self.losses)
+            ])
         else:
-            factor = self.coef
-
-        return sum([
-            f * loss(predi, label)
-            for (f, loss) in zip(factor, self.losses)
-        ])
+            return sum([loss(predi, label)for loss in self.losses])

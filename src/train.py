@@ -79,7 +79,7 @@ optimizer = Optimizer(config['optimizer'])(model)
 if 'scheduler' in config:
     scheduler = Scheduler(
         optimizer,
-        T_0=config['epochs'],
+        T_0=config['scheduler']['T_0'],
         T_mult=config['scheduler']['T_mult'],
         eta_max=config['optimizer']['lr'],
         T_up=config['scheduler']['T_up'],

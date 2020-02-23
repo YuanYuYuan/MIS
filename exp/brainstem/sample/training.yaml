@@ -67,3 +67,4 @@ optimizer:
 scheduler:
   T_mult   : 1
   T_up     : 10
+  T_0      : 40
