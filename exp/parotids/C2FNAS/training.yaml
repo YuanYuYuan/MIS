@@ -1,0 +1,66 @@
+gpus: 0
+epochs: 500
+validation_frequency: 5
+early_stopping_epochs: 10
+output_threshold: 0.2
+data: ../data_list.yaml
+
+generator:
+  train            :
+    BlockSampler   :
+      shuffle      : True
+      block_shape  : [128, 128, 30]
+      out_shape    : [96, 96, 20]
+      n_workers    : 4
+      n_samples    : 32
+      ratios       : [0, 1, 2, 2]
+      verbose      : False
+
+    # Augmentor      :
+    #   zoom_range   : [0.5, 1.2]
+    #   filter_range : [0.9, 1.0]
+    #   transpose    : False
+    #   flip         : False
+    #   n_workers    : 2
+    #   verbose      : False
+
+    BatchGenerator :
+      batch_size   : 32
+      n_workers    : 4
+      verbose      : False
+
+  valid            :
+    BlockGenerator :
+      block_shape  : [128, 128, 30]
+      out_shape    : [96, 96, 20]
+      n_workers    : 4
+      ordered      : True
+      verbose      : False
+
+    BatchGenerator :
+      n_workers    : 1
+      batch_size   : 120
+      verbose      : False
+
+model:
+  name        : C2FNASNet
+  in_channels : 1
+  n_filters   : 32
+  n_classes   : 4
+
+loss:
+  losses:
+    - name: cross_entropy
+      weight: [0.1, 1, 1.5, 1.5]
+    - name: dice_loss
+      weight: [1, 1.5, 1.5]
+  coef: [100, 1]
+  iter_decay: [200, 0]
+
+optimizer:
+  name     : Adam
+  lr       : 0.001
+
+scheduler:
+  T_mult   : 1
+  T_up     : 10
