@@ -58,12 +58,16 @@ loader_config = data_config['loader']
 
 # - data pipeline
 data_gen = dict()
-ROIs = loader_config[0]['ROIs']
+loader_name = loader_config.pop('name')
+ROIs = None
 for stage in ['train', 'valid']:
-    data_loader = DataLoader(*loader_config)
+    data_loader = DataLoader(loader_name, **loader_config)
     if data_list[stage] is not None:
         data_loader.set_data_list(data_list[stage])
     data_gen[stage] = DataGenerator(data_loader, generator_config[stage])
+
+    if ROIs is None:
+        ROIs = data_loader.ROIs
 
 # - GPUs
 os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
