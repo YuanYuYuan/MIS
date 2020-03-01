@@ -1,0 +1,83 @@
+gpus: 0
+epochs: 500
+validation_frequency: 4
+early_stopping_epochs: 5
+output_threshold: 0.2
+data: data_list.yaml
+
+generator:
+  train            :
+    BlockSampler   :
+      shuffle      : True
+      block_shape  : [128, 128, 30]
+      out_shape    : [96, 96, 20]
+      n_workers    : 4
+      n_samples    : 8
+      ratios       : [0, 1, 1, 1]
+      verbose      : False
+
+    Augmentor      :                  # do preprocessing and data augmentation
+      # zoom_range   : [0.8, 1.2]       # zoom the image/label with some scale in range, note that it only apply on x-y plane
+      # transpose    : True             # transpose the image/label on x-y plane with a fixed probability 0.5
+      # flip         : True             # flip the image/only on x-y plane with a fixed probability 0.5
+      noise        : True             # add a Gaussian noise with mean 0 and sigam 0.05 on the image
+      window_width : [90, 110]        # adjust the contrast with the given window width(or a range), default : 100
+      window_level : [40, 60]         # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 2                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
+
+    BatchGenerator :
+      batch_size   : 18
+      n_workers    : 4
+      verbose      : False
+
+  valid            :
+    BlockGenerator :
+      block_shape  : [128, 128, 30]
+      out_shape    : [96, 96, 20]
+      n_workers    : 4
+      ordered      : True
+      verbose      : False
+
+    Augmentor      :                  # do preprocessing and data augmentation
+      window_width : 100              # adjust the contrast with the given window width(or a range), default : 100
+      window_level : 50               # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 1                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
+
+    BatchGenerator :
+      n_workers    : 1
+      batch_size   : 54
+      verbose      : False
+
+model:
+  name          : VNet
+  in_channels   : 1
+  base_channels : 16
+  kernel_size   : 5
+  depth         : 4
+  n_labels      : 4
+  n_dim         : 3
+  in_shape      : [128, 128, 30]
+  out_shape     : [96, 96, 20]
+  norm          : BatchNorm
+  block_type    : 2
+  attention     : True
+
+loss:
+  losses:
+    - name: cross_entropy
+      # weight: [0.1, 1, 1.5, 1.5]
+    - name: dice_loss
+      # weight: [1, 1.5, 1.5]
+  # coef: [1, 1]
+  # iter_decay: [0, 0]
+
+optimizer:
+  name     : Adam
+  lr       : 0.0001
+
+scheduler:
+  T_mult   : 1
+  T_up     : 10
+  T_0      : 40
