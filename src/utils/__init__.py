@@ -1,3 +1,3 @@
 from .trainer import Trainer
-from .predictor import Predictor
+from .validator import Validator
 from .utils import *

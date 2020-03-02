@@ -7,14 +7,14 @@ from metrics import compute_dice, match_up
 from typing import Dict
 
 
-class Predictor:
+class Validator:
 
     def __init__(
         self,
         model,
         load_checkpoint=None,
-        save_prediction=None,
-        save_data=None,
+        save_output=None,
+        save_input=None,
         threshold=0.2,
     ):
         self.use_cuda = torch.cuda.device_count() > 0
@@ -36,24 +36,24 @@ class Predictor:
                 else:
                     self.model = self.model.cuda()
 
-        # save prediction
-        if save_prediction:
-            os.makedirs(save_prediction, exist_ok=True)
-            self.save_prediction = save_prediction
+        # save output
+        if save_output:
+            os.makedirs(save_output, exist_ok=True)
+            self.save_output = save_output
         else:
-            self.save_prediction = None
+            self.save_output = None
 
         # save preprocessed data
-        if save_data:
-            os.makedirs(os.path.join(save_data, 'images'), exist_ok=True)
-            os.makedirs(os.path.join(save_data, 'labels'), exist_ok=True)
-            self.save_data = save_data
+        if save_input:
+            os.makedirs(os.path.join(save_input, 'images'), exist_ok=True)
+            os.makedirs(os.path.join(save_input, 'labels'), exist_ok=True)
+            self.save_input = save_input
         else:
-            self.save_data = None
+            self.save_input = None
 
         self.threshold = threshold
 
-    def predict(self, batch):
+    def validate(self, batch):
         with torch.set_grad_enabled(False):
             self.model.eval()
 
@@ -65,9 +65,9 @@ class Predictor:
             logits = self.model(images)
             probas = F.softmax(logits, dim=1)
 
-            # enhance prediction by setting a threshold
-            for i, threshold in enumerate([0.9, self.threshold]):
-                probas[:, i] += (probas[:, i] >= threshold).float()
+            # enhance output by setting a threshold
+            for i in range(1, probas.shape[1]):
+                probas[:, i, ...] += (probas[:, i, ...] >= self.threshold).float()
 
             # convert probabilities into one-hot: [B, C, ...]
             max_idx = torch.argmax(probas, 1, keepdim=True)
@@ -83,7 +83,7 @@ class Predictor:
                 batch_wise=True
             )
             result = {'match': match, 'total': total}
-            if self.save_prediction:
+            if self.save_output:
                 result['output'] = one_hot
             return result
 
@@ -107,7 +107,7 @@ class Predictor:
             zip(PG.data_list, PG.partition),
             total=len(PG.data_list),
             ncols=get_tty_columns(),
-            desc='[Predicting] ID: %s, Accu: %.5f'
+            desc='[Validating] ID: %s, Accu: %.5f'
             % ('', 0.0)
         )
 
@@ -118,7 +118,7 @@ class Predictor:
             'match': torch.Tensor(),
             'total': torch.Tensor()
         }
-        if self.save_prediction:
+        if self.save_output:
             results['output'] = torch.Tensor()
 
         # use with statement to make sure data_gen is clear in case interrupted
@@ -129,7 +129,7 @@ class Predictor:
                 while partition_counter < partition_per_data:
                     try:
                         batch = next(gen)
-                        new_batch_result = self.predict(batch)
+                        new_batch_result = self.validate(batch)
                     except StopIteration:
                         break
 
@@ -152,33 +152,41 @@ class Predictor:
                 # exclude background
                 roi_score = roi_score[1:]
 
-                # save prediction
-                if self.save_prediction:
-                    one_hot_ouptuts = results['output'][:partition_per_data]
-                    prediction = PG.restore(
-                        data_idx,
-                        torch.argmax(one_hot_ouptuts, 1)
+                # save output
+                if self.save_output:
+                    save_nifti(
+
+                        # restore data from output
+                        PG.restore(
+                            data_idx,
+                            torch.argmax(results['output'][:partition_per_data], 1)
+                        ).data.cpu().numpy(),
+
+                        # nifti file path
+                        os.path.join(
+                            self.save_output,
+                            data_idx + '.nii.gz'
+                        )
                     )
-                    file_path = os.path.join(
-                        self.save_prediction,
-                        data_idx + '.nii.gz'
-                    )
-                    save_nifti(prediction.data.cpu().numpy(), file_path)
 
                 # save preprocessed data
-                if self.save_data:
-                    image_path = os.path.join(
-                        self.save_data,
-                        'images',
-                        data_idx + '.nii.gz'
+                if self.save_input:
+                    save_nifti(
+                        DL.get_image(data_idx),
+                        os.path.join(
+                            self.save_input,
+                            'images',
+                            data_idx + '.nii.gz'
+                        )
                     )
-                    label_path = os.path.join(
-                        self.save_data,
-                        'labels',
-                        data_idx + '.nii.gz'
+                    save_nifti(
+                        DL.get_label(data_idx),
+                        os.path.join(
+                            self.save_input,
+                            'labels',
+                            data_idx + '.nii.gz'
+                        )
                     )
-                    save_nifti(DL.get_image(data_idx), image_path)
-                    save_nifti(DL.get_label(data_idx), label_path)
 
                 # remove processed results
                 for key in results:
@@ -193,7 +201,7 @@ class Predictor:
 
                 # show progress
                 progress_bar.set_description(
-                    '[Predicting]  ID: %s, Accu: %.5f'
+                    '[Validating]  ID: %s, Accu: %.5f'
                     % (data_idx, roi_score.mean())
                 )
 

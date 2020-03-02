@@ -5,7 +5,7 @@ import torch
 import time
 import os
 
-from utils import Trainer, Predictor, epoch_info, ROIScoreWriter
+from utils import Trainer, Validator, epoch_info, ROIScoreWriter
 import yaml
 from training.optimizers import Optimizer
 from training.scheduler import CosineAnnealingWarmUpRestarts as Scheduler
@@ -126,7 +126,7 @@ trainer = Trainer(
     logger=logger,
 )
 
-predictor = Predictor(
+validator = Validator(
     trainer.model,
     threshold=config['output_threshold'],
 )
@@ -163,7 +163,7 @@ for epoch in range(config['epochs']):
         if epoch % config['validation_frequency'] == 0:
 
             # get validation scorel: {data_idx: {roi: score}}
-            val_score = predictor.run(data_gen['valid'])
+            val_score = validator.run(data_gen['valid'])
 
             # compute total average score
             avg_score = sum(
