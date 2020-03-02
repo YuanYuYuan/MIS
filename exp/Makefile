@@ -16,6 +16,7 @@ endif
 
 # Configs
 TRAINING_CONFIG = './training.yaml'
+INFERING_CONFIG = './infering.yaml'
 TRAIN_LOG_DIR   = './_logs'
 CKPT_DIR  = './_ckpts'
 CKPT = '_ckpt.pt'
@@ -45,6 +46,14 @@ retrain:
 continue:
 	@echo "===== Training... ====="
 	$(EXECUTOR) $(SRC_DIR)/train.py $(TRAIN_FLAGS) --checkpoint $(PAUSE_CKPT)
+
+validate:
+	@echo "===== Validating... ====="
+	$(EXECUTOR) $(SRC_DIR)/train.py $(TRAIN_FLAGS) --checkpoint $(CKPT) --validate-only
+
+infer:
+	@echo "===== Infering... ====="
+	$(EXECUTOR) $(SRC_DIR)/infer.py --config $(INFERING_CONFIG)
 
 log:
 	@echo "===== Launch Tensorboard ====="

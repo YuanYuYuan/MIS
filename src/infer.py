@@ -24,16 +24,15 @@ args = parser.parse_args()
 # load config
 with open(args.config) as f:
     config = yaml.safe_load(f)
-
-loader_config = config['loader']
+os.makedirs(config['output_dir'], exist_ok=True)
 
 # - data pipeline
+loader_config = config['loader']
 loader_name = loader_config.pop('name')
 data_loader = DataLoader(
     loader_name,
     **loader_config
 )
-
 data_gen = DataGenerator(data_loader, config['generator'])
 ROIs = data_loader.ROIs
 
@@ -73,60 +72,56 @@ progress_bar = tqdm(
     zip(PG.data_list, PG.partition),
     total=len(PG.data_list),
     ncols=get_tty_columns(),
-    desc='[Predicting] ID: '
+    desc='[Infering] ID: '
 )
 
 partition_counter = 0
 
 # use with statement to make sure data_gen is clear in case interrupted
-with data_gen as gen:
-    for (data_idx, partition_per_data) in progress_bar:
+with torch.set_grad_enabled(False):
+    results = torch.Tensor()
+    with data_gen as gen:
+        for (data_idx, partition_per_data) in progress_bar:
 
-        results = []
+            # show progress
+            progress_bar.set_description('[Infering] ID: %s' % data_idx)
 
-        # loop until a partition have been covered
-        while partition_counter < partition_per_data:
-            try:
-                batch = next(gen)
-                logits = model(batch['image'].cuda())
-                probas = F.softmax(logits, dim=1)
+            # loop until a partition have been covered
+            while partition_counter < partition_per_data:
+                try:
+                    batch = next(gen)
+                    logits = model(batch['image'].cuda())
+                    probas = F.softmax(logits, dim=1)
 
-                # enhance prediction by setting a threshold
-                for i in range(1, probas.shape[1]):
-                    probas[:, i, ...] += (probas[:, i, ...] >= config['output_threshold']).float()
+                    # enhance prediction by setting a threshold
+                    for i in range(1, probas.shape[1]):
+                        probas[:, i, ...] += (probas[:, i, ...] >= config['output_threshold']).float()
+                    output = torch.argmax(probas, 1).cpu()
 
-                # convert probabilities into one-hot: [B, C, ...]
-                max_idx = torch.argmax(probas, 1, keepdim=True)
-                one_hot = torch.zeros(probas.shape)
-                one_hot.scatter_(1, max_idx, 1)
-                results.append(one_hot)
+                except StopIteration:
+                    break
 
-            except StopIteration:
-                break
+                # append to each torch tensor in results
+                results = output if len(results) == 0 else torch.cat([results, output])
+                partition_counter += data_gen.struct['BG'].batch_size
 
-            # append to each torch tensor in results list
-            partition_counter += data_gen.struct['BG'].batch_size
-
-        # save prediction
-        one_hot_ouptuts = results[:partition_per_data]
-        prediction = PG.restore(
-            data_idx,
-            torch.argmax(one_hot_ouptuts, 1)
-        )
-        save_nifti(
-            prediction.data.cpu().numpy(),
-            os.path.join(
-                config['output_dir'],
-                data_idx + '.nii.gz'
+            # save prediction
+            prediction = PG.restore(
+                data_idx,
+                results[:partition_per_data]
             )
-        )
+            save_nifti(
+                prediction.data.cpu().numpy(),
+                os.path.join(
+                    config['output_dir'],
+                    data_idx + '.nii.gz'
+                )
+            )
 
-        # remove processed results
-        results = results[partition_per_data:]
-        partition_counter -= partition_per_data
+            # remove processed results
+            results = results[partition_per_data:]
+            partition_counter -= partition_per_data
 
-        # show progress
-        progress_bar.set_description('[Predicting]  ID: %s' % data_idx)
 
 print('Total:', time.time()-start)
 print('Finished')
