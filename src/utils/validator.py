@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from .utils import save_nifti, get_tty_columns
 from tqdm import tqdm
 from metrics import compute_dice, match_up
-from typing import Dict
 
 
 class Validator:
@@ -91,21 +90,24 @@ class Validator:
         self,
         data_gen,
         verbose=False,
-    ) -> Dict[str, Dict[str, float]]:
+    ):
 
         PG = data_gen.struct['PG']
         DL = data_gen.struct['DL']
         BG = data_gen.struct['BG']
+
+        # Use data list from PG since may be shuffled
+        data_list = PG.data_list
+        ROIs = DL.ROIs
 
         # ensure the order
         if PG.n_workers > 1:
             assert PG.ordered
         assert BG.n_workers == 1
 
-        # Use data list from PG since may be shuffled
         progress_bar = tqdm(
-            zip(PG.data_list, PG.partition),
-            total=len(PG.data_list),
+            zip(data_list, PG.partition),
+            total=len(data_list),
             ncols=get_tty_columns(),
             desc='[Validating] ID: %s, Accu: %.5f'
             % ('', 0.0)
@@ -196,7 +198,7 @@ class Validator:
                 # record the score details
                 each_roi_score[data_idx] = {
                     roi: score.item() for
-                    (roi, score) in zip(DL.ROIs, roi_score)
+                    (roi, score) in zip(ROIs, roi_score)
                 }
 
                 # show progress
@@ -205,4 +207,34 @@ class Validator:
                     % (data_idx, roi_score.mean())
                 )
 
-        return each_roi_score
+        # compute total average score
+        avg_score = sum(
+            sum(each_roi_score[data_idx].values()) / len(ROIs)
+            for data_idx in data_list
+        ) / len(data_list)
+
+        # compute score for each roi: {roi: average score}
+        roi_score = {roi: 0.0 for roi in ROIs}
+        for data_idx in data_list:
+            for roi in ROIs:
+                roi_score[roi] += each_roi_score[data_idx][roi]
+        for roi in ROIs:
+            roi_score[roi] /= len(data_list)
+
+        info = ['Avg Accu: %.5f' % avg_score]
+        info += [
+            '%s: %.5f' % (roi, score)
+            for (roi, score) in roi_score.items()
+        ]
+        print(', '.join(info))
+
+        return {
+            # {data_idx: {roi: score}}
+            'raw': each_roi_score,
+
+            # {roi: avg score over data_list}
+            'roi': roi_score,
+
+            # avg over all roi and data_list
+            'avg': avg_score,
+        }

@@ -5,7 +5,7 @@ import torch
 import time
 import os
 
-from utils import Trainer, Validator, epoch_info, ROIScoreWriter
+from utils import Trainer, Validator, epoch_info, ROIScoreWriter, EarlyStopper
 import yaml
 from training.optimizers import Optimizer
 from training.scheduler import CosineAnnealingWarmUpRestarts as Scheduler
@@ -39,6 +39,12 @@ parser.add_argument(
     default=False,
     action='store_true',
     help='Small data test',
+)
+parser.add_argument(
+    '--validate-only',
+    default=False,
+    action='store_true',
+    help='do validation only',
 )
 parser.add_argument(
     '--pause-ckpt',
@@ -131,13 +137,21 @@ validator = Validator(
     threshold=config['output_threshold'],
 )
 
+if args.validate_only:
+    validator.run(data_gen['valid'])
+    logger.close()
+    print('Total:', time.time()-start)
+    exit(0)
+
 checkpoint_dir = args.checkpoint_dir
 if checkpoint_dir:
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-early_stop = config['early_stopping_epochs'] > 1
-best_score = 0.0
-n_stagnation = 0
+# early stopper
+if config['early_stopping_epochs'] > 1:
+    early_stopper = EarlyStopper(config['early_stopping_epochs'])
+else:
+    early_stopper = None
 
 for epoch in range(config['epochs']):
 
@@ -162,78 +176,50 @@ for epoch in range(config['epochs']):
 
         if epoch % config['validation_frequency'] == 0:
 
-            # get validation scorel: {data_idx: {roi: score}}
+            # get validation score
             val_score = validator.run(data_gen['valid'])
-
-            # compute total average score
-            avg_score = sum(
-                sum(val_score[data_idx].values()) / len(val_score[data_idx])
-                for data_idx in val_score
-            ) / len(val_score)
-
-            # compute score for each roi: {roi: average score}
-            roi_score = {roi: 0.0 for roi in ROIs}
-            for data_idx in val_score.keys():
-                for roi in ROIs:
-                    roi_score[roi] += val_score[data_idx][roi]
-            for roi in ROIs:
-                roi_score[roi] /= len(val_score)
-
-            info = ['Avg Accu: %.5f' % avg_score]
-            info += [
-                '%s: %.5f' % (roi, score)
-                for (roi, score) in roi_score.items()
-            ]
-            print(', '.join(info))
 
             # logging
             if logger is not None:
-                logger.add_scalar(
-                    'validation/avg_accu',
-                    avg_score,
-                    epoch+1
-                )
                 logger.add_scalars(
                     'validation/roi_score',
-                    roi_score,
+                    val_score['roi'],
+                    epoch+1
+                )
+                logger.add_scalar(
+                    'validation/avg_accu',
+                    val_score['avg'],
                     epoch+1
                 )
 
                 # log validation score into csv file
-                score_writer.write(epoch+1, roi_score)
+                score_writer.write(epoch+1, val_score['roi'])
 
             # check early stopping
-            if early_stop:
-                if avg_score > best_score:
-                    best_score = avg_score
-                    n_stagnation = 0
+            if early_stopper:
+                if early_stopper.check(val_score['avg']):
+                    print('Early stopped.')
+                    break
 
-                    # store checkpoint
-                    if checkpoint_dir:
-                        file_path = os.path.join(
-                            checkpoint_dir,
-                            '%02d-%.5f.pt' % (epoch+1, avg_score)
-                        )
+            # store checkpoint
+            if checkpoint_dir:
+                file_path = os.path.join(
+                    checkpoint_dir,
+                    '%02d-%.5f.pt' % (epoch+1, val_score['avg'])
+                )
 
-                        # check if multiple gpu model
-                        if torch.cuda.device_count() > 1:
-                            model_state_dict = trainer.model.module.state_dict()
-                        else:
-                            model_state_dict = trainer.model.state_dict()
-
-                        torch.save({
-                            'epoch': epoch+1,
-                            'model_state_dict': model_state_dict,
-                            'loss': loss,
-                            'step': trainer.global_step
-                        }, file_path)
-                elif avg_score > best_score * 0.95:
-                    continue
+                # check if multiple gpu model
+                if torch.cuda.device_count() > 1:
+                    model_state_dict = trainer.model.module.state_dict()
                 else:
-                    n_stagnation += 1
-                    if n_stagnation > config['early_stopping_epochs']:
-                        print('Early stop.')
-                        break
+                    model_state_dict = trainer.model.state_dict()
+
+                torch.save({
+                    'epoch': epoch+1,
+                    'model_state_dict': model_state_dict,
+                    'loss': loss,
+                    'step': trainer.global_step
+                }, file_path)
 
     except KeyboardInterrupt:
 
