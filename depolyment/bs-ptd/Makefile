@@ -8,4 +8,4 @@ download_model:
 
 infer:
 	@ echo "===== Infering... ====="
-	@ ../src/infer.py --config ./infering.yaml
+	@ ../../src/infer.py --config ./infering.yaml

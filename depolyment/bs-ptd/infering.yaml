@@ -40,13 +40,13 @@ generator:
 model:
   name          : VNet
   in_channels   : 1
-  base_channels : 32
+  base_channels : 16
   kernel_size   : 5
-  depth         : 3
+  depth         : 4
   n_labels      : 4
   n_dim         : 3
   in_shape      : [128, 128, 30]
   out_shape     : [96, 96, 20]
   norm          : BatchNorm
   block_type    : 2
-  attention     : False
+  attention     : True
