@@ -197,29 +197,32 @@ for epoch in range(config['epochs']):
 
             # check early stopping
             if early_stopper:
-                if early_stopper.check(val_score['avg']):
+                early_stop, improved = early_stopper.check(val_score['avg'])
+
+                if early_stop:
                     print('Early stopped.')
                     break
 
-            # store checkpoint
-            if checkpoint_dir:
-                file_path = os.path.join(
-                    checkpoint_dir,
-                    '%02d-%.5f.pt' % (epoch+1, val_score['avg'])
-                )
+                elif improved:
+                    # store checkpoint
+                    if checkpoint_dir:
+                        file_path = os.path.join(
+                            checkpoint_dir,
+                            '%02d-%.5f.pt' % (epoch+1, val_score['avg'])
+                        )
 
-                # check if multiple gpu model
-                if torch.cuda.device_count() > 1:
-                    model_state_dict = trainer.model.module.state_dict()
-                else:
-                    model_state_dict = trainer.model.state_dict()
+                        # check if multiple gpu model
+                        if torch.cuda.device_count() > 1:
+                            model_state_dict = trainer.model.module.state_dict()
+                        else:
+                            model_state_dict = trainer.model.state_dict()
 
-                torch.save({
-                    'epoch': epoch+1,
-                    'model_state_dict': model_state_dict,
-                    'loss': loss,
-                    'step': trainer.global_step
-                }, file_path)
+                        torch.save({
+                            'epoch': epoch+1,
+                            'model_state_dict': model_state_dict,
+                            'loss': loss,
+                            'step': trainer.global_step
+                        }, file_path)
 
     except KeyboardInterrupt:
 

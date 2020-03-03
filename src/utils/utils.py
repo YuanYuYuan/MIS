@@ -45,10 +45,12 @@ class EarlyStopper:
 
     def check(self, score):
         early_stop_or_not = False
+        improved = False
 
         if score > self.best_score:
             self.best_score = score
             self.n_stagnation = 0
+            improved = True
 
         elif score > self.best_score * 0.95:
             pass
@@ -58,7 +60,7 @@ class EarlyStopper:
             if self.n_stagnation > self.patience:
                 early_stop_or_not = True
 
-        return early_stop_or_not
+        return early_stop_or_not, improved
 
 
 def load_config(config_file):
