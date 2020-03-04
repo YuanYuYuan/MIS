@@ -1,0 +1,13 @@
+git+https://github.com/YuanYuYuan/MIDP
+tensorflow-gpu
+prettytable
+torch
+torchvision
+opencv-python
+pynrrd
+ruamel.yaml
+pathos
+nibabel
+pydicom
+tqdm
+psutil
