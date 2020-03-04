@@ -58,8 +58,8 @@ model.eval()
 timer = time.time()
 start = timer
 
-PG = data_gen.struct['PG']
 DL = data_gen.struct['DL']
+PG = data_gen.struct['PG']
 BG = data_gen.struct['BG']
 
 # ensure the order
@@ -110,12 +110,10 @@ with torch.set_grad_enabled(False):
                 data_idx,
                 results[:partition_per_data]
             )
-            save_nifti(
+            DL.save_prediction(
+                data_idx,
                 prediction.data.cpu().numpy(),
-                os.path.join(
-                    config['output_dir'],
-                    data_idx + '.nii.gz'
-                )
+                config['output_dir']
             )
 
             # remove processed results
