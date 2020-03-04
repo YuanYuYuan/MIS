@@ -8,15 +8,15 @@ model_weight: model.pt
 #   data_dir: data
 
 loader:
-  name: ParsingLoader
-  parser_config:
-  - name: PDDCAParser
-    ROIs:
-    - BrainStem
-    - Parotid_L
-    - Parotid_R
-    data_dir: data
-    preprocess_image: false
+  name: NRRDLoader
+  data_dir: data
+  roi_map:
+    BrainStem: 1
+    Parotid_L: 2
+    Parotid_R: 3
+  spacing: 1
+  test: false
+  resample: false
 
 generator:
   BlockGenerator :
