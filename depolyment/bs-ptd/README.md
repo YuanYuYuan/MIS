@@ -81,6 +81,10 @@ The output results will be in NRRD format like
 
 ```bash
 OUTPUT_DIR
-├── DATA_INDEX.nrrd
+├── DATA_INDEX
+│   └── structures
+│       ├── BrainStem.nrrd
+│       ├── Parotid_L.nrrd
+│       └── Parotid_R.nrrd
 ...
 ```
