@@ -21,7 +21,7 @@ loader:
   name: NRRDLoader
   data_dir: data     <-- SPECIFY A DATA DIRECTORY
   roi_map:          <-- SPECIFY THE TARGETS
-    BrainStem: 1
+    Brainstem: 1
     Parotid_L: 2
     Parotid_R: 3
   spacing: 1
@@ -42,7 +42,7 @@ loader:
   name: NRRDLoader
   data_dir: data        <-- SPECIFY A DATA DIRECTORY
   roi_map:
-    BrainStem: 1
+    Brainstem: 1
     Parotid_L: 2
     Parotid_R: 3
   spacing: 1

@@ -59,7 +59,7 @@ loader:
   name: NRRDLoader
   data_dir: data
   roi_map:
-    BrainStem: 1
+    Brainstem: 1
     Parotid_L: 2
     Parotid_R: 3
   spacing: 1
