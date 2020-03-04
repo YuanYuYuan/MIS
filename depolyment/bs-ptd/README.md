@@ -2,20 +2,18 @@
 
 Total 4 classes: background, brainstem, left/right parotids
 
-Note that this script is for inference only, no training and validation supported.
-For further re-training, please see [here](../../exp).
-
-This program doesn't require any label information by default.
-If you have labels of the images and want to evaluate the performance after inference,
-please see here.
+Note that this script is for inference only.
+Hence, no label information required. But if you have label of images
+and want to evaluate the performance, or further training based on the model,
+please see [here](../../exp/bs-ptd-nrrd).
 
 ## Latest results
 
 Dice score of validation on PDDCA dataset (train/valid: 33/15)
 
-| ROI   | Brain Stem | Left Parotid | Right Parotid | Average |
-|-------|------------|--------------|---------------|---------|
-| Score | 0.8782     | 0.7223       | 0.7404        | 0.7803  |
+| ROI     | Brainstem   | Left Parotid   | Right Parotid   | Average   |
+| ------- | ------------ | -------------- | --------------- | --------- |
+| Score   | 0.86830      | 0.75442        | 0.75059         | 0.79111   |
 
 
 ## How to use
@@ -52,7 +50,7 @@ loader:
   name: NRRDLoader
   data_dir: data        <-- SPECIFY A DATA DIRECTORY
   roi_map:
-    BrainStem: 1
+    Brainstem: 1
     Parotid_L: 2
     Parotid_R: 3
   spacing: 1
@@ -79,10 +77,10 @@ model: ...
 make infer
 ```
 
-The output results will be in NIfTI format like
+The output results will be in NRRD format like
 
 ```bash
 OUTPUT_DIR
-├── DATA_INDEX.nii.gz
+├── DATA_INDEX.nrrd
 ...
 ```

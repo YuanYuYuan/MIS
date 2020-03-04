@@ -1,4 +1,4 @@
-MODEL_ID = "1EL8h2zfPQa0wOWwWj5H2Fynt20WA4Pe6"
+MODEL_ID = "1E2Qbekb1mts_uOPiIA93EtUDYfXzS445"
 
 run: download_model infer
 
