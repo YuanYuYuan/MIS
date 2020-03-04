@@ -18,19 +18,19 @@ generator:
   BlockGenerator :
     block_shape  : [128, 128, 30]
     out_shape    : [96, 96, 20]
-    ordered      : True
     n_workers    : 4
+    ordered      : True
     verbose      : False
 
   Augmentor      :
     window_width : 100
     window_level : 50
-    n_workers    : 1
+    n_workers    : 2
     verbose      : False
 
   BatchGenerator :
-    batch_size   : 12
     n_workers    : 1
+    batch_size   : 12
     verbose      : False
 
 model:

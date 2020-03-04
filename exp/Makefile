@@ -19,7 +19,7 @@ TRAINING_CONFIG = './training.yaml'
 INFERING_CONFIG = './infering.yaml'
 TRAIN_LOG_DIR   = './_logs'
 CKPT_DIR  = './_ckpts'
-CKPT = '_ckpt.pt'
+CKPT = 'ckpt.pt'
 PAUSE_CKPT = 'pause.pt'
 
 # train
