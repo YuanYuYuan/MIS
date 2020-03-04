@@ -18,6 +18,10 @@ Dice score of validation on PDDCA dataset (train/valid: 33/15)
 
 ## How to use
 
+### Prerequisites
+
+Check the [installation](../../README.md) if needed.
+
 ### Download the trained model
 
 ```bash
