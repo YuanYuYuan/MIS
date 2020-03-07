@@ -1,6 +1,6 @@
 gpus: 0
-epochs: 500
-validation_frequency: 5
+epochs: 10
+validation_frequency: 2
 early_stopping_epochs: 5
 output_threshold: 0.2
 data: ../data_list.yaml
@@ -12,21 +12,23 @@ generator:
       block_shape  : [128, 128, 30]
       out_shape    : [96, 96, 20]
       n_workers    : 4
-      n_samples    : 32
-      ratios       : [0, 1, 1, 3]
+      n_samples    : 8
+      ratios       : [0, 1, 1, 1]
       verbose      : False
 
-    # Augmentor      :
-    #   zoom_range   : [0.5, 1.2]
-    #   filter_range : [0.9, 1.0]
-    #   transpose    : False
-    #   flip         : False
-    #   n_workers    : 2
-    #   verbose      : False
+    Augmentor      :                  # do preprocessing and data augmentation
+      # zoom_range   : [0.8, 1.2]       # zoom the image/label with some scale in range, note that it only apply on x-y plane
+      # transpose    : True             # transpose the image/label on x-y plane with a fixed probability 0.5
+      # flip         : True             # flip the image/only on x-y plane with a fixed probability 0.5
+      noise        : True             # add a Gaussian noise with mean 0 and sigam 0.05 on the image
+      window_width : [90, 110]        # adjust the contrast with the given window width(or a range), default : 100
+      window_level : [40, 60]         # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 2                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
-      batch_size   : 32
-      n_workers    : 2
+      batch_size   : 12
+      n_workers    : 4
       verbose      : False
 
   valid            :
@@ -37,9 +39,15 @@ generator:
       ordered      : True
       verbose      : False
 
+    Augmentor      :                  # do preprocessing and data augmentation
+      window_width : 100              # adjust the contrast with the given window width(or a range), default : 100
+      window_level : 50               # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 1                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
+
     BatchGenerator :
       n_workers    : 1
-      batch_size   : 120
+      batch_size   : 36
       verbose      : False
 
 model:
@@ -59,15 +67,15 @@ model:
 loss:
   losses:
     - name: cross_entropy
-      weight: [0.1, 1, 1, 3]
+      # weight: [0.1, 1, 1.5, 1.5]
     - name: dice_loss
-      weight: [1, 1, 3]
-  coef: [1, 1.5]
-  iter_decay: [0, 0]
+      # weight: [1, 1.5, 1.5]
+  # coef: [1, 1]
+  # iter_decay: [0, 0]
 
 optimizer:
   name     : Adam
-  lr       : 0.001
+  lr       : 0.0001
 
 scheduler:
   T_mult   : 1

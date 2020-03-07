@@ -56,11 +56,12 @@ list:
   - 0522c0708
   - 0522c0857
 loader:
-- ROIs:
-  - OpticNerve_L
-  - OpticNerve_R
-  - Chiasm
-  data_dir: /tmp/PDDCA
-  data_list: null
-  name: PDDCAParser
-  preprocess_image: true
+  name: NRRDLoader
+  data_dir: data
+  roi_map:
+    BrainStem: 1
+    Parotid_L: 2
+    Parotid_R: 3
+  spacing: 1
+  test: false
+  resample: false
