@@ -103,7 +103,7 @@ class Map(nn.Module):
                 'norm',
                 nn.InstanceNorm3d(self.ch_out, affine=True)
             )
-            self.op.add_module('acti', nn.ReLU())
+            self.op.add_module('acti', nn.ReLU(inplace=True))
 
     def forward(self, x):
         return self.op(x)
@@ -149,7 +149,7 @@ class Chain(nn.Module):
                     if tmp is None:
                         tmp = self.ops[map_idx](state[state_in_idx])
                     else:
-                        tmp += self.ops[map_idx](state[state_in_idx])
+                        tmp = tmp + self.ops[map_idx](state[state_in_idx])
                 state[state_out_idx] = tmp
 
         if len(self.outs) > 1:
