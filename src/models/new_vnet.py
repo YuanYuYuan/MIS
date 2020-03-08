@@ -1,5 +1,5 @@
 import json5
-from chain import Chain
+from .chain import Chain
 import torch.nn as nn
 
 
