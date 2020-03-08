@@ -1,9 +1,9 @@
-gpus: 0
+gpus: 2,3
 epochs: 500
 validation_frequency: 5
 early_stopping_epochs: 10
 output_threshold: 0.2
-data: ../data_list.yaml
+data: data_list.yaml
 
 generator:
   train            :
@@ -27,7 +27,7 @@ generator:
       verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
-      batch_size   : 8
+      batch_size   : 12
       n_workers    : 4
       verbose      : False
 
@@ -46,7 +46,7 @@ generator:
       verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
-      batch_size   : 40
+      batch_size   : 48
       n_workers    : 1
       verbose      : False
 
@@ -65,7 +65,7 @@ loss:
 
 optimizer:
   name     : Adam
-  lr       : 0.0001
+  lr       : 0.0005
 
 scheduler:
   T_mult   : 1
