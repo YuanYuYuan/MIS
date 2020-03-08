@@ -8,12 +8,14 @@ class Map(nn.Module):
         name,
         ch_in=16,
         ch_out: int = None,
+        postprocess=True,
     ):
         super().__init__()
 
         self.op = nn.Sequential()
         self.ch_in = ch_in
         self.ch_out = ch_in if ch_out is None else ch_out
+        self.postprocess = postprocess
 
         if name == '2D':
             self.op.add_module(
@@ -96,8 +98,7 @@ class Map(nn.Module):
 
         else:
             raise NotImplementedError
-
-        if name != 'Identity':
+        if postprocess and name != 'Identity':
             self.op.add_module(
                 'norm',
                 nn.InstanceNorm3d(self.ch_out, affine=True)
