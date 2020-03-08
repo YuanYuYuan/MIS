@@ -140,7 +140,6 @@ class Chain(nn.Module):
         # construct maps
         for state_out_idx, maps in self.topo.items():
             state_out_idx = int(state_out_idx)
-            print(state_out_idx)
             if isinstance(maps, str):
                 state[state_out_idx] = self.ops[maps](state[state_out_idx-1])
             else:

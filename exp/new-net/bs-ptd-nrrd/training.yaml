@@ -1,15 +1,15 @@
 gpus: 0
-epochs: 10
-validation_frequency: 2
-early_stopping_epochs: 5
+epochs: 500
+validation_frequency: 5
+early_stopping_epochs: 10
 output_threshold: 0.2
-data: data_list.yaml
+data: ../data_list.yaml
 
 generator:
   train            :
     BlockSampler   :
       shuffle      : True
-      block_shape  : [96, 96, 96]
+      block_shape  : [128, 128, 48]
       # out_shape    : [96, 96, 20]
       n_workers    : 4
       n_samples    : 8
@@ -27,13 +27,13 @@ generator:
       verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
-      batch_size   : 12
+      batch_size   : 8
       n_workers    : 4
       verbose      : False
 
   valid            :
     BlockGenerator :
-      block_shape  : [96, 96, 96]
+      block_shape  : [128, 128, 48]
       # out_shape    : [96, 96, 20]
       n_workers    : 4
       ordered      : True
@@ -46,8 +46,8 @@ generator:
       verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
+      batch_size   : 40
       n_workers    : 1
-      batch_size   : 36
       verbose      : False
 
 model:
