@@ -57,7 +57,7 @@ list:
   - 0522c0857
 loader:
   name: NRRDLoader
-  data_dir: data
+  data_dir: /tmp/PDDCA
   roi_map:
     OpticNerve_L: 1
     OpticNerve_R: 2

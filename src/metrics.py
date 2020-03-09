@@ -55,13 +55,13 @@ def match_up(logits, labels, needs_softmax=True, batch_wise=False):
     return match, total
 
 
-def compute_dice(match, total, eps=1e-10):
-    return ((2. * match + eps) / (total + eps))
+def compute_dice(match, total, smooth=1):
+    return ((2. * match + smooth) / (total + smooth))
 
 
-def dice_score(logits, labels, eps=1e-10, exclude_background=True):
+def dice_score(logits, labels, smooth=1, exclude_background=True):
     match, total = match_up(logits, labels, needs_softmax=True)
-    multi_class_score = compute_dice(match, total, eps=eps)
+    multi_class_score = compute_dice(match, total, smooth=smooth)
     if exclude_background:
         return multi_class_score[1:]
     else:

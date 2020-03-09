@@ -1,16 +1,16 @@
-gpus: 0
-epochs: 10
-validation_frequency: 2
-early_stopping_epochs: 5
+gpus: 0,1
+epochs: 500
+validation_frequency: 5
+early_stopping_epochs: 10
 output_threshold: 0.2
-data: ../data_list.yaml
+data: data_list.yaml
 
 generator:
   train            :
     BlockSampler   :
       shuffle      : True
-      block_shape  : [128, 128, 30]
-      out_shape    : [96, 96, 20]
+      block_shape  : [128, 128, 48]
+      # out_shape    : [96, 96, 20]
       n_workers    : 4
       n_samples    : 8
       ratios       : [0, 1, 1, 1]
@@ -33,8 +33,8 @@ generator:
 
   valid            :
     BlockGenerator :
-      block_shape  : [128, 128, 30]
-      out_shape    : [96, 96, 20]
+      block_shape  : [128, 128, 48]
+      # out_shape    : [96, 96, 20]
       n_workers    : 4
       ordered      : True
       verbose      : False
@@ -46,23 +46,13 @@ generator:
       verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
+      batch_size   : 48
       n_workers    : 1
-      batch_size   : 36
       verbose      : False
 
 model:
-  name          : VNet
-  in_channels   : 1
-  base_channels : 16
-  kernel_size   : 5
-  depth         : 4
-  n_labels      : 4
-  n_dim         : 3
-  in_shape      : [128, 128, 30]
-  out_shape     : [96, 96, 20]
-  norm          : BatchNorm
-  block_type    : 2
-  attention     : True
+  name          : NewVNet
+  config        : './new_vnet.json5'
 
 loss:
   losses:
@@ -75,7 +65,7 @@ loss:
 
 optimizer:
   name     : Adam
-  lr       : 0.0001
+  lr       : 0.0005
 
 scheduler:
   T_mult   : 1

@@ -57,11 +57,11 @@ list:
   - 0522c0857
 loader:
   name: NRRDLoader
-  data_dir: data
+  data_dir: /tmp/PDDCA
   roi_map:
-    OpticNerve_L: 1
-    OpticNerve_R: 2
-    Chiasm: 3
+    Brainstem: 1
+    Parotid_L: 2
+    Parotid_R: 3
   spacing: 1
   test: false
   resample: false
