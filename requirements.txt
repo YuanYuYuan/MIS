@@ -11,3 +11,4 @@ nibabel
 pydicom
 tqdm
 psutil
+json5
