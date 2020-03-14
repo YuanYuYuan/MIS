@@ -109,6 +109,7 @@ class Validator:
             zip(data_list, PG.partition),
             total=len(data_list),
             ncols=get_tty_columns(),
+            dynamic_ncols=True,
             desc='[Validating] ID: %s, Accu: %.5f'
             % ('', 0.0)
         )

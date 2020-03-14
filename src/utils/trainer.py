@@ -95,6 +95,7 @@ class Trainer:
             enumerate(data_gen),
             total=n_steps,
             ncols=get_tty_columns(),
+            dynamic_ncols=True,
             desc='[Training] Loss: %.5f, Accu: %.5f'
             % (0.0, 0.0)
         )
