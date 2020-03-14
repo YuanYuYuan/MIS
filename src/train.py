@@ -162,7 +162,7 @@ for epoch in range(config['epochs']):
         epoch_info(epoch, config['epochs'] + trainer.init_epoch)
 
         # train an epoch
-        loss, accu = trainer.run(data_gen['train'], epoch)
+        loss, accu = trainer.run(data_gen['train'])
 
         # adjust learning rate by epoch
         if scheduler is not None:
