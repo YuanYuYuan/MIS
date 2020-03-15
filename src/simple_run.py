@@ -163,7 +163,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         break
 
     # epoch start
-    epoch_info(epoch, init_epoch + config['epochs'])
+    epoch_info(epoch - 1, init_epoch + config['epochs'] - 1)
 
     for stage in ['train', 'valid']:
 

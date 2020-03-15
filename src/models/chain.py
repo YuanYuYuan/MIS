@@ -19,10 +19,13 @@ class Map(nn.Module):
 
         if preprocess and name != 'Identity':
             self.op.add_module(
-                'norm',
+                'preprocess_norm',
                 nn.InstanceNorm3d(self.ch_in, affine=True)
             )
-            self.op.add_module('acti', nn.ReLU(inplace=True))
+            self.op.add_module(
+                'preprocess_acti',
+                nn.ReLU(inplace=True)
+            )
 
         if name == '2D':
             self.op.add_module(
@@ -107,10 +110,13 @@ class Map(nn.Module):
             raise NotImplementedError
         if postprocess and name != 'Identity':
             self.op.add_module(
-                'norm',
+                'postprocess_norm',
                 nn.InstanceNorm3d(self.ch_out, affine=True)
             )
-            self.op.add_module('acti', nn.ReLU(inplace=True))
+            self.op.add_module(
+                'postprocess_acti',
+                nn.ReLU(inplace=True)
+            )
 
     def forward(self, x):
         return self.op(x)
