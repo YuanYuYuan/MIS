@@ -20,7 +20,7 @@ class Map(nn.Module):
         if preprocess and name != 'Identity':
             self.op.add_module(
                 'norm',
-                nn.InstanceNorm3d(self.ch_out, affine=True)
+                nn.InstanceNorm3d(self.ch_in, affine=True)
             )
             self.op.add_module('acti', nn.ReLU(inplace=True))
 
