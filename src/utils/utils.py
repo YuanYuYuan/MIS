@@ -142,6 +142,7 @@ def get_tty_columns():
     return int(columns)
 
 
+# TODO: move epoch + 1 -> epoch, remember to modify train.py and simple_run.py
 def epoch_info(epoch, total_epochs, sep='-'):
     n_cols = get_tty_columns()
     info = '%s Epoch %02d/%d %s' % (sep, epoch+1, total_epochs, sep)
