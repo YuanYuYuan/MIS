@@ -8,7 +8,6 @@ import yaml
 from training.optimizers import Optimizer
 from training.scheduler import CosineAnnealingWarmUpRestarts as Scheduler
 from MIDP import DataLoader, DataGenerator
-# import models
 
 
 parser = argparse.ArgumentParser()
