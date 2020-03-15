@@ -19,14 +19,13 @@ class ModelHandler:
         checkpoint=None,
     ):
         model_name = model_config.pop('name')
-        self.model = getattr(models, model_name)(model_config)
+        self.model = getattr(models, model_name)(**model_config)
 
         # load checkpoint
-        if checkpoint is not None:
+        if checkpoint is None:
             self.checkpoint = None
         else:
             print('===== Loading checkpoint %s =====' % checkpoint)
-
             self.checkpoint = torch.load(
                 checkpoint,
                 map_location=lambda storage, location: storage

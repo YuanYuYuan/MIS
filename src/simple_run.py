@@ -125,12 +125,14 @@ start = timer
 
 runners = {
     'train': Runner(
+        'train',
         model_handler.model,
-        optimizer=optimizer,
         loss_fn=loss_fn,
+        optimizer=optimizer,
         logger=logger,
     ),
     'valid': Runner(
+        'valid',
         model_handler.model,
         loss_fn=loss_fn,
         logger=logger,
@@ -155,7 +157,11 @@ else:
     init_epoch = 1
 
 # main running loop
+terminated = False
 for epoch in range(init_epoch, init_epoch + config['epochs']):
+
+    if terminated:
+        break
 
     # epoch start
     epoch_info(epoch, init_epoch + config['epochs'])
@@ -177,17 +183,18 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     'step': runners[stage].step
                 }
             )
+            terminated = True
             break
 
         # summarize the performance
-        info = ''
-        for key, val in results.item():
-            info += '%s: %.5f' % (key, val)
-        print(info)
+        print(', '.join(
+            '%s: %.5f' % (key, val)
+            for key, val in results.items()
+        ))
 
         # record the performance
         if logger is not None:
-            for key, val in results.item():
+            for key, val in results.items():
                 logger.add_scalar(
                     '%s/metrics/%s' % (stage, key),
                     val,
@@ -200,9 +207,10 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
             if early_stop:
                 print('Early stopped.')
+                terminated = True
                 break
 
-            elif improved and checkpoint_dir is None:
+            elif improved and checkpoint_dir is not None:
                 model_handler.save(
                     file_path=os.path.join(
                         checkpoint_dir,

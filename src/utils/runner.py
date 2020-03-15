@@ -8,10 +8,10 @@ class Runner:
 
     def __init__(
         self,
+        stage,
         model,
         loss_fn,
         optimizer=None,
-        stage='train',
         accu_fn='dice',
         logger=None,
         step=0,
@@ -83,7 +83,7 @@ class Runner:
         for step, batch in progress_bar:
             loss, accu = self.process_batch(batch)
             progress_bar.set_description(
-                '[%s]  Loss: %.5f, Accu: %.5f'
+                '[%s] Loss: %.5f, Accu: %.5f'
                 % (self.stage, loss.item(), accu.item())
             )
 
