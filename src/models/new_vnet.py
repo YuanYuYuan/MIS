@@ -51,4 +51,4 @@ class NewVNet(nn.Module):
             for i, j in enumerate(flow['out']):
                 state[j] = tmp[i]
 
-        return [state[i] for i in self.cfg['outs']]
+        return [state[i] for i in self.cfg['outs']][0]
