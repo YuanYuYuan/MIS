@@ -9,10 +9,10 @@ class NewVNet(nn.Module):
         super().__init__()
         with open(config) as f:
             model = json5.load(f)
-        self.encoder = Chain(**model['encoder'])
-        self.decoder = Chain(**model['decoder'])
+        self.op = nn.Sequential(
+            Chain(**model['encoder']),
+            Chain(**model['decoder']),
+        )
 
     def forward(self, x):
-        x = self.encoder(x)
-        x = self.decoder(x)
-        return x[0]
+        return self.op(x)[0]
