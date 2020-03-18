@@ -51,6 +51,6 @@ class NewVNet(nn.Module):
             for i, j in enumerate(flow['outs']):
                 state[j] = tmp[i]
 
-        for i in range(6):
-            print(state[i].shape)
-        return [state[idx] for idx in self.cfg['outs']][0]
+        output = [state[idx] for idx in self.cfg['outs']]
+        # TODO: fix list type of single output
+        return output[0]
