@@ -27,8 +27,8 @@ class NewVNet(nn.Module):
             'inps': [0],
             'outs': [5],
             'flow': {
-                'encoder': {'in': [0], 'out': [1, 2, 3, 4]},
-                'decoder': {'in': [1, 2, 3, 4], 'out': [5]}
+                'encoder': {'inps': [0], 'outs': [1, 2, 3, 4]},
+                'decoder': {'inps': [1, 2, 3, 4], 'outs': [5]}
             }
         }
         a: dict = {
@@ -47,8 +47,10 @@ class NewVNet(nn.Module):
             state[idx] = x[idx]
 
         for module, flow in self.cfg['flow'].items():
-            tmp = self.sub_modules[module]([state[i] for i in flow['in']])
-            for i, j in enumerate(flow['out']):
+            tmp = self.sub_modules[module]([state[i] for i in flow['inps']])
+            for i, j in enumerate(flow['outs']):
                 state[j] = tmp[i]
 
-        return [state[i] for i in self.cfg['outs']][0]
+        for i in range(6):
+            print(state[i].shape)
+        return [state[idx] for idx in self.cfg['outs']][0]

@@ -165,7 +165,8 @@ class Chain(nn.Module):
                         tmp = tmp + self.ops[map_idx](state[state_in_idx])
                 state[state_out_idx] = tmp
 
-        if len(self.outs) > 1:
-            return [state[idx] for idx in self.outs]
-        else:
-            return state[self.outs[0]]
+        # if len(self.outs) > 1:
+        #     return [state[idx] for idx in self.outs]
+        # else:
+        #     return state[self.outs[0]]
+        return [state[idx] for idx in self.outs]
