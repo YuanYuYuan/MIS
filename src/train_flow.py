@@ -23,12 +23,16 @@ class Metric:
             self.metric = getattr(metrics, name)
         elif hasattr(torch.nn.functional, name):
             self.metric = getattr(torch.nn.functional, name)
+        elif name == 'sum':
+            self.metric = 'sum'
         else:
             raise ValueError
 
     def __call__(self, inp):
-        assert len(inp) == 2
-        return [self.metric(inp[0], inp[1])]
+        if self.metric == 'sum':
+            return [sum(inp)]
+        else:
+            return [self.metric(inp[0], inp[1])]
 
 
 class MetricFlow:
