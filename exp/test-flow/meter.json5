@@ -1,0 +1,18 @@
+{
+  'nodes': {
+    'loss_1': {'name': 'dice_loss'},
+    'loss_2': {'name': 'cross_entropy'},
+    'accu': {'name': 'dice_score'},
+    'sum': {'name': 'sum'},
+  },
+  'links': {
+    'inps': [0, 1],
+    'outs': [4, 5],
+    'flow': {
+      'loss_1': {'inps': [0, 1], 'outs': [2]},
+      'loss_2': {'inps': [0, 1], 'outs': [3]},
+      'sum': {'inps': [2, 3], 'outs': [4]},
+      'accu': {'inps': [0, 1], 'outs': [5]},
+    }
+  }
+}

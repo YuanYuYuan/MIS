@@ -1,6 +1,6 @@
 class Flow:
 
-    def __init__(self, config: dict, cls):
+    def __init__(self, config: dict, cls: type):
         self.nodes = {
             node_name: cls(**node_config)
             for node_name, node_config in config['nodes'].items()
@@ -28,6 +28,4 @@ class Flow:
             for tmp_idx, state_idx in enumerate(flow['outs']):
                 state[state_idx] = tmp[tmp_idx]
 
-        output = [state[idx] for idx in self.links['outs']]
-        # TODO: fix list type of single output
-        return output[0]
+        return [state[idx] for idx in self.links['outs']]
