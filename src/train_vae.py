@@ -10,41 +10,7 @@ import yaml
 from training.optimizers import Optimizer
 from training.scheduler import CosineAnnealingWarmUpRestarts as Scheduler
 from MIDP import DataLoader, DataGenerator
-from models.flow import Flow
-from models import ModuleFlow
-import metrics
-import json5
-
-
-class Metric:
-
-    def __init__(self, name):
-        if hasattr(metrics, name):
-            self.metric = getattr(metrics, name)
-        elif hasattr(torch.nn.functional, name):
-            self.metric = getattr(torch.nn.functional, name)
-        elif name == 'sum':
-            self.metric = 'sum'
-        else:
-            raise ValueError
-
-    def __call__(self, inp):
-        if self.metric == 'sum':
-            return [sum(inp)]
-        else:
-            return [self.metric(inp[0], inp[1])]
-
-
-class MetricFlow:
-
-    def __init__(self, config):
-        super().__init__()
-        with open(config) as f:
-            config = json5.load(f)
-        self.flow = Flow(config, Metric)
-
-    def __call__(self, x):
-        return self.flow(x)
+from flows import MetricFlow, ModuleFlow
 
 
 class Runner:
@@ -64,13 +30,15 @@ class Runner:
         self.step = step
 
     def process_batch(self, batch, training=True):
+        image = batch['image'].cuda()
+        label = batch['label'].cuda()
         if training:
             with torch.set_grad_enabled(True):
                 self.model.train()
                 self.optimizer.zero_grad()
 
-                [outputs] = self.model(batch['image'].cuda())
-                loss, accu = self.meter([outputs, batch['label'].cuda()])
+                outputs = self.model(image)
+                loss, accu = self.meter(outputs + [label, image])
 
                 # back propagation
                 loss.backward()
@@ -82,8 +50,8 @@ class Runner:
             with torch.set_grad_enabled(False):
                 self.model.eval()
 
-                [outputs] = self.model(batch['image'].cuda())
-                loss, accu = self.meter([outputs, batch['label'].cuda()])
+                outputs = self.model(image)
+                loss, accu = self.meter(outputs + [label, image])
 
             return loss, accu
 

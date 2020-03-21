@@ -2,6 +2,16 @@ import torch
 import torch.nn.functional as F
 
 
+def VAE_KLD(latent_dist):
+    mean, std = latent_dist
+    std_square = std**2
+    return torch.mean(mean**2 + std_square - torch.log(1e-10+std_square) - 1)
+
+
+def VAE_L2(images, reconstructions):
+    return torch.mean((images - reconstructions)**2)
+
+
 '''
 C, B, H, W, D:
     n_classes, batch_size, height, width, depth
@@ -59,30 +69,30 @@ def compute_dice(match, total, smooth=1):
     return ((2. * match + smooth) / (total + smooth))
 
 
-def soft_dice_loss(logits, labels, smooth=1., squared=False):
-    probas = F.softmax(logits, dim=1)
-    n_classes = logits.shape[1]
+# def soft_dice_loss(logits, labels, smooth=1., squared=False):
+#     probas = F.softmax(logits, dim=1)
+#     n_classes = logits.shape[1]
 
-    shape = logits.shape
-    n_classes = shape[1]
-    n_dim = len(shape[2:])
+#     shape = logits.shape
+#     n_classes = shape[1]
+#     n_dim = len(shape[2:])
 
-    permute_dim = (0, n_dim+1,) + tuple(i+1 for i in range(n_dim))
+#     permute_dim = (0, n_dim+1,) + tuple(i+1 for i in range(n_dim))
 
-    # exclude batch dim
-    sum_dim = tuple(i+2 for i in range(n_dim))
+#     # exclude batch dim
+#     sum_dim = tuple(i+2 for i in range(n_dim))
 
-    labels = F.one_hot(labels, n_classes).permute(permute_dim).float()
-    assert probas.shape == labels.shape, (probas.shape, labels.shape)
+#     labels = F.one_hot(labels, n_classes).permute(permute_dim).float()
+#     assert probas.shape == labels.shape, (probas.shape, labels.shape)
 
-    match = torch.sum(probas * labels, sum_dim)
-    if squared:
-        total = torch.sum(probas + labels, sum_dim)
-    else:
-        total = torch.sum(probas**2 + labels**2, sum_dim)
+#     match = torch.sum(probas * labels, sum_dim)
+#     if squared:
+#         total = torch.sum(probas + labels, sum_dim)
+#     else:
+#         total = torch.sum(probas**2 + labels**2, sum_dim)
 
-    score = ((2. * match + smooth) / (total + smooth))
-    return 1 - score.mean()
+#     score = ((2. * match + smooth) / (total + smooth))
+#     return 1 - score.mean()
 
 
 def dice_score(logits, labels, smooth=1, exclude_background=True):

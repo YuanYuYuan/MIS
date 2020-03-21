@@ -9,13 +9,14 @@ class Flow:
         for node in config['nodes']:
             assert node in config['links']['flow']
         self.links = config['links']
+        self.n_states = max(self.links['outs']) + 1
 
     def __call__(self, x, nodes=None):
 
         if nodes is None:
             nodes = self.nodes
 
-        state = [None] * (self.links['outs'][-1] + 1)
+        state = [None] * self.n_states
         if not isinstance(x, list):
             x = [x]
         assert len(self.links['inps']) == len(x)

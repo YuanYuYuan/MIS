@@ -1,7 +1,7 @@
 import json5
 import torch.nn as nn
 from .flow import Flow
-from .chain import Chain
+from models.chain import Chain
 
 
 class ModuleFlow(nn.Module):
