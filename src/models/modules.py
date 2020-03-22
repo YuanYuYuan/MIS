@@ -1,6 +1,6 @@
 from torch import nn
 import torch
-import math
+import numpy as np
 
 
 class ConvBlock(nn.Module):
@@ -125,7 +125,7 @@ class LatentReparametrization(nn.Module):
 
     def __init__(self, in_shape, z_dim=128):
         super().__init__()
-        in_dim = math.prod(in_shape)
+        in_dim = np.prod(in_shape)
         self.op = nn.ModuleDict({
             'mean': nn.Linear(in_dim, z_dim),
             'std': nn.Linear(in_dim, z_dim),
@@ -148,7 +148,7 @@ class LatentReconstruction(nn.Module):
     def __init__(self, out_shape, z_dim=128):
         super().__init__()
         self.op = nn.Sequential(
-            nn.Linear(z_dim, math.prod(out_shape)),
+            nn.Linear(z_dim, np.prod(out_shape)),
             nn.ReLU(inplace=True),
         )
         if isinstance(out_shape, list):
