@@ -38,6 +38,15 @@ class Runner:
                 self.optimizer.zero_grad()
 
                 outputs = self.model(image)
+                if outputs[0].shape != label.shape:
+                    assert outputs[0].shape >= label.shape
+                    crop_range = (slice(None), slice(None))
+                    crop_range += tuple(
+                        slice((o-l) // 2, l + (o-l) // 2)
+                        for o, l in zip(outputs[0].shape[2:], label.shape[2:])
+                    )
+                    outputs[0] = outputs[0][crop_range]
+
                 loss, accu = self.meter(outputs + [label, image])
 
                 # back propagation
