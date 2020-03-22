@@ -39,7 +39,8 @@ class Runner:
 
                 outputs = self.model(image)
                 if outputs[0].shape != label.shape:
-                    assert outputs[0].shape >= label.shape
+                    for o, l in zip(outputs[0].shape, label.shape)
+                        assert o >= l
                     crop_range = (slice(None), slice(None))
                     crop_range += tuple(
                         slice((o-l) // 2, l + (o-l) // 2)
