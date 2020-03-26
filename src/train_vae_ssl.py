@@ -28,6 +28,7 @@ class Runner:
         self.optimizer = optimizer
         self.logger = logger
         self.step = step
+        self.zeros = None
 
 
     def process_batch(self, batch, training=True):
@@ -45,23 +46,16 @@ class Runner:
             return crop_range
 
         image = batch['image'].cuda()
-        label = batch['label'].cuda()
+
         if training:
+            if self.zeros is None:
+                self.zeros = torch.zeros((image.shape[0],) + image.shape[2:]).long().cuda()
             with torch.set_grad_enabled(True):
                 self.model.train()
                 self.optimizer.zero_grad()
 
                 outputs = self.model(image)
-
-                if outputs[0].shape[2:] != label.shape[1:]:
-                    outputs[0] = outputs[0][
-                        crop_range(
-                            outputs[0].shape[2:],
-                            label.shape[1:]
-                        )
-                    ]
-
-                loss, accu = self.meter(outputs + [label, image])
+                loss, accu = self.meter(outputs + [self.zeros, image])
 
                 # back propagation
                 loss.backward()
@@ -70,6 +64,7 @@ class Runner:
             return loss, accu
 
         else:
+            label = batch['label'].cuda()
             with torch.set_grad_enabled(False):
                 self.model.eval()
 
