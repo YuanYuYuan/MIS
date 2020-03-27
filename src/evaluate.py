@@ -63,10 +63,12 @@ result = {
     key: torch.stack([result[key] for result in result_list]).mean(dim=0)
     for key in result_keys
 }
-print(result)
-# print(', '.join(
-#     '%s: %.5f' % (key, val)
-#     for key, val in results.items()
-# ))
-print('Total:', time.time()-start)
-print('Finished Training')
+
+accu = result.pop('accu')
+mean_accu = accu.mean()
+print(', '.join(
+    '%s: %.5f' % (key, val)
+    for key, val in result.items()
+))
+print('Accu: ', accu.tolist())
+print('Time:', time.time()-start)

@@ -3,194 +3,15 @@ from tensorboardX import SummaryWriter
 import argparse
 import time
 import os
-from tqdm import tqdm
-from utils import get_tty_columns, epoch_info, EarlyStopper
-import torch
+from utils import epoch_info, EarlyStopper
 import yaml
 from training.optimizers import Optimizer
 from training.scheduler import CosineAnnealingWarmUpRestarts as Scheduler
+from training.model_handler import ModelHandler
+from training.runner import Runner
 from MIDP import DataLoader, DataGenerator
-from flows import MetricFlow, ModuleFlow
-
-
-class Runner:
-
-    def __init__(
-        self,
-        model,
-        meter,
-        optimizer=None,
-        logger=None,
-        step=0
-    ):
-        self.model = model
-        self.meter = meter
-        self.optimizer = optimizer
-        self.logger = logger
-        self.step = step
-
-
-    def process_batch(self, batch, training=True):
-
-        def crop_range(prediction_shape, label_shape):
-            assert len(prediction_shape) == 3
-            assert len(label_shape) == 3
-            for p, l in zip(prediction_shape, label_shape):
-                assert p >= l
-            crop_range = (slice(None), slice(None))
-            crop_range += tuple(
-                slice((p-l) // 2, l + (p-l) // 2)
-                for p, l in zip(prediction_shape, label_shape)
-            )
-            return crop_range
-
-        image = batch['image'].cuda()
-        label = batch['label'].cuda()
-        if training:
-            with torch.set_grad_enabled(True):
-                self.model.train()
-                self.optimizer.zero_grad()
-
-                outputs = self.model(image)
-
-                if outputs[0].shape[2:] != label.shape[1:]:
-                    outputs[0] = outputs[0][
-                        crop_range(
-                            outputs[0].shape[2:],
-                            label.shape[1:]
-                        )
-                    ]
-
-                loss, accu = self.meter(outputs + [label, image])
-
-                # back propagation
-                loss.backward()
-                self.optimizer.step()
-
-            return loss, accu
-
-        else:
-            with torch.set_grad_enabled(False):
-                self.model.eval()
-
-                outputs = self.model(image)
-
-                if outputs[0].shape[2:] != label.shape[1:]:
-                    for o, l in zip(outputs[0].shape[2:], label.shape[1:]):
-                        assert o >= l
-                    crop_range = (slice(None), slice(None))
-                    crop_range += tuple(
-                        slice((o-l) // 2, l + (o-l) // 2)
-                        for o, l in zip(outputs[0].shape[2:], label.shape[1:])
-                    )
-                    outputs[0] = outputs[0][crop_range]
-
-                loss, accu = self.meter(outputs + [label, image])
-
-            return loss, accu
-
-    def run(self, data_gen, training=True):
-        stage = 'train' if training else 'valid'
-        running_loss = running_accu = 0.0
-        n_steps = len(data_gen)
-
-        progress_bar = tqdm(
-            enumerate(data_gen),
-            total=n_steps,
-            ncols=get_tty_columns(),
-            dynamic_ncols=True,
-            desc='[%s] Loss: %.5f, Accu: %.5f'
-            % (stage, 0.0, 0.0)
-        )
-
-        for step, batch in progress_bar:
-            loss, accu = self.process_batch(batch, training=training)
-
-            # TODO: multiple classes
-            accu = accu.mean()
-
-            progress_bar.set_description(
-                '[%s] Loss: %.5f, Avg accu: %.5f'
-                % (stage, loss.item(), accu.item())
-            )
-
-            running_loss += loss.item()
-            running_accu += accu.item()
-
-            if self.logger is not None:
-                self.logger.add_scalar(
-                    '%s/metrics/step_loss' % stage,
-                    loss.item(),
-                    self.step+1
-                )
-                self.logger.add_scalar(
-                    '%s/metrics/step_accu' % stage,
-                    accu.item(),
-                    self.step+1
-                )
-            if training:
-                self.step += 1
-
-        running_loss /= n_steps
-        running_accu /= n_steps
-
-        return {
-            'loss': running_loss,
-            'accu': running_accu,
-        }
-
-
-class ModelHandler:
-
-    def __init__(
-        self,
-        model_config,
-        checkpoint=None,
-    ):
-        self.model = ModuleFlow(model_config)
-
-        # load checkpoint
-        if checkpoint is None:
-            self.checkpoint = None
-        else:
-            print('===== Loading checkpoint %s =====' % checkpoint)
-            self.checkpoint = torch.load(
-                checkpoint,
-                map_location=lambda storage, location: storage
-            )
-
-            # check validity between fresh model state and pretrained one
-            model_state = self.model.state_dict()
-            pretrained_weights = dict()
-            for key, val in self.checkpoint['model_state_dict'].items():
-                if key not in model_state:
-                    print('Exclude %s since not in current model state' % key)
-                else:
-                    if val.size() != model_state[key].size():
-                        print('Exclude %s due to size mismatch' % key)
-                    else:
-                        pretrained_weights[key] = val
-
-            model_state.update(pretrained_weights)
-            self.model.load_state_dict(model_state)
-
-        # swicth between multi_gpu/single gpu modes
-        if torch.cuda.device_count() > 1:
-            self.model = torch.nn.DataParallel(self.model).cuda()
-        else:
-            self.model = self.model.cuda()
-
-    def save(self, file_path, additional_info=dict()):
-        # check if multiple gpu model
-        if torch.cuda.device_count() > 1:
-            model_state_dict = self.model.module.state_dict()
-        else:
-            model_state_dict = self.model.state_dict()
-
-        content = {'model_state_dict': model_state_dict}
-        if len(additional_info) >= 1:
-            content.update(additional_info)
-        torch.save(content, file_path)
+from flows import MetricFlow
+import torch
 
 
 parser = argparse.ArgumentParser()
@@ -215,18 +36,6 @@ parser.add_argument(
     help='training logs'
 )
 parser.add_argument(
-    '--test',
-    default=False,
-    action='store_true',
-    help='Small data test',
-)
-parser.add_argument(
-    '--validate-only',
-    default=False,
-    action='store_true',
-    help='do validation only',
-)
-parser.add_argument(
     '--pause-ckpt',
     help='save model checkpoint if paused'
 )
@@ -236,6 +45,7 @@ args = parser.parse_args()
 with open(args.config) as f:
     config = yaml.safe_load(f)
 generator_config = config['generator']
+stages = generator_config.keys()
 with open(config['data']) as f:
     data_config = yaml.safe_load(f)
 data_list = data_config['list']
@@ -245,7 +55,7 @@ loader_config = data_config['loader']
 data_gen = dict()
 loader_name = loader_config.pop('name')
 ROIs = None
-for stage in ['train', 'valid']:
+for stage in stages:
     data_loader = DataLoader(loader_name, **loader_config)
     if data_list[stage] is not None:
         data_loader.set_data_list(data_list[stage])
@@ -322,14 +132,15 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
     # epoch start
     epoch_info(epoch - 1, init_epoch + config['epochs'] - 1)
 
-    for stage in ['train', 'valid']:
+    for stage in stages:
         training = True if stage == 'train' else False
 
-        if stage == 'valid' and epoch % config['validation_frequency'] != 0:
+        if stage != 'train' and epoch % config['validation_frequency'] != 0:
             break
         # run on an epoch
         try:
-            results = runner.run(data_gen[stage], training=training)
+            result_list = runner.run(data_gen[stage], training=training)
+
         except KeyboardInterrupt:
             print('save temporary model into %s' % args.pause_ckpt)
             model_handler.save(
@@ -339,24 +150,32 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             terminated = True
             break
 
+        result = {
+            key: torch.stack([
+                result[key] for result in result_list
+            ]).mean(dim=0)
+            for key in result_list[0].keys()
+        }
+
         # summarize the performance
+        accu = result.pop('accu')
+        mean_accu = accu.mean()
         print(', '.join(
             '%s: %.5f' % (key, val)
-            for key, val in results.items()
+            for key, val in result.items()
         ))
+        print('Accu: ', accu.tolist())
 
         # record the performance
         if logger is not None:
-            for key, val in results.items():
-                logger.add_scalar(
-                    '%s/metrics/%s' % (stage, key),
-                    val,
-                    epoch
-                )
+            for key, val in result.items():
+                logger.add_scalar('%s/metrics/%s' % (stage, key), val, epoch)
+            logger.add_scalars('%s/accu' % stage, accu, epoch)
+            logger.add_scalars('%s/mean_accu' % stage, mean_accu, epoch)
 
         # check early stopping
         if stage == 'valid' and early_stopper is not None:
-            early_stop, improved = early_stopper.check(results['accu'])
+            early_stop, improved = early_stopper.check(mean_accu)
 
             if early_stop:
                 print('Early stopped.')
@@ -367,7 +186,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                 model_handler.save(
                     file_path=os.path.join(
                         checkpoint_dir,
-                        '%02d-%.5f.pt' % (epoch, results['accu'])
+                        '%02d-%.5f.pt' % (epoch, mean_accu)
                     ),
                     additional_info={'epoch': epoch, 'step': runner.step}
                 )
