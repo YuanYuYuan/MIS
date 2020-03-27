@@ -21,7 +21,7 @@ class Flow:
             nodes = self.nodes
 
         state = [None] * self.n_states
-        for key, idx in self.links['inps']:
+        for key, idx in self.links['inps'].items():
             state[idx] = x[key]
 
         # if not isinstance(x, list):

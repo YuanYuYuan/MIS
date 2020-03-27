@@ -14,18 +14,7 @@
       'reconstruction': 2,
       'label': 3,
       'image': 4
-    }
-    // 'inps': [
-    //   0, // prediction
-    //   1, // mean, std
-    //   2, // reconstruction
-    //   3, // label
-    //   4, // image
-    // ],
-    // 'outs': [
-    //   10, // loss
-    //   5,  // accu
-    // ],
+    },
     'outs': {
       'loss': 10,
       'accu': 5,
