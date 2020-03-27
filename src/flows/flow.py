@@ -37,4 +37,4 @@ class Flow:
                 state[state_idx] = tmp[tmp_idx]
 
         # return [state[idx] for idx in self.links['outs']]
-        return {key: state[idx] for key, idx in self.links['outs']}
+        return {key: state[idx] for key, idx in self.links['outs'].items()}
