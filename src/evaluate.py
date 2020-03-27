@@ -66,10 +66,13 @@ result = {
 
 accu = result.pop('accu')
 mean_accu = accu.mean()
-accu = {key: val for key, val in zip(ROIs, accu)}
+accu_dict = {key: val.item() for key, val in zip(ROIs, accu)}
 print(', '.join(
     '%s: %.5f' % (key, val)
     for key, val in result.items()
 ))
-print('Accu: ', accu)
+print('Accu: ' + ', '.join(
+    '%s: %.5f' % (key, val)
+    for key, val in accu_dict.items()
+))
 print('Time:', time.time()-start)

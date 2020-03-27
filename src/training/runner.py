@@ -81,6 +81,8 @@ class Runner:
                 data.update(outputs)
                 results = self.meter(data)
 
+        for key in results:
+            results[key] = results[key].detach().cpu()
         return results
 
     def run(self, data_gen, training=True):
@@ -115,12 +117,12 @@ class Runner:
 
             if self.logger is not None:
                 self.logger.add_scalar(
-                    '%s/metrics/step_loss' % stage,
+                    '%s/step/loss' % stage,
                     step_loss,
                     self.step+1
                 )
                 self.logger.add_scalar(
-                    '%s/metrics/step_accu' % stage,
+                    '%s/step/accu' % stage,
                     step_accu,
                     self.step+1
                 )

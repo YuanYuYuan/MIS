@@ -159,19 +159,23 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
         # summarize the performance
         accu = result.pop('accu')
+        accu_dict = {key: val.item() for key, val in zip(ROIs, accu)}
         mean_accu = accu.mean()
         print(', '.join(
             '%s: %.5f' % (key, val)
             for key, val in result.items()
         ))
-        print('Accu: ', accu.tolist())
+        print('Accu: ' + ', '.join(
+            '%s: %.5f' % (key, val)
+            for key, val in accu_dict.items()
+        ))
 
         # record the performance
         if logger is not None:
             for key, val in result.items():
-                logger.add_scalar('%s/metrics/%s' % (stage, key), val, epoch)
-            logger.add_scalars('%s/accu' % stage, accu, epoch)
-            logger.add_scalars('%s/mean_accu' % stage, mean_accu, epoch)
+                logger.add_scalar('%s/epoch/%s' % (stage, key), val, epoch)
+            logger.add_scalar('%s/epoch/mean_accu' % stage, mean_accu, epoch)
+            logger.add_scalars('%s/epoch/accu' % stage, accu_dict, epoch)
 
         # check early stopping
         if stage == 'valid' and early_stopper is not None:
