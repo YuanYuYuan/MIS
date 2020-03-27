@@ -9,7 +9,11 @@ class Flow:
         for node in config['nodes']:
             assert node in config['links']['flow']
         self.links = config['links']
-        self.n_states = max(self.links['outs']) + 1
+
+        if isinstance(self.links['outs'], dict):
+            self.n_states = max(self.links['outs'].values()) + 1
+        else:
+            self.n_states = max(self.links['outs']) + 1
 
     def __call__(self, x, nodes=None):
 
@@ -17,16 +21,20 @@ class Flow:
             nodes = self.nodes
 
         state = [None] * self.n_states
-        if not isinstance(x, list):
-            x = [x]
-        assert len(self.links['inps']) == len(x)
+        for key, idx in self.links['inps']:
+            state[idx] = x[key]
 
-        for idx in self.links['inps']:
-            state[idx] = x[idx]
+        # if not isinstance(x, list):
+        #     x = [x]
+        # assert len(self.links['inps']) == len(x)
+
+        # for idx in self.links['inps']:
+        #     state[idx] = x[idx]
 
         for node, flow in self.links['flow'].items():
             tmp = nodes[node]([state[idx] for idx in flow['inps']])
             for tmp_idx, state_idx in enumerate(flow['outs']):
                 state[state_idx] = tmp[tmp_idx]
 
-        return [state[idx] for idx in self.links['outs']]
+        # return [state[idx] for idx in self.links['outs']]
+        return {key: state[idx] for key, idx in self.links['outs']}

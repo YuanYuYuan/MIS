@@ -7,6 +7,7 @@ from training.model_handler import ModelHandler
 from training.runner import Runner
 from MIDP import DataLoader, DataGenerator
 from flows import MetricFlow
+import torch
 
 
 parser = argparse.ArgumentParser()
@@ -55,10 +56,17 @@ runner = Runner(
     model=model_handler.model,
     meter=MetricFlow(config['meter']),
 )
-results = runner.run(data_gen, training=False)
-print(', '.join(
-    '%s: %.5f' % (key, val)
-    for key, val in results.items()
-))
+result_list = runner.run(data_gen, training=False)
+result_keys = result_list[0].keys()
+
+result = {
+    key: torch.stack([result[key] for result in result_list]).mean(dim=0)
+    for key in result_keys
+}
+print(result)
+# print(', '.join(
+#     '%s: %.5f' % (key, val)
+#     for key, val in results.items()
+# ))
 print('Total:', time.time()-start)
 print('Finished Training')

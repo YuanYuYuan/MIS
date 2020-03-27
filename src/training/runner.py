@@ -33,50 +33,55 @@ class Runner:
             )
             return crop_range
 
-        image = batch['image'].cuda()
-        label = batch['label'].cuda()
+        # image = batch['image'].cuda()
+        # label = batch['label'].cuda()
+        data = {
+            'image': batch['image'].cuda(),
+            'label': batch['label'].cuda()
+        }
+
         if training:
             with torch.set_grad_enabled(True):
                 self.model.train()
                 self.optimizer.zero_grad()
 
-                outputs = self.model(image)
+                outputs = self.model(data)
 
-                if outputs[0].shape[2:] != label.shape[1:]:
-                    outputs[0] = outputs[0][
+                # crop if size mismatched
+                if outputs['prediction'].shape[2:] != data['label'].shape[1:]:
+                    outputs['prediction'] = outputs['prediction'][
                         crop_range(
-                            outputs[0].shape[2:],
-                            label.shape[1:]
+                            outputs['prediction'].shape[2:],
+                            data['label'].shape[1:]
                         )
                     ]
 
-                loss, accu = self.meter(outputs + [label, image])
+                data.update(outputs)
+                results = self.meter(data)
 
                 # back propagation
-                loss.backward()
+                results['loss'].backward()
                 self.optimizer.step()
-
-            return loss, accu
 
         else:
             with torch.set_grad_enabled(False):
                 self.model.eval()
 
-                outputs = self.model(image)
+                outputs = self.model(data)
 
-                if outputs[0].shape[2:] != label.shape[1:]:
-                    for o, l in zip(outputs[0].shape[2:], label.shape[1:]):
-                        assert o >= l
-                    crop_range = (slice(None), slice(None))
-                    crop_range += tuple(
-                        slice((o-l) // 2, l + (o-l) // 2)
-                        for o, l in zip(outputs[0].shape[2:], label.shape[1:])
-                    )
-                    outputs[0] = outputs[0][crop_range]
+                # crop if size mismatched
+                if outputs['prediction'].shape[2:] != data['label'].shape[1:]:
+                    outputs['prediction'] = outputs['prediction'][
+                        crop_range(
+                            outputs['prediction'].shape[2:],
+                            data['label'].shape[1:]
+                        )
+                    ]
 
-                loss, accu = self.meter(outputs + [label, image])
+                data.update(outputs)
+                results = self.meter(data)
 
-            return loss, accu
+        return results
 
     def run(self, data_gen, training=True):
         stage = 'train' if training else 'valid'
@@ -92,38 +97,35 @@ class Runner:
             % (stage, 0.0, 0.0)
         )
 
+        result_list = []
         for step, batch in progress_bar:
-            loss, accu = self.process_batch(batch, training=training)
+            result = self.process_batch(batch, training=training)
+            result_list.append(result)
 
-            # TODO: multiple classes
-            accu = accu.mean()
+            step_loss = result['loss'].item()
+            step_accu = result['accu'].mean().item()
 
             progress_bar.set_description(
                 '[%s] Loss: %.5f, Avg accu: %.5f'
-                % (stage, loss.item(), accu.item())
+                % (stage, step_loss, step_accu)
             )
 
-            running_loss += loss.item()
-            running_accu += accu.item()
+            running_loss += step_loss
+            running_accu += step_accu
 
             if self.logger is not None:
                 self.logger.add_scalar(
                     '%s/metrics/step_loss' % stage,
-                    loss.item(),
+                    step_loss,
                     self.step+1
                 )
                 self.logger.add_scalar(
                     '%s/metrics/step_accu' % stage,
-                    accu.item(),
+                    step_accu,
                     self.step+1
                 )
+
             if training:
                 self.step += 1
 
-        running_loss /= n_steps
-        running_accu /= n_steps
-
-        return {
-            'loss': running_loss,
-            'accu': running_accu,
-        }
+        return result_list

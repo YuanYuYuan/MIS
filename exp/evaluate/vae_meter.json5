@@ -8,17 +8,28 @@
     'sum': {'name': 'sum', 'weight': [1., 1., 0.1, 0.1]},
   },
   'links': {
-    'inps': [
-      0, // prediction
-      1, // mean, std
-      2, // reconstruction
-      3, // label
-      4, // image
-    ],
-    'outs': [
-      10, // loss
-      5,  // accu
-    ],
+    'inps': {
+      'prediction': 0,
+      'latent': 1,
+      'reconstruction': 2,
+      'label': 3,
+      'image': 4
+    }
+    // 'inps': [
+    //   0, // prediction
+    //   1, // mean, std
+    //   2, // reconstruction
+    //   3, // label
+    //   4, // image
+    // ],
+    // 'outs': [
+    //   10, // loss
+    //   5,  // accu
+    // ],
+    'outs': {
+      'loss': 10,
+      'accu': 5,
+    },
     'flow': {
       'accu': {'inps': [0, 3], 'outs': [5]},
       'loss_1': {'inps': [0, 3], 'outs': [6]},
