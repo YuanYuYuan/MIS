@@ -166,8 +166,8 @@
       'maps': {
         // layer 1
         'reduce': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 256, 'ch_out': 16},
-        'lrp': {'name': 'LatentReparametrization', 'in_shape': [16, 8, 8, 2]},
-        'lrc': {'name': 'LatentReconstruction', 'out_shape': [16, 8, 8, 2]},
+        'lrp': {'name': 'LatentReparametrization', 'in_shape': [16, 4, 4, 4]},
+        'lrc': {'name': 'LatentReconstruction', 'out_shape': [16, 4, 4, 4]},
         'expand': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 16, 'ch_out': 256},
 
         // upsample

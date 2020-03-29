@@ -20,5 +20,7 @@ generator:
     batch_size   : 72
     n_workers    : 2
     verbose      : False
-model: './vae_model.json5'
-meter: './vae_meter.json5'
+
+model: './model.json5'
+meter: './meter.json5'
+save_prediction: './predictions'

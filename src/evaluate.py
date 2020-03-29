@@ -8,6 +8,8 @@ from training.model_handler import ModelHandler
 from training.runner import Runner
 from MIDP import DataLoader, DataGenerator
 from flows import MetricFlow
+from tqdm import tqdm
+import numpy as np
 import torch
 
 
@@ -27,10 +29,16 @@ parser.add_argument(
     default='_logs',
     help='logs'
 )
+parser.add_argument(
+    '--prediction-dir',
+    default=None,
+    help='save prediction'
+)
 args = parser.parse_args()
 
 timer = time.time()
 start = timer
+
 
 if args.log_dir is not None:
     logger = SummaryWriter(args.log_dir)
@@ -57,6 +65,20 @@ ROIs = None
 if ROIs is None:
     ROIs = data_loader.ROIs
 
+if 'save_prediction' in config:
+    PG = data_gen.struct['PG']
+    BG = data_gen.struct['BG']
+    # ensure the order
+    if PG.n_workers > 1:
+        assert PG.ordered
+    assert BG.n_workers == 1
+    prediction_dir = config['save_prediction']
+    os.makedirs(prediction_dir, exist_ok=True)
+    save_prediction = True
+else:
+    save_prediction = False
+
+
 # - GPUs
 os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
 
@@ -67,8 +89,19 @@ runner = Runner(
     meter=MetricFlow(config['meter']),
     logger=logger,
 )
-result_list = runner.run(data_gen, training=False, stage='Evaluating')
+result_list = runner.run(
+    data_gen,
+    training=False,
+    stage='Evaluating',
+    save_prediction=save_prediction,
+)
 result_keys = result_list[0].keys()
+
+if save_prediction:
+    assert 'prediction' in result_keys
+    for idx, result in tqdm(enumerate(result_list)):
+        file_path = os.path.join(prediction_dir, idx + '.npy')
+        np.save(result['prediction'], file_path)
 
 result = {
     key: torch.stack([result[key] for result in result_list]).mean(dim=0)

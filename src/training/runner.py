@@ -18,7 +18,7 @@ class Runner:
         self.logger = logger
         self.step = dict()
 
-    def process_batch(self, batch, training=True):
+    def process_batch(self, batch, training=True, save_prediction=False):
 
         def crop_range(prediction_shape, label_shape):
             assert len(prediction_shape) == 3
@@ -32,8 +32,6 @@ class Runner:
             )
             return crop_range
 
-        # image = batch['image'].cuda()
-        # label = batch['label'].cuda()
         data = {
             'image': batch['image'].cuda(),
             'label': batch['label'].cuda()
@@ -80,11 +78,23 @@ class Runner:
                 data.update(outputs)
                 results = self.meter(data)
 
+        # detach and move it to CPU
         for key in results:
             results[key] = results[key].detach().cpu()
+
+        if save_prediction:
+            results.update({'prediction': outputs['prediction'].detach().cpu().numpy()})
+
         return results
 
-    def run(self, data_gen, training=True, stage=None):
+    def run(
+        self,
+        data_gen,
+        training=True,
+        stage=None,
+        min_ratio=0.,
+        save_prediction=False
+    ):
         if stage is None:
             stage = 'train' if training else 'valid'
         n_steps = len(data_gen)
@@ -112,11 +122,14 @@ class Runner:
                     ratio,
                     self.step[stage]
                 )
-                if ratio == 0:
+                if ratio < min_ratio:
                     continue
 
-
-            result = self.process_batch(batch, training=training)
+            result = self.process_batch(
+                batch,
+                training=training,
+                save_prediction=save_prediction
+            )
             step_loss = result['loss'].item()
             step_accu = result['accu'].mean().item()
 

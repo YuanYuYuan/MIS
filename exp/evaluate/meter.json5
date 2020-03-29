@@ -4,7 +4,11 @@
     'loss_2': {'name': 'cross_entropy'},
     'loss_3': {'name': 'VAE_KLD'},
     'loss_4': {'name': 'VAE_L2'},
-    'accu': {'name': 'dice_score'},
+    'accu': {
+        'name': 'dice_score',
+        // 'threshold': 0.2,
+        'exclude_blank': true
+    },
     'sum': {'name': 'sum', 'weight': [1., 1., 0.1, 0.1]},
   },
   'links': {
@@ -18,6 +22,10 @@
     'outs': {
       'loss': 10,
       'accu': 5,
+      'KLD': 8,
+      'L2': 9,
+      'ce':7,
+      'dice':6,
     },
     'flow': {
       'accu': {'inps': [0, 3], 'outs': [5]},
