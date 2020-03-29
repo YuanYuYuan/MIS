@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from tensorboardX import SummaryWriter
 import argparse
 import time
 import os
@@ -21,10 +22,20 @@ parser.add_argument(
     default=None,
     help='pretrained model checkpoint'
 )
+parser.add_argument(
+    '--log-dir',
+    default='_logs',
+    help='logs'
+)
 args = parser.parse_args()
 
 timer = time.time()
 start = timer
+
+if args.log_dir is not None:
+    logger = SummaryWriter(args.log_dir)
+else:
+    logger = None
 
 # load config
 with open(args.config) as f:
@@ -55,8 +66,9 @@ model_handler = ModelHandler(config['model'], checkpoint=args.checkpoint)
 runner = Runner(
     model=model_handler.model,
     meter=MetricFlow(config['meter']),
+    logger=logger,
 )
-result_list = runner.run(data_gen, training=False)
+result_list = runner.run(data_gen, training=False, stage='Evaluating')
 result_keys = result_list[0].keys()
 
 result = {
@@ -65,8 +77,8 @@ result = {
 }
 
 accu = result.pop('accu')
-mean_accu = accu.mean()
 accu_dict = {key: val.item() for key, val in zip(ROIs, accu)}
+accu_dict.update({'mean': accu.mean()})
 print(', '.join(
     '%s: %.5f' % (key, val)
     for key, val in result.items()
@@ -75,4 +87,6 @@ print('Accu: ' + ', '.join(
     '%s: %.5f' % (key, val)
     for key, val in accu_dict.items()
 ))
+
 print('Time:', time.time()-start)
+logger.close()

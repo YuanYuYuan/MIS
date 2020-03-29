@@ -11,13 +11,12 @@ class Runner:
         meter,
         optimizer=None,
         logger=None,
-        step=0
     ):
         self.model = model
         self.meter = meter
         self.optimizer = optimizer
         self.logger = logger
-        self.step = step
+        self.step = dict()
 
     def process_batch(self, batch, training=True):
 
@@ -85,9 +84,9 @@ class Runner:
             results[key] = results[key].detach().cpu()
         return results
 
-    def run(self, data_gen, training=True):
-        stage = 'train' if training else 'valid'
-        running_loss = running_accu = 0.0
+    def run(self, data_gen, training=True, stage=None):
+        if stage is None:
+            stage = 'train' if training else 'valid'
         n_steps = len(data_gen)
 
         progress_bar = tqdm(
@@ -99,11 +98,25 @@ class Runner:
             % (stage, 0.0, 0.0)
         )
 
+        if stage not in self.step:
+            self.step[stage] = 1
+
         result_list = []
         for step, batch in progress_bar:
-            result = self.process_batch(batch, training=training)
-            result_list.append(result)
 
+            self.step[stage] += 1
+            if self.logger is not None:
+                ratio = (batch['label'] > 0).float().mean().item()
+                self.logger.add_scalar(
+                    '%s/quality/ratio' % stage,
+                    ratio,
+                    self.step[stage]
+                )
+                if ratio == 0:
+                    continue
+
+
+            result = self.process_batch(batch, training=training)
             step_loss = result['loss'].item()
             step_accu = result['accu'].mean().item()
 
@@ -112,22 +125,19 @@ class Runner:
                 % (stage, step_loss, step_accu)
             )
 
-            running_loss += step_loss
-            running_accu += step_accu
-
             if self.logger is not None:
                 self.logger.add_scalar(
                     '%s/step/loss' % stage,
                     step_loss,
-                    self.step+1
+                    self.step[stage]
                 )
                 self.logger.add_scalar(
                     '%s/step/accu' % stage,
                     step_accu,
-                    self.step+1
+                    self.step[stage]
                 )
 
-            if training:
-                self.step += 1
+            if step_accu >= 0.:
+                result_list.append(result)
 
         return result_list

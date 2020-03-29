@@ -33,7 +33,13 @@ def mixed_dice_loss(logits, labels, *args):
     return dice * ce + (1 - dice) * dice
 
 
-def match_up(logits, labels, needs_softmax=True, batch_wise=False):
+def match_up(
+    logits,
+    labels,
+    needs_softmax=True,
+    batch_wise=False,
+    threshold=0.
+):
 
     probas = F.softmax(logits, dim=1) if needs_softmax else logits
     n_classes = logits.shape[1]
@@ -59,6 +65,9 @@ def match_up(logits, labels, needs_softmax=True, batch_wise=False):
     # match = torch.sum(probas[:, 1:, ...] * labels[:, 1:, ...], sum_dim)
     # total = torch.sum(probas[:, 1:, ...] + labels[:, 1:, ...], sum_dim)
 
+    if threshold > 0.:
+        probas = (probas > threshold).float()
+
     match = torch.sum(probas * labels, sum_dim)
     total = torch.sum(probas + labels, sum_dim)
 
@@ -69,39 +78,23 @@ def compute_dice(match, total, smooth=1):
     return ((2. * match + smooth) / (total + smooth))
 
 
-# def soft_dice_loss(logits, labels, smooth=1., squared=False):
-#     probas = F.softmax(logits, dim=1)
-#     n_classes = logits.shape[1]
-
-#     shape = logits.shape
-#     n_classes = shape[1]
-#     n_dim = len(shape[2:])
-
-#     permute_dim = (0, n_dim+1,) + tuple(i+1 for i in range(n_dim))
-
-#     # exclude batch dim
-#     sum_dim = tuple(i+2 for i in range(n_dim))
-
-#     labels = F.one_hot(labels, n_classes).permute(permute_dim).float()
-#     assert probas.shape == labels.shape, (probas.shape, labels.shape)
-
-#     match = torch.sum(probas * labels, sum_dim)
-#     if squared:
-#         total = torch.sum(probas + labels, sum_dim)
-#     else:
-#         total = torch.sum(probas**2 + labels**2, sum_dim)
-
-#     score = ((2. * match + smooth) / (total + smooth))
-#     return 1 - score.mean()
-
-
-def dice_score(logits, labels, smooth=1, exclude_background=True):
-    match, total = match_up(logits, labels, needs_softmax=True)
-    multi_class_score = compute_dice(match, total, smooth=smooth)
-    if exclude_background:
-        return multi_class_score[1:]
+def dice_score(
+    logits,
+    labels,
+    smooth=1,
+    exclude_background=True,
+    threshold=0.,
+    exclude_blank=False,
+):
+    if exclude_blank and labels.sum() == 0:
+        return torch.tensor([-1.])
     else:
-        return multi_class_score
+        match, total = match_up(logits, labels, needs_softmax=True, threshold=threshold)
+        multi_class_score = compute_dice(match, total, smooth=smooth)
+        if exclude_background:
+            return multi_class_score[1:]
+        else:
+            return multi_class_score
 
 
 def dice_loss(logits, labels, weight=None):

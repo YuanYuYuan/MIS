@@ -161,6 +161,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         accu = result.pop('accu')
         accu_dict = {key: val.item() for key, val in zip(ROIs, accu)}
         mean_accu = accu.mean()
+        accu_dict.update({'mean': mean_accu})
         print(', '.join(
             '%s: %.5f' % (key, val)
             for key, val in result.items()
