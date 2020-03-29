@@ -47,7 +47,6 @@ data_list = data_config['list']
 loader_config = data_config['loader']
 
 # - data pipeline
-data_gen = dict()
 loader_name = loader_config.pop('name')
 data_loader = DataLoader(loader_name, **loader_config)
 if data_list is not None:

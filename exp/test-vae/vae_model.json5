@@ -212,12 +212,17 @@
     }
   },
   'links': {
-    'inps': [0],
-    'outs': [
-      5, // prediction
-      6, // mean, std
-      7, // reconstruction
-    ],
+    'inps': {'image': 0},
+    'outs': {
+      'prediction': 5,
+      'latent': 6,
+      'reconstruction': 7
+    },
+    // 'outs': [
+    //   5, // prediction
+    //   6, // mean, std
+    //   7, // reconstruction
+    // ],
     'flow': {
       'encoder': {'inps': [0], 'outs': [1, 2, 3, 4]},
       'decoder': {'inps': [1, 2, 3, 4], 'outs': [5]},

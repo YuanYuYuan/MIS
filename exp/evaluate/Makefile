@@ -17,10 +17,18 @@ endif
 # Configs
 CONFIG = './evaluation.yaml'
 CKPT = 'ckpt.pt'
+LOG_DIR = 'logs'
+
+run: clean evaluate
 
 evaluate:
 	@echo "===== Evaluating ====="
-	$(EXECUTOR) $(SRC_DIR)/evaluate.py --config $(CONFIG) --checkpoint $(CKPT)
+	$(EXECUTOR) $(SRC_DIR)/evaluate.py --config $(CONFIG) --checkpoint $(CKPT) --log-dir $(LOG_DIR)
 
-# clean:
-#     rm -rvf $(CKPT_DIR) $(TRAIN_LOG_DIR) $(PAUSE_CKPT)
+
+log:
+	@echo "===== Launch Tensorboard ====="
+	tensorboard --logdir $(LOG_DIR) > /dev/null 2>&1
+
+clean:
+	rm -rvf $(LOG_DIR)
