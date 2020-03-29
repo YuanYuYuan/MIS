@@ -1,0 +1,39 @@
+{
+  'nodes': {
+    'loss_1': {'name': 'dice_loss'},
+    'loss_2': {'name': 'cross_entropy'},
+    'loss_3': {'name': 'VAE_KLD'},
+    'loss_4': {'name': 'VAE_L2'},
+    'accu': {
+        'name': 'dice_score',
+        // 'threshold': 0.2,
+        'exclude_blank': true
+    },
+    'sum': {'name': 'sum', 'weight': [1., 1., 0.1, 0.1]},
+  },
+  'links': {
+    'inps': {
+      'prediction': 0,
+      'latent': 1,
+      'reconstruction': 2,
+      'label': 3,
+      'image': 4
+    },
+    'outs': {
+      'loss': 10,
+      'accu': 5,
+      'KLD': 8,
+      'L2': 9,
+      'ce':7,
+      'dice':6,
+    },
+    'flow': {
+      'accu': {'inps': [0, 3], 'outs': [5]},
+      'loss_1': {'inps': [0, 3], 'outs': [6]},
+      'loss_2': {'inps': [0, 3], 'outs': [7]},
+      'loss_3': {'inps': [1], 'outs': [8]},
+      'loss_4': {'inps': [2, 4], 'outs': [9]},
+      'sum': {'inps': [6, 7, 8, 9], 'outs': [10]},
+    }
+  }
+}
