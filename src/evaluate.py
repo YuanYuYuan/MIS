@@ -73,6 +73,8 @@ if 'save_prediction' in config:
     if PG.n_workers > 1:
         assert PG.ordered
     assert BG.n_workers == 1
+    if 'AG' in data_gen.struct:
+        assert data_gen.struct['AG'].n_workers == 1
     prediction_dir = config['save_prediction']
     os.makedirs(prediction_dir, exist_ok=True)
     save_prediction = True
@@ -114,6 +116,9 @@ if save_prediction:
             dynamic_ncols=False,
             desc='[Saving prediction]',
         ))
+
+    # partition_counter = 0
+    # for data_idx, partition_per_data in zip(PG.data_list, PG.partition):
 
 result_keys.remove('prediction')
 result = {

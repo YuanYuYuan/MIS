@@ -18,7 +18,13 @@ class Runner:
         self.logger = logger
         self.step = dict()
 
-    def process_batch(self, batch, training=True, save_prediction=False):
+    def process_batch(
+        self,
+        batch,
+        training=True,
+        save_prediction=False,
+        output_threshold=0.3,
+    ):
 
         def crop_range(prediction_shape, label_shape):
             assert len(prediction_shape) == 3
@@ -83,7 +89,11 @@ class Runner:
             results[key] = results[key].detach().cpu()
 
         if save_prediction:
-            results.update({'prediction': outputs['prediction'].detach().cpu().numpy()})
+            probas = torch.nn.functional.softmax(outputs['prediction'], dim=1)
+            for i in range(1, probas.shape[1]):
+                probas[:, i, ...] += (probas[:, i, ...] >= output_threshold).float()
+            output = torch.argmax(probas, 1).detach().cpu().numpy()
+            results.update({'prediction': output})
 
         return results
 
@@ -93,7 +103,8 @@ class Runner:
         training=True,
         stage=None,
         min_ratio=0.,
-        save_prediction=False
+        save_prediction=False,
+        output_threshold=0.3,
     ):
         if stage is None:
             stage = 'train' if training else 'valid'
@@ -128,7 +139,8 @@ class Runner:
             result = self.process_batch(
                 batch,
                 training=training,
-                save_prediction=save_prediction
+                save_prediction=save_prediction,
+                output_threshold=output_threshold,
             )
             step_loss = result['loss'].item()
             step_accu = result['accu'].mean().item()
