@@ -11,7 +11,7 @@ from flows import MetricFlow
 from tqdm import tqdm
 import numpy as np
 import torch
-from multiprocessing import Pool
+import json
 
 
 parser = argparse.ArgumentParser()
@@ -100,6 +100,7 @@ if save_prediction:
         training=False,
         stage='Evaluating',
         save_prediction=save_prediction,
+        output_threshold=config['output_threshold'],
     )
 else:
     result_list = runner.run(
@@ -113,10 +114,16 @@ result_keys = list(result_list[0].keys())
 if save_prediction:
     assert len(prediction_list) * BG.batch_size >= sum(PG.partition), (len(prediction_list) * BG.batch_size, sum(PG.partition))
 
+    def dice_score(x, y):
+        assert x.shape == y.shape
+        return 2 * np.sum(x * y) / np.sum(x + y)
+
+    scores = dict()
+
     with tqdm(
         total=len(PG.partition),
-        dynamic_ncols=False,
-        desc='[Saving prediction]'
+        dynamic_ncols=True,
+        desc='[Data index]'
     ) as progress_bar:
         idx = 0
         queue = []
@@ -131,11 +138,34 @@ if save_prediction:
                 DL.save_prediction(PG.data_list[idx], restored, prediction_dir)
                 queue = queue[PG.partition[idx]:]
 
-                progress_bar.set_description('[Saving prediction] ID: %s' % PG.data_list[idx])
+                scores[PG.data_list[idx]] = {
+                    roi: dice_score(
+                        (restored == val).astype(int),
+                        (DL.get_label(PG.data_list[idx]) == val).astype(int)
+                    )
+                    for roi, val in DL.roi_map.items()
+                }
+
+                info = '[%s] ' % PG.data_list[idx]
+                info += ', '.join(
+                    '%s: %.3f' % (key, val)
+                    for key, val in scores[PG.data_list[idx]].items()
+                )
+                progress_bar.set_description(info)
                 progress_bar.update(1)
                 idx += 1
                 if idx >= len(PG.partition):
                     break
+
+    with open('score.json', 'w') as f:
+        json.dump(scores, f, indent=2)
+
+    mean_roi_score = {
+        roi: np.mean([scores[key][roi] for key in scores])
+        for roi in ROIs
+    }
+    mean_roi_score.update({'mean': np.mean([mean_roi_score[roi] for roi in ROIs])})
+    print(mean_roi_score)
 
 
 result = {
