@@ -11,6 +11,7 @@ from flows import MetricFlow
 from tqdm import tqdm
 import numpy as np
 import torch
+from multiprocessing import Pool
 
 
 parser = argparse.ArgumentParser()
@@ -95,14 +96,26 @@ result_list = runner.run(
     stage='Evaluating',
     save_prediction=save_prediction,
 )
-result_keys = result_list[0].keys()
+result_keys = list(result_list[0].keys())
 
 if save_prediction:
     assert 'prediction' in result_keys
-    for idx, result in tqdm(enumerate(result_list)):
-        file_path = os.path.join(prediction_dir, idx + '.npy')
-        np.save(result['prediction'], file_path)
 
+    def save_npy(data):
+        idx, npy = data
+        file_path = os.path.join(prediction_dir, ('%03d' % idx) + '.npy')
+        np.save(file_path, npy)
+
+    with Pool(4) as pool:
+        jobs = pool.imap(save_npy, enumerate(result_list))
+        list(tqdm(
+            jobs,
+            total=len(result_list),
+            dynamic_ncols=False,
+            desc='[Saving prediction]',
+        ))
+
+result_keys.remove('prediction')
 result = {
     key: torch.stack([result[key] for result in result_list]).mean(dim=0)
     for key in result_keys
