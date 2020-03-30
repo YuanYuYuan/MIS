@@ -93,17 +93,25 @@ runner = Runner(
     meter=MetricFlow(config['meter']),
     logger=logger,
 )
-result_list = runner.run(
-    data_gen,
-    training=False,
-    stage='Evaluating',
-    save_prediction=save_prediction,
-)
+
+if save_prediction:
+    result_list, prediction_list = runner.run(
+        data_gen,
+        training=False,
+        stage='Evaluating',
+        save_prediction=save_prediction,
+    )
+else:
+    result_list = runner.run(
+        data_gen,
+        training=False,
+        stage='Evaluating',
+        save_prediction=save_prediction,
+    )
 result_keys = list(result_list[0].keys())
 
 if save_prediction:
-    assert 'prediction' in result_keys
-    assert len(result_list) * BG.batch_size >= sum(PG.partition)
+    assert len(prediction_list) * BG.batch_size >= sum(PG.partition), (len(prediction_list) * BG.batch_size, sum(PG.partition))
 
     with tqdm(
         total=len(PG.partition),
@@ -112,11 +120,11 @@ if save_prediction:
     ) as progress_bar:
         idx = 0
         queue = []
-        for result in result_list:
+        for batch in prediction_list:
             if len(queue) == 0:
-                queue = result['prediction']
+                queue = batch
             else:
-                queue = np.concatenate((queue, result['prediction']), axis=0)
+                queue = np.concatenate((queue, batch), axis=0)
 
             if len(queue) > PG.partition[idx]:
                 restored = PG.restore(PG.data_list[idx], queue[:PG.partition[idx]])
@@ -124,12 +132,12 @@ if save_prediction:
                 queue = queue[PG.partition[idx]:]
 
                 progress_bar.set_description('[Saving prediction] ID: %s' % PG.data_list[idx])
+                progress_bar.update(1)
                 idx += 1
                 if idx >= len(PG.partition):
                     break
 
 
-result_keys.remove('prediction')
 result = {
     key: torch.stack([result[key] for result in result_list]).mean(dim=0)
     for key in result_keys

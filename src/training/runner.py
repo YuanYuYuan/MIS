@@ -122,6 +122,9 @@ class Runner:
         if stage not in self.step:
             self.step[stage] = 1
 
+        if save_prediction:
+            prediction_list = []
+
         result_list = []
         for step, batch in progress_bar:
 
@@ -162,7 +165,13 @@ class Runner:
                     self.step[stage]
                 )
 
+            if save_prediction:
+                prediction_list.append(result.pop('prediction'))
+
             if step_accu >= 0.:
                 result_list.append(result)
 
-        return result_list
+        if save_prediction:
+            return result_list, prediction_list
+        else:
+            return result_list
