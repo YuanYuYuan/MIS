@@ -67,6 +67,7 @@ if ROIs is None:
     ROIs = data_loader.ROIs
 
 if 'save_prediction' in config:
+    DL = data_gen.struct['DL']
     PG = data_gen.struct['PG']
     BG = data_gen.struct['BG']
     # ensure the order
@@ -102,23 +103,31 @@ result_keys = list(result_list[0].keys())
 
 if save_prediction:
     assert 'prediction' in result_keys
+    assert len(result_list) * BG.batch_size >= sum(PG.partition)
 
-    def save_npy(data):
-        idx, npy = data
-        file_path = os.path.join(prediction_dir, ('%03d' % idx) + '.npy')
-        np.save(file_path, npy)
+    with tqdm(
+        total=len(PG.partition),
+        dynamic_ncols=False,
+        desc='[Saving prediction]'
+    ) as progress_bar:
+        idx = 0
+        queue = []
+        for result in result_list:
+            if len(queue) == 0:
+                queue = result['prediction']
+            else:
+                queue = np.concatenate((queue, result['prediction']), axis=0)
 
-    with Pool(4) as pool:
-        jobs = pool.imap(save_npy, enumerate(result_list))
-        list(tqdm(
-            jobs,
-            total=len(result_list),
-            dynamic_ncols=False,
-            desc='[Saving prediction]',
-        ))
+            if len(queue) > PG.partition[idx]:
+                restored = PG.restore(PG.data_list[idx], queue[:PG.partition[idx]])
+                DL.save_prediction(PG.data_list[idx], restored, prediction_dir)
+                queue = queue[PG.partition[idx]:]
 
-    # partition_counter = 0
-    # for data_idx, partition_per_data in zip(PG.data_list, PG.partition):
+                progress_bar.set_description('[Saving prediction] ID: %s' % PG.data_list[idx])
+                idx += 1
+                if idx >= len(PG.partition):
+                    break
+
 
 result_keys.remove('prediction')
 result = {
