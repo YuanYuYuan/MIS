@@ -204,6 +204,12 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             scheduler.step(metric=scheduler_metric)
         else:
             scheduler.step()
+        if logger is not None:
+            logger.add_scalar(
+                'training/lr_rate',
+                optimizer.param_groups[0]['lr'],
+                epoch
+            )
 
 logger.close()
 print('Total:', time.time()-start)
