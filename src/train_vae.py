@@ -6,7 +6,7 @@ import os
 from utils import epoch_info, EarlyStopper
 import yaml
 from training.optimizers import Optimizer
-from training.scheduler import CosineAnnealingWarmUpRestarts as Scheduler
+from training.scheduler import Scheduler
 from training.model_handler import ModelHandler
 from training.runner import Runner
 from MIDP import DataLoader, DataGenerator
@@ -80,11 +80,7 @@ optimizer = Optimizer(config['optimizer'])(model_handler.model)
 if 'scheduler' in config:
     scheduler = Scheduler(
         optimizer,
-        T_0=config['scheduler']['T_0'],
-        T_mult=config['scheduler']['T_mult'],
-        eta_max=config['optimizer']['lr'],
-        T_up=config['scheduler']['T_up'],
-        gamma=0.5
+        **config['scheduler']
     )
 else:
     scheduler = None
@@ -171,6 +167,12 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             for key, val in accu_dict.items()
         ))
 
+        if stage == 'valid' and scheduler and scheduler.use_reduce_lr:
+            if scheduler.mode == 'min':
+                scheduler_metric = result['loss']
+            else:
+                scheduler_metric = mean_accu
+
         # record the performance
         if logger is not None:
             for key, val in result.items():
@@ -197,8 +199,11 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                 )
 
     # adjust learning rate by epoch
-    if scheduler is not None:
-        scheduler.step()
+    if scheduler:
+        if scheduler.use_reduce_lr:
+            scheduler.step(metric=scheduler_metric)
+        else:
+            scheduler.step()
 
 logger.close()
 print('Total:', time.time()-start)
