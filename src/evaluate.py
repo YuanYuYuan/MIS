@@ -120,42 +120,46 @@ if save_prediction:
 
     scores = dict()
 
-    with tqdm(
-        total=len(PG.partition),
+    progress_bar = tqdm(
+        zip(PG.data_list, PG.partition),
+        total=len(PG.data_list),
         dynamic_ncols=True,
         desc='[Data index]'
-    ) as progress_bar:
-        idx = 0
-        queue = []
-        for batch in prediction_list:
-            if len(queue) == 0:
-                queue = batch
-            else:
-                queue = np.concatenate((queue, batch), axis=0)
+    )
 
-            if len(queue) > PG.partition[idx]:
-                restored = PG.restore(PG.data_list[idx], queue[:PG.partition[idx]])
-                DL.save_prediction(PG.data_list[idx], restored, prediction_dir)
-                queue = queue[PG.partition[idx]:]
+    queue = []
+    with data_gen as gen:
+        for (data_idx, partition_per_data) in progress_bar:
 
-                scores[PG.data_list[idx]] = {
-                    roi: dice_score(
-                        (restored == val).astype(int),
-                        (DL.get_label(PG.data_list[idx]) == val).astype(int)
-                    )
-                    for roi, val in DL.roi_map.items()
-                }
+            while len(queue) < partition_per_data:
+                batch = prediction_list.pop(0)
+                if len(queue) == 0:
+                    queue = batch
+                else:
+                    queue = np.concatenate((queue, batch), axis=0)
 
-                info = '[%s] ' % PG.data_list[idx]
-                info += ', '.join(
-                    '%s: %.3f' % (key, val)
-                    for key, val in scores[PG.data_list[idx]].items()
+            restored = PG.restore(data_idx, queue[:partition_per_data])
+            DL.save_prediction(
+                data_idx,
+                restored,
+                args.output_dir
+            )
+            queue = queue[partition_per_data:]
+
+            scores[data_idx] = {
+                roi: dice_score(
+                    (restored == val).astype(int),
+                    (DL.get_label(data_idx) == val).astype(int)
                 )
-                progress_bar.set_description(info)
-                progress_bar.update(1)
-                idx += 1
-                if idx >= len(PG.partition):
-                    break
+                for roi, val in DL.roi_map.items()
+            }
+
+            info = '[%s] ' % data_idx
+            info += ', '.join(
+                '%s: %.3f' % (key, val)
+                for key, val in scores[data_idx].items()
+            )
+            progress_bar.set_description(info)
 
     with open('score.json', 'w') as f:
         json.dump(scores, f, indent=2)
