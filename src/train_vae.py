@@ -120,6 +120,7 @@ else:
 
 # main running loop
 terminated = False
+scheduler_metric = None
 for epoch in range(init_epoch, init_epoch + config['epochs']):
 
     if terminated:
@@ -133,6 +134,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
         if stage != 'train' and epoch % config['validation_frequency'] != 0:
             break
+
         # run on an epoch
         try:
             result_list = runner.run(data_gen[stage], training=training)
@@ -200,16 +202,24 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
     # adjust learning rate by epoch
     if scheduler:
-        if scheduler.use_reduce_lr:
+
+        if scheduler.use_reduce_lr and stage == 'valid' and scheduler_metric:
             scheduler.step(metric=scheduler_metric)
         else:
             scheduler.step()
-        if logger is not None:
+
+        if logger:
             logger.add_scalar(
-                'training/lr_rate',
+                'scheduler/lr_rate',
                 optimizer.param_groups[0]['lr'],
                 epoch
             )
+            if scheduler.best is not None:
+                logger.add_scalar(
+                    'scheduler/best_metric',
+                    scheduler.best,
+                    epoch
+                )
 
 logger.close()
 print('Total:', time.time()-start)

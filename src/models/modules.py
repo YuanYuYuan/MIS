@@ -135,7 +135,7 @@ class LatentReparametrization(nn.Module):
         self.in_shape = in_shape
 
     def forward(self, x):
-        assert x.shape[1:] == self.in_shape
+        assert x.shape[1:] == self.in_shape, (x.shape[1:], self.in_shape)
         x = torch.flatten(x, start_dim=1)
         mean = self.op['mean'](x)
         std = self.op['std'](x)
