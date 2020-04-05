@@ -33,7 +33,7 @@ parser.add_argument(
 parser.add_argument(
     '--prediction-dir',
     default=None,
-    help='save prediction'
+    help='save prediction',
 )
 args = parser.parse_args()
 
@@ -66,7 +66,14 @@ ROIs = None
 if ROIs is None:
     ROIs = data_loader.ROIs
 
-if 'save_prediction' in config:
+# check include prediction while running
+if args.prediction_dir is not None or 'include_prediction' in config:
+    include_prediction = True
+else:
+    include_prediction = False
+
+# ensure the ability of restoration if including prediction
+if include_prediction:
     DL = data_gen.struct['DL']
     PG = data_gen.struct['PG']
     BG = data_gen.struct['BG']
@@ -76,12 +83,11 @@ if 'save_prediction' in config:
     assert BG.n_workers == 1
     if 'AG' in data_gen.struct:
         assert data_gen.struct['AG'].n_workers == 1
-    prediction_dir = config['save_prediction']
-    os.makedirs(prediction_dir, exist_ok=True)
-    save_prediction = True
-else:
-    save_prediction = False
 
+    assert 'output_threshold' in config
+
+if args.prediction_dir is not None:
+    os.makedirs(args.prediction_dir, exist_ok=True)
 
 # - GPUs
 os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
@@ -94,24 +100,16 @@ runner = Runner(
     logger=logger,
 )
 
-if save_prediction:
+if include_prediction:
     result_list, prediction_list = runner.run(
         data_gen,
         training=False,
         stage='Evaluating',
-        save_prediction=save_prediction,
+        include_prediction=True,
         output_threshold=config['output_threshold'],
+        find_max=True,
     )
-else:
-    result_list = runner.run(
-        data_gen,
-        training=False,
-        stage='Evaluating',
-        save_prediction=save_prediction,
-    )
-result_keys = list(result_list[0].keys())
 
-if save_prediction:
     assert len(prediction_list) * BG.batch_size >= sum(PG.partition), \
         (len(prediction_list) * BG.batch_size, sum(PG.partition))
 
@@ -128,38 +126,46 @@ if save_prediction:
 
     queue = []
     scores = dict()
-    with data_gen as gen:
-        for (data_idx, partition_per_data) in progress_bar:
+    for (data_idx, partition_per_data) in progress_bar:
 
-            while len(queue) < partition_per_data:
-                batch = prediction_list.pop(0)
-                if len(queue) == 0:
-                    queue = batch
-                else:
-                    queue = np.concatenate((queue, batch), axis=0)
+        # collect new batch prediction into queue
+        while len(queue) < partition_per_data:
+            batch = prediction_list.pop(0)
+            if len(queue) == 0:
+                queue = batch
+            else:
+                queue = np.concatenate((queue, batch), axis=0)
 
-            restored = PG.restore(data_idx, queue[:partition_per_data])
+        # restore if the queue is enough for restoration
+        restored = PG.restore(data_idx, queue[:partition_per_data])
+
+        # clean out restored part
+        queue = queue[partition_per_data:]
+
+        # collect score for each data
+        scores[data_idx] = {
+            roi: dice_score(
+                (restored == val).astype(int),
+                (DL.get_label(data_idx) == val).astype(int)
+            )
+            for roi, val in DL.roi_map.items()
+        }
+
+        # update progress bar
+        info = '[%s] ' % data_idx
+        info += ', '.join(
+            '%s: %.3f' % (key, val)
+            for key, val in scores[data_idx].items()
+        )
+        progress_bar.set_description(info)
+
+        # save prediction if specified
+        if args.prediction_dir is not None:
             DL.save_prediction(
                 data_idx,
                 restored,
-                args.output_dir
+                args.prediction_dir
             )
-            queue = queue[partition_per_data:]
-
-            scores[data_idx] = {
-                roi: dice_score(
-                    (restored == val).astype(int),
-                    (DL.get_label(data_idx) == val).astype(int)
-                )
-                for roi, val in DL.roi_map.items()
-            }
-
-            info = '[%s] ' % data_idx
-            info += ', '.join(
-                '%s: %.3f' % (key, val)
-                for key, val in scores[data_idx].items()
-            )
-            progress_bar.set_description(info)
 
     with open('score.json', 'w') as f:
         json.dump(scores, f, indent=2)
@@ -169,9 +175,20 @@ if save_prediction:
         for roi in ROIs
     }
     mean_roi_score.update({'mean': np.mean([mean_roi_score[roi] for roi in ROIs])})
+    print('========== Restored ==========')
     print(mean_roi_score)
+    print('==============================')
 
+else:
+    result_list = runner.run(
+        data_gen,
+        training=False,
+        stage='Evaluating',
+        include_prediction=False,
+    )
 
+# arrange the result
+result_keys = list(result_list[0].keys())
 result = {
     key: torch.stack([result[key] for result in result_list]).mean(dim=0)
     for key in result_keys

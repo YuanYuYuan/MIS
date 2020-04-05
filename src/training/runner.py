@@ -101,7 +101,7 @@ class Runner:
         training=True,
         stage=None,
         min_ratio=0.,
-        save_prediction=False,
+        include_prediction=False,
         output_threshold=0.3,
         find_max=True,
     ):
@@ -110,7 +110,7 @@ class Runner:
         n_steps = len(data_gen)
 
         progress_bar = tqdm(
-            enumerate(data_gen),
+            data_gen,
             total=n_steps,
             ncols=get_tty_columns(),
             dynamic_ncols=True,
@@ -121,11 +121,11 @@ class Runner:
         if stage not in self.step:
             self.step[stage] = 1
 
-        if save_prediction:
+        if include_prediction:
             prediction_list = []
 
         result_list = []
-        for step, batch in progress_bar:
+        for batch in progress_bar:
 
             self.step[stage] += 1
             if self.logger is not None:
@@ -141,7 +141,7 @@ class Runner:
             result = self.process_batch(
                 batch,
                 training=training,
-                include_prediction=save_prediction,
+                include_prediction=include_prediction,
             )
 
             step_loss = result['loss'].item()
@@ -164,19 +164,19 @@ class Runner:
                     self.step[stage]
                 )
 
-            if save_prediction:
+            if include_prediction:
                 prediction = result.pop('prediction')
                 if find_max:
                     for i in range(1, prediction.shape[1]):
                         prediction[:, i, ...] += \
-                            (prediction[:, i, ...] >= output_threshold).float()
+                            (prediction[:, i, ...] >= output_threshold).astype(np.float)
                     prediction = np.argmax(prediction, 1)
                 prediction_list.append(prediction)
 
             if step_accu >= 0.:
                 result_list.append(result)
 
-        if save_prediction:
+        if include_prediction:
             return result_list, prediction_list
         else:
             return result_list
