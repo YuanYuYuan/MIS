@@ -1,6 +1,7 @@
 import torch
 from tqdm import tqdm
 from utils import get_tty_columns
+import numpy as np
 
 
 class Runner:
@@ -22,8 +23,7 @@ class Runner:
         self,
         batch,
         training=True,
-        save_prediction=False,
-        output_threshold=0.3,
+        include_prediction=False,
     ):
 
         def crop_range(prediction_shape, label_shape):
@@ -88,12 +88,10 @@ class Runner:
         for key in results:
             results[key] = results[key].detach().cpu()
 
-        if save_prediction:
+        if include_prediction:
             probas = torch.nn.functional.softmax(outputs['prediction'], dim=1)
-            for i in range(1, probas.shape[1]):
-                probas[:, i, ...] += (probas[:, i, ...] >= output_threshold).float()
-            output = torch.argmax(probas, 1).detach().cpu().numpy()
-            results.update({'prediction': output})
+            probas = probas.detach().cpu().numpy()
+            results.update({'prediction': probas})
 
         return results
 
@@ -105,6 +103,7 @@ class Runner:
         min_ratio=0.,
         save_prediction=False,
         output_threshold=0.3,
+        find_max=True,
     ):
         if stage is None:
             stage = 'train' if training else 'valid'
@@ -142,9 +141,9 @@ class Runner:
             result = self.process_batch(
                 batch,
                 training=training,
-                save_prediction=save_prediction,
-                output_threshold=output_threshold,
+                include_prediction=save_prediction,
             )
+
             step_loss = result['loss'].item()
             step_accu = result['accu'].mean().item()
 
@@ -166,7 +165,13 @@ class Runner:
                 )
 
             if save_prediction:
-                prediction_list.append(result.pop('prediction'))
+                prediction = result.pop('prediction')
+                if find_max:
+                    for i in range(1, prediction.shape[1]):
+                        prediction[:, i, ...] += \
+                            (prediction[:, i, ...] >= output_threshold).float()
+                    prediction = np.argmax(prediction, 1)
+                prediction_list.append(prediction)
 
             if step_accu >= 0.:
                 result_list.append(result)

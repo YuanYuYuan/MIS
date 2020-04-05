@@ -112,13 +112,12 @@ else:
 result_keys = list(result_list[0].keys())
 
 if save_prediction:
-    assert len(prediction_list) * BG.batch_size >= sum(PG.partition), (len(prediction_list) * BG.batch_size, sum(PG.partition))
+    assert len(prediction_list) * BG.batch_size >= sum(PG.partition), \
+        (len(prediction_list) * BG.batch_size, sum(PG.partition))
 
     def dice_score(x, y):
         assert x.shape == y.shape
         return 2 * np.sum(x * y) / np.sum(x + y)
-
-    scores = dict()
 
     progress_bar = tqdm(
         zip(PG.data_list, PG.partition),
@@ -128,6 +127,7 @@ if save_prediction:
     )
 
     queue = []
+    scores = dict()
     with data_gen as gen:
         for (data_idx, partition_per_data) in progress_bar:
 
