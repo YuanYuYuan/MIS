@@ -27,11 +27,10 @@ class Scheduler(_LRScheduler):
             self.reduced_lrs = None
             assert mode in ['min', 'max']
             self.mode = mode
-            self.best = math.inf if mode == 'min' else -math.inf
+            self.best = None
 
         self.stage = 'init'
         super().__init__(optimizer)
-
 
     def get_lr(self):
         if self.use_warmup and self.last_epoch <= self.warmup:
@@ -48,10 +47,12 @@ class Scheduler(_LRScheduler):
             return self.base_lrs
 
     def check_improved(self, metric, threshold=0.95):
-        if self.mode == 'min':
-            return metric <= self.best * threshold
+        if self.best is None:
+            return True
+        elif self.mode == 'min':
+            return metric <= (self.best * threshold)
         else:
-            return metric >= self.best * threshold
+            return metric >= (self.best * threshold)
 
     def step(self, epoch=None, metric=None):
         if self.stage == 'init':
