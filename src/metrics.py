@@ -85,20 +85,41 @@ def dice_score(
     exclude_background=True,
     threshold=0.,
     exclude_blank=False,
+    batch_wise=False,
 ):
     if exclude_blank and labels.sum() == 0:
         return torch.tensor([-1.])
     else:
-        match, total = match_up(logits, labels, needs_softmax=True, threshold=threshold)
+        match, total = match_up(
+            logits,
+            labels,
+            needs_softmax=True,
+            threshold=threshold,
+            batch_wise=batch_wise,
+        )
         multi_class_score = compute_dice(match, total, smooth=smooth)
+        if batch_wise:
+            multi_class_score = torch.mean(multi_class_score, dim=0)
+
         if exclude_background:
             return multi_class_score[1:]
         else:
             return multi_class_score
 
 
-def dice_loss(logits, labels, weight=None):
-    score = dice_score(logits, labels, exclude_background=True)
+def dice_loss(
+    logits,
+    labels,
+    weight=None,
+    exclude_background=True,
+    batch_wise=False,
+):
+    score = dice_score(
+        logits,
+        labels,
+        exclude_background=exclude_background,
+        batch_wise=batch_wise,
+    )
     if weight is not None:
         assert len(score) == len(weight), (len(score), len(weight))
         score *= weight
