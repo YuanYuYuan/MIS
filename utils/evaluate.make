@@ -18,8 +18,13 @@ endif
 CONFIG = './evaluation.yaml'
 CKPT = 'ckpt.pt'
 LOG_DIR = 'logs'
+PREDI_DIR = 'outputs'
 
 run: clean evaluate
+
+predict:
+	@echo "===== Evaluating ====="
+	$(EXECUTOR) $(SRC_DIR)/evaluate.py --config $(CONFIG) --checkpoint $(CKPT) --log-dir $(LOG_DIR) --prediction-dir $(PREDI_DIR)
 
 evaluate:
 	@echo "===== Evaluating ====="
@@ -30,4 +35,4 @@ log:
 	tensorboard --logdir $(LOG_DIR) > /dev/null 2>&1
 
 clean:
-	rm -rvf $(LOG_DIR)
+	rm -rvf $(LOG_DIR) $(PREDI_DIR)
