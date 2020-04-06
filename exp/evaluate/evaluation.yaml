@@ -2,6 +2,10 @@ gpus: 6,7
 data: train_list.yaml
 # data: valid_list.yaml
 
+include_prediction: true
+output_threshold: 0.3
+
+
 generator:
   BlockGenerator :
     block_shape  : [96, 96, 96]
@@ -25,4 +29,3 @@ generator:
 
 model: './model.json5'
 meter: './meter.json5'
-include_prediction: true
