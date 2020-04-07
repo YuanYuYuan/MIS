@@ -41,6 +41,10 @@ def match_up(
     threshold=0.
 ):
 
+    # requires torch tensors
+    assert isinstance(logits, torch.Tensor)
+    assert isinstance(labels, torch.Tensor)
+
     probas = F.softmax(logits, dim=1) if needs_softmax else logits
     n_classes = logits.shape[1]
 
@@ -61,8 +65,14 @@ def match_up(
     labels = F.one_hot(labels, n_classes).permute(permute_dim).float()
     assert probas.shape == labels.shape, (probas.shape, labels.shape)
 
+    # binarize the probas according to given threshold
+    # NOTE: there might be multiple classes be 1
     if threshold > 0.:
         probas = (probas > threshold).float()
+
+    # equivalent to apply argmax
+    elif threshold == -1:
+        probas = (probas > 1/n_classes).float()
 
     match = torch.sum(probas * labels, sum_dim)
     total = torch.sum(probas + labels, sum_dim)

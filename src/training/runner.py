@@ -1,7 +1,8 @@
 import torch
 from tqdm import tqdm
 from utils import get_tty_columns
-import numpy as np
+from metrics import match_up
+
 
 
 class Runner:
@@ -24,6 +25,7 @@ class Runner:
         batch,
         training=True,
         include_prediction=False,
+        compute_match=False,
     ):
 
         def crop_range(prediction_shape, label_shape):
@@ -92,6 +94,16 @@ class Runner:
             probas = torch.nn.functional.softmax(outputs['prediction'], dim=1)
             probas = probas.detach().cpu().numpy()
             results.update({'prediction': probas})
+
+        if compute_match:
+            probas = torch.nn.functional.softmax(outputs['prediction'], dim=1)
+            match, total = match_up(
+                outputs['prediction'],
+                data['label'],
+                needs_softmax=True,
+                batch_wise=True
+            )
+            results.update({'match': match, 'total': total})
 
         return results
 
