@@ -61,10 +61,6 @@ def match_up(
     labels = F.one_hot(labels, n_classes).permute(permute_dim).float()
     assert probas.shape == labels.shape, (probas.shape, labels.shape)
 
-    # # dice score without background
-    # match = torch.sum(probas[:, 1:, ...] * labels[:, 1:, ...], sum_dim)
-    # total = torch.sum(probas[:, 1:, ...] + labels[:, 1:, ...], sum_dim)
-
     if threshold > 0.:
         probas = (probas > threshold).float()
 
@@ -74,14 +70,14 @@ def match_up(
     return match, total
 
 
-def compute_dice(match, total, smooth=1):
+def compute_dice(match, total, smooth):
     return ((2. * match + smooth) / (total + smooth))
 
 
 def dice_score(
     logits,
     labels,
-    smooth=1,
+    smooth=1e-5,
     exclude_background=True,
     threshold=0.,
     exclude_blank=False,
@@ -113,7 +109,7 @@ def dice_loss(
     weight=None,
     exclude_background=True,
     batch_wise=False,
-    smooth=1.,
+    smooth=1e-5,
 ):
     score = dice_score(
         logits,
