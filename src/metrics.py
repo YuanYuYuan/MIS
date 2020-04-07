@@ -113,12 +113,14 @@ def dice_loss(
     weight=None,
     exclude_background=True,
     batch_wise=False,
+    smooth=1.,
 ):
     score = dice_score(
         logits,
         labels,
         exclude_background=exclude_background,
         batch_wise=batch_wise,
+        smooth=smooth,
     )
     if weight is not None:
         assert len(score) == len(weight), (len(score), len(weight))

@@ -102,8 +102,6 @@ class Runner:
         stage=None,
         min_ratio=0.,
         include_prediction=False,
-        output_threshold=0.3,
-        find_max=True,
     ):
         if stage is None:
             stage = 'train' if training else 'valid'
@@ -165,13 +163,17 @@ class Runner:
                 )
 
             if include_prediction:
-                prediction = result.pop('prediction')
-                if find_max:
-                    for i in range(1, prediction.shape[1]):
-                        prediction[:, i, ...] += \
-                            (prediction[:, i, ...] >= output_threshold).astype(np.float)
-                    prediction = np.argmax(prediction, 1)
-                prediction_list.append(prediction)
+                # XXX: deprecated
+                # output_threshold = 0.3
+                # prediction = result.pop('prediction')
+                # for i in range(1, prediction.shape[1]):
+                #     prediction[:, i, ...] += \
+                #         (prediction[:, i, ...] >= output_threshold).astype(np.float)
+                # # prediction[:, 1:, ...] = (prediction[:, 1:, ...] >= output_threshold).astype(np.float)
+                # prediction = np.argmax(prediction, 1)
+                # prediction_list.append(prediction)
+
+                prediction_list.append(result.pop('prediction'))
 
             if step_accu >= 0.:
                 result_list.append(result)

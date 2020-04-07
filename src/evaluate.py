@@ -106,8 +106,6 @@ if include_prediction:
         training=False,
         stage='Evaluating',
         include_prediction=True,
-        output_threshold=config['output_threshold'],
-        find_max=True,
     )
 
     assert len(prediction_list) * BG.batch_size >= sum(PG.partition), \
@@ -137,7 +135,11 @@ if include_prediction:
                 queue = np.concatenate((queue, batch), axis=0)
 
         # restore if the queue is enough for restoration
-        restored = PG.restore(data_idx, queue[:partition_per_data])
+        restored = PG.restore(
+            data_idx,
+            queue[:partition_per_data],
+            output_threshold=config['output_threshold'],
+        )
 
         # clean out restored part
         queue = queue[partition_per_data:]
