@@ -100,105 +100,121 @@ runner = Runner(
     logger=logger,
 )
 
-if include_prediction:
-    result_list, prediction_list = runner.run(
-        data_gen,
-        training=False,
-        stage='Evaluating',
-        include_prediction=True,
-    )
+# if include_prediction:
+#     result_list, prediction_list = runner.run(
+#         data_gen,
+#         training=False,
+#         stage='Evaluating',
+#         include_prediction=True,
+#     )
 
-    assert len(prediction_list) * BG.batch_size >= sum(PG.partition), \
-        (len(prediction_list) * BG.batch_size, sum(PG.partition))
+#     assert len(prediction_list) * BG.batch_size >= sum(PG.partition), \
+#         (len(prediction_list) * BG.batch_size, sum(PG.partition))
 
-    def dice_score(x, y):
-        assert x.shape == y.shape
-        return 2 * np.sum(x * y) / np.sum(x + y)
+#     def dice_score(x, y):
+#         assert x.shape == y.shape
+#         return 2 * np.sum(x * y) / np.sum(x + y)
 
-    progress_bar = tqdm(
-        zip(PG.data_list, PG.partition),
-        total=len(PG.data_list),
-        dynamic_ncols=True,
-        desc='[Data index]'
-    )
+#     progress_bar = tqdm(
+#         zip(PG.data_list, PG.partition),
+#         total=len(PG.data_list),
+#         dynamic_ncols=True,
+#         desc='[Data index]'
+#     )
 
-    queue = []
-    scores = dict()
-    for (data_idx, partition_per_data) in progress_bar:
+#     queue = []
+#     scores = dict()
+#     for (data_idx, partition_per_data) in progress_bar:
 
-        # collect new batch prediction into queue
-        while len(queue) < partition_per_data:
-            batch = prediction_list.pop(0)
-            if len(queue) == 0:
-                queue = batch
-            else:
-                queue = np.concatenate((queue, batch), axis=0)
+#         # collect new batch prediction into queue
+#         while len(queue) < partition_per_data:
+#             batch = prediction_list.pop(0)
+#             if len(queue) == 0:
+#                 queue = batch
+#             else:
+#                 queue = np.concatenate((queue, batch), axis=0)
 
-        # restore if the queue is enough for restoration
-        restored = PG.restore(
-            data_idx,
-            queue[:partition_per_data],
-            output_threshold=config['output_threshold'],
-        )
+#         # restore if the queue is enough for restoration
+#         restored = PG.restore(
+#             data_idx,
+#             queue[:partition_per_data],
+#             output_threshold=config['output_threshold'],
+#         )
 
-        # clean out restored part
-        queue = queue[partition_per_data:]
+#         # clean out restored part
+#         queue = queue[partition_per_data:]
 
-        # collect score for each data
-        scores[data_idx] = {
-            roi: dice_score(
-                (restored == val).astype(int),
-                (DL.get_label(data_idx) == val).astype(int)
-            )
-            for roi, val in DL.roi_map.items()
-        }
+#         # collect score for each data
+#         scores[data_idx] = {
+#             roi: dice_score(
+#                 (restored == val).astype(int),
+#                 (DL.get_label(data_idx) == val).astype(int)
+#             )
+#             for roi, val in DL.roi_map.items()
+#         }
 
-        # update progress bar
-        info = '[%s] ' % data_idx
-        info += ', '.join(
-            '%s: %.3f' % (key, val)
-            for key, val in scores[data_idx].items()
-        )
-        progress_bar.set_description(info)
+#         # update progress bar
+#         info = '[%s] ' % data_idx
+#         info += ', '.join(
+#             '%s: %.3f' % (key, val)
+#             for key, val in scores[data_idx].items()
+#         )
+#         progress_bar.set_description(info)
 
-        # save prediction if specified
-        if args.prediction_dir is not None:
-            DL.save_prediction(
-                data_idx,
-                restored,
-                args.prediction_dir
-            )
+#         # save prediction if specified
+#         if args.prediction_dir is not None:
+#             DL.save_prediction(
+#                 data_idx,
+#                 restored,
+#                 args.prediction_dir
+#             )
 
-    with open('score.json', 'w') as f:
-        json.dump(scores, f, indent=2)
+#     with open('score.json', 'w') as f:
+#         json.dump(scores, f, indent=2)
 
-    mean_roi_score = {
-        roi: np.mean([scores[key][roi] for key in scores])
-        for roi in ROIs
-    }
-    mean_roi_score.update({'mean': np.mean([mean_roi_score[roi] for roi in ROIs])})
-    print('========== Restored ==========')
-    print(mean_roi_score)
-    print('==============================')
+#     mean_roi_score = {
+#         roi: np.mean([scores[key][roi] for key in scores])
+#         for roi in ROIs
+#     }
+#     mean_roi_score.update({'mean': np.mean([mean_roi_score[roi] for roi in ROIs])})
+#     print('========== Restored ==========')
+#     print(mean_roi_score)
+#     print('==============================')
 
-else:
-    result_list = runner.run(
-        data_gen,
-        training=False,
-        stage='Evaluating',
-        include_prediction=False,
-    )
+# else:
+#     result_list = runner.run(
+#         data_gen,
+#         training=False,
+#         stage='Evaluating',
+#         include_prediction=False,
+#     )
+
+result_list = runner.run(
+    data_gen,
+    training=False,
+    stage='Evaluating',
+    include_prediction=include_prediction,
+    compute_match=False,
+)
+
+
+result_keys = list(result_list[0].keys())
+if 'prediction' in result_keys:
+    result_keys.remove('prediction')
+    print('do something on prediction')
 
 # arrange the result
-result_keys = list(result_list[0].keys())
 result = {
-    key: torch.stack([result[key] for result in result_list]).mean(dim=0)
+    key: np.nanmean(
+        np.vstack([result[key] for result in result_list]),
+        axis=0
+    )
     for key in result_keys
 }
 
 accu = result.pop('accu')
-accu_dict = {key: val.item() for key, val in zip(ROIs, accu)}
-accu_dict.update({'mean': accu.mean()})
+accu_dict = {key: val for key, val in zip(ROIs, accu)}
+accu_dict.update({'mean': np.mean(accu)})
 print(', '.join(
     '%s: %.5f' % (key, val)
     for key, val in result.items()

@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-
+import math
 
 def VAE_KLD(latent_dist):
     mean, std = latent_dist
@@ -94,7 +94,8 @@ def dice_score(
     batch_wise=False,
 ):
     if exclude_blank and labels.sum() == 0:
-        return torch.tensor([-1.])
+        multi_class_score = torch.tensor([math.nan]*logits.shape[1])
+
     else:
         match, total = match_up(
             logits,
@@ -107,10 +108,10 @@ def dice_score(
         if batch_wise:
             multi_class_score = torch.mean(multi_class_score, dim=0)
 
-        if exclude_background:
-            return multi_class_score[1:]
-        else:
-            return multi_class_score
+    if exclude_background:
+        return multi_class_score[1:]
+    else:
+        return multi_class_score
 
 
 def dice_loss(

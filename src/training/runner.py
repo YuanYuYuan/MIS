@@ -2,7 +2,8 @@ import torch
 from tqdm import tqdm
 from utils import get_tty_columns
 from metrics import match_up
-
+import math
+import numpy as np
 
 
 class Runner:
@@ -86,17 +87,11 @@ class Runner:
                 data.update(outputs)
                 results = self.meter(data)
 
-        # detach and move it to CPU
-        for key in results:
-            results[key] = results[key].detach().cpu()
-
         if include_prediction:
             probas = torch.nn.functional.softmax(outputs['prediction'], dim=1)
-            probas = probas.detach().cpu().numpy()
             results.update({'prediction': probas})
 
         if compute_match:
-            probas = torch.nn.functional.softmax(outputs['prediction'], dim=1)
             match, total = match_up(
                 outputs['prediction'],
                 data['label'],
@@ -104,6 +99,10 @@ class Runner:
                 batch_wise=True
             )
             results.update({'match': match, 'total': total})
+
+        # detach all, move to CPU, and convert to numpy
+        for key in results:
+            results[key] = results[key].detach().cpu().numpy()
 
         return results
 
@@ -114,6 +113,7 @@ class Runner:
         stage=None,
         min_ratio=0.,
         include_prediction=False,
+        compute_match=False,
     ):
         if stage is None:
             stage = 'train' if training else 'valid'
@@ -130,9 +130,6 @@ class Runner:
 
         if stage not in self.step:
             self.step[stage] = 1
-
-        if include_prediction:
-            prediction_list = []
 
         result_list = []
         for batch in progress_bar:
@@ -152,45 +149,40 @@ class Runner:
                 batch,
                 training=training,
                 include_prediction=include_prediction,
+                compute_match=compute_match,
             )
 
-            step_loss = result['loss'].item()
-            step_accu = result['accu'].mean().item()
-
+            step_accu = np.nanmean(result['accu'])
             progress_bar.set_description(
                 '[%s] Loss: %.5f, Avg accu: %.5f'
-                % (stage, step_loss, step_accu)
+                % (stage, result['loss'], step_accu)
             )
 
             if self.logger is not None:
                 self.logger.add_scalar(
                     '%s/step/loss' % stage,
-                    step_loss,
+                    result['loss'],
                     self.step[stage]
                 )
                 self.logger.add_scalar(
                     '%s/step/accu' % stage,
-                    step_accu,
+                    -1 if math.isnan(step_accu) else step_accu,
                     self.step[stage]
                 )
 
-            if include_prediction:
-                # XXX: deprecated
-                # output_threshold = 0.3
-                # prediction = result.pop('prediction')
-                # for i in range(1, prediction.shape[1]):
-                #     prediction[:, i, ...] += \
-                #         (prediction[:, i, ...] >= output_threshold).astype(np.float)
-                # # prediction[:, 1:, ...] = (prediction[:, 1:, ...] >= output_threshold).astype(np.float)
-                # prediction = np.argmax(prediction, 1)
-                # prediction_list.append(prediction)
+            # if include_prediction:
+            #     # XXX: deprecated
+            #     # output_threshold = 0.3
+            #     # prediction = result.pop('prediction')
+            #     # for i in range(1, prediction.shape[1]):
+            #     #     prediction[:, i, ...] += \
+            #     #         (prediction[:, i, ...] >= output_threshold).astype(np.float)
+            #     # # prediction[:, 1:, ...] = (prediction[:, 1:, ...] >= output_threshold).astype(np.float)
+            #     # prediction = np.argmax(prediction, 1)
+            #     # prediction_list.append(prediction)
 
-                prediction_list.append(result.pop('prediction'))
+            #     prediction_list.append(result.pop('prediction'))
 
-            if step_accu >= 0.:
-                result_list.append(result)
+            result_list.append(result)
 
-        if include_prediction:
-            return result_list, prediction_list
-        else:
-            return result_list
+        return result_list
