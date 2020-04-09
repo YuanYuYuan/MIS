@@ -214,29 +214,29 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     progress_bar.set_description(info)
 
             # summerize roi score
-            mean_roi_score = {
+            roi_scores = {
                 roi: np.mean([scores[data_idx][roi] for data_idx in scores])
                 for roi in ROIs
             }
-            mean_roi_score.update({
+            roi_scores.update({
                 'mean': np.mean([
-                    mean_roi_score[roi]
+                    roi_scores[roi]
                     for roi in ROIs
                 ])
             })
             if logger is not None:
-                logger.add_scalars('mean_roi_score', mean_roi_score, epoch)
+                logger.add_scalars('roi_scores', roi_scores, epoch)
 
             # update metric for learning rate scheduler
             if scheduler and scheduler.use_reduce_lr:
                 if scheduler.mode == 'min':
                     scheduler_metric = result['loss']
                 else:
-                    scheduler_metric = mean_roi_score['mean']
+                    scheduler_metric = roi_scores['mean']
 
             # check early stopping
             if early_stopper is not None:
-                early_stop, improved = early_stopper.check(mean_roi_score)
+                early_stop, improved = early_stopper.check(roi_scores['mean'])
 
                 if early_stop:
                     print('Early stopped.')
@@ -247,7 +247,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     model_handler.save(
                         file_path=os.path.join(
                             checkpoint_dir,
-                            '%02d-%.5f.pt' % (epoch, mean_roi_score['mean'])
+                            '%02d-%.5f.pt' % (epoch, roi_scores['mean'])
                         ),
                         additional_info={'epoch': epoch, 'step': runner.step}
                     )
