@@ -162,17 +162,18 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         # collect results except those revertible ones,
         # e.g., prediction, match dice score, ...
         result = {
-            key: torch.stack([
-                result[key] for result in result_list
-            ]).mean(dim=0)
+            key: np.nanmean(
+                np.vstack([result[key] for result in result_list]),
+                axis=0
+            )
             for key in result_list[0].keys()
             if key not in reverter.revertible
         }
 
         # summarize the performance
         accu = result.pop('accu')
-        accu_dict = {key: val.item() for key, val in zip(ROIs, accu)}
-        mean_accu = accu.mean()
+        accu_dict = {key: val for key, val in zip(ROIs, accu)}
+        mean_accu = np.nanmean(accu)
         accu_dict.update({'mean': mean_accu})
         print(', '.join(
             '%s: %.5f' % (key, val)
