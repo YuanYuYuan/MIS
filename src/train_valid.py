@@ -224,6 +224,10 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     for roi in ROIs
                 ])
             })
+            print('Scores: ' + ', '.join(
+                '%s: %.5f' % (key, val)
+                for key, val in roi_scores.items()
+            ))
             if logger is not None:
                 logger.add_scalars('roi_scores', roi_scores, epoch)
 
