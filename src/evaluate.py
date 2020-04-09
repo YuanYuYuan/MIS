@@ -10,6 +10,7 @@ from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
 from tqdm import tqdm
 import numpy as np
+from utils import get_tty_columns
 import torch
 import json
 
@@ -61,6 +62,7 @@ data_loader = DataLoader(loader_name, **loader_config)
 if data_list is not None:
     data_loader.set_data_list(data_list)
 data_gen = DataGenerator(data_loader, generator_config)
+reverter = Reverter(data_gen)
 
 ROIs = None
 if ROIs is None:
@@ -194,13 +196,13 @@ result_list = runner.run(
     training=False,
     stage='Evaluating',
     include_prediction=include_prediction,
-    compute_match=False,
+    compute_match=True,
 )
 
-reverter = Reverter(data_gen)
-result_keys = list(result_list[0].keys())
-for key in reverter.revertible:
-    result_keys.remove(key)
+result_keys = [
+    key for key in result_list[0].keys()
+    if key not in reverter.revertible
+]
 
 # arrange the result
 result = {
@@ -224,37 +226,28 @@ print('Accu: ' + ', '.join(
 ))
 
 
-
-# def evaluate(reverted_data: dict):
-#     result = dict()
-#     if 'prediction' in reverted_data:
-#         result['true_score'] = DL.evaluate(
-#             reverted_data['idx'],
-#             reverted_data['prediction']
-#         )
-#         if args.prediction_dir is not None:
-#             DL.save_prediction(
-#                 reverted_data['idx'],
-#                 reverted['prediction'],
-#                 args.prediction_dir
-#             )
-#     if 'score' in reverted_data:
-#         result['match_score'] = reverted_data['score']
-
-#     return result
-
-
-reverted_list = reverter.on_batches(result_list)
-
 scores = dict()
 with tqdm(
-    reverted_list,
+    reverter.on_batches(result_list),
+    total=len(reverter.data_list),
     dynamic_ncols=True,
+    ncols=get_tty_columns(),
     desc='[Data index]'
 ) as progress_bar:
     for reverted in progress_bar:
         data_idx = reverted['idx']
-        scores[data_idx] = DL.evaluate(data_idx, reverted['prediction'])
+
+        if include_prediction:
+            scores[data_idx] = DL.evaluate(data_idx, reverted['prediction'])
+            if args.prediction_dir is not None:
+                DL.save_prediction(
+                    data_idx,
+                    reverted['prediction'],
+                    args.prediction_dir
+                )
+
+        else:
+            scores[data_idx] = reverted['score']
 
         info = '[%s] ' % data_idx
         info += ', '.join(
@@ -262,41 +255,21 @@ with tqdm(
             for key, val in scores[data_idx].items()
         )
 
-        if args.prediction_dir is not None:
-            DL.save_prediction(
-                data_idx,
-                reverted['prediction'],
-                args.prediction_dir
-            )
 
         progress_bar.set_description(info)
-print('True dice score:', scores)
 
-scores = dict()
-with tqdm(
-    reverted_list,
-    dynamic_ncols=True,
-    desc='[Data index]'
-) as progress_bar:
-    for reverted in progress_bar:
-        data_idx = reverted['idx']
-        scores[data_idx] = reverted['score']
+with open('score.json', 'w') as f:
+    json.dump(scores, f, indent=2)
 
-        info = '[%s] ' % data_idx
-        info += ', '.join(
-            '%s: %.3f' % (key, val)
-            for key, val in scores[data_idx].items()
-        )
+mean_roi_score = {
+    roi: np.mean([scores[key][roi] for key in scores])
+    for roi in ROIs
+}
+mean_roi_score.update({'mean': np.mean([mean_roi_score[roi] for roi in ROIs])})
+print('========== Restored ==========')
+print(mean_roi_score)
+print('==============================')
 
-        if args.prediction_dir is not None:
-            DL.save_prediction(
-                data_idx,
-                reverted['prediction'],
-                args.prediction_dir
-            )
-
-        progress_bar.set_description(info)
-print('Match dice score:', scores)
 
 print('Time:', time.time()-start)
 logger.close()

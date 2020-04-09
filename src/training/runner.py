@@ -96,7 +96,8 @@ class Runner:
                 outputs['prediction'],
                 data['label'],
                 needs_softmax=True,
-                batch_wise=True
+                batch_wise=True,
+                threshold=-1,
             )
             results.update({'match': match, 'total': total})
 
