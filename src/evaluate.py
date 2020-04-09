@@ -171,7 +171,10 @@ with open('score.json', 'w') as f:
     json.dump(scores, f, indent=2)
 
 mean_roi_score = {
-    roi: np.mean([scores[key][roi] for key in scores])
+    roi: np.mean([
+        scores[data_idx][roi]
+        for data_idx in scores
+    ])
     for roi in ROIs
 }
 mean_roi_score.update({'mean': np.mean([mean_roi_score[roi] for roi in ROIs])})

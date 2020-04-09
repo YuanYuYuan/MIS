@@ -215,7 +215,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
             # summerize roi score
             mean_roi_score = {
-                roi: np.mean([scores[key][roi] for key in scores])
+                roi: np.mean([scores[data_idx][roi] for data_idx in scores])
                 for roi in ROIs
             }
             mean_roi_score.update({
