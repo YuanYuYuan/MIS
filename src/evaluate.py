@@ -6,7 +6,7 @@ import os
 import yaml
 from training.model_handler import ModelHandler
 from training.runner import Runner
-from MIDP import DataLoader, DataGenerator
+from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
 from tqdm import tqdm
 import numpy as np
@@ -197,11 +197,10 @@ result_list = runner.run(
     compute_match=False,
 )
 
-
+reverter = Reverter(data_gen)
 result_keys = list(result_list[0].keys())
-if 'prediction' in result_keys:
-    result_keys.remove('prediction')
-    print('do something on prediction')
+for key in reverter.revertible:
+    result_keys.remove(key)
 
 # arrange the result
 result = {
@@ -223,6 +222,81 @@ print('Accu: ' + ', '.join(
     '%s: %.5f' % (key, val)
     for key, val in accu_dict.items()
 ))
+
+
+
+# def evaluate(reverted_data: dict):
+#     result = dict()
+#     if 'prediction' in reverted_data:
+#         result['true_score'] = DL.evaluate(
+#             reverted_data['idx'],
+#             reverted_data['prediction']
+#         )
+#         if args.prediction_dir is not None:
+#             DL.save_prediction(
+#                 reverted_data['idx'],
+#                 reverted['prediction'],
+#                 args.prediction_dir
+#             )
+#     if 'score' in reverted_data:
+#         result['match_score'] = reverted_data['score']
+
+#     return result
+
+
+reverted_list = reverter.on_batches(result_list)
+
+scores = dict()
+with tqdm(
+    reverted_list,
+    dynamic_ncols=True,
+    desc='[Data index]'
+) as progress_bar:
+    for reverted in progress_bar:
+        data_idx = reverted['idx']
+        scores[data_idx] = DL.evaluate(data_idx, reverted['prediction'])
+
+        info = '[%s] ' % data_idx
+        info += ', '.join(
+            '%s: %.3f' % (key, val)
+            for key, val in scores[data_idx].items()
+        )
+
+        if args.prediction_dir is not None:
+            DL.save_prediction(
+                data_idx,
+                reverted['prediction'],
+                args.prediction_dir
+            )
+
+        progress_bar.set_description(info)
+print('True dice score:', scores)
+
+scores = dict()
+with tqdm(
+    reverted_list,
+    dynamic_ncols=True,
+    desc='[Data index]'
+) as progress_bar:
+    for reverted in progress_bar:
+        data_idx = reverted['idx']
+        scores[data_idx] = reverted['score']
+
+        info = '[%s] ' % data_idx
+        info += ', '.join(
+            '%s: %.3f' % (key, val)
+            for key, val in scores[data_idx].items()
+        )
+
+        if args.prediction_dir is not None:
+            DL.save_prediction(
+                data_idx,
+                reverted['prediction'],
+                args.prediction_dir
+            )
+
+        progress_bar.set_description(info)
+print('Match dice score:', scores)
 
 print('Time:', time.time()-start)
 logger.close()
