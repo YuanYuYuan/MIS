@@ -114,11 +114,17 @@ class Runner:
         stage=None,
         min_ratio=0.,
         include_prediction=False,
-        compute_match=False,
     ):
         if stage is None:
             stage = 'train' if training else 'valid'
         n_steps = len(data_gen)
+
+        if training:
+            include_prediction = False
+            compute_match = False
+        else:
+            include_prediction = include_prediction
+            compute_match = not include_prediction
 
         progress_bar = tqdm(
             data_gen,
