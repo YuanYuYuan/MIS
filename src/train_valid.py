@@ -66,7 +66,9 @@ for stage in stages:
 
     if ROIs is None:
         ROIs = data_loader.ROIs
-reverter = Reverter(data_gen)
+
+# FIXME
+reverter = Reverter(data_gen['valid'])
 
 # - GPUs
 os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
