@@ -11,7 +11,7 @@ from training.model_handler import ModelHandler
 from training.runner import Runner
 from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
-import torch
+import json
 from tqdm import tqdm
 from utils import get_tty_columns
 import numpy as np
@@ -230,6 +230,12 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             ))
             if logger is not None:
                 logger.add_scalars('roi_scores', roi_scores, epoch)
+                file_path = os.path.join(
+                    logger.log_dir,
+                    '%02d-%.5f.json' % (epoch, roi_scores['mean'])
+                )
+                with open(file_path, 'w') as f:
+                    json.dump(scores, f, indent=2)
 
             # update metric for learning rate scheduler
             if scheduler and scheduler.use_reduce_lr:
