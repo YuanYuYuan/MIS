@@ -6,7 +6,7 @@ Total 4 classes: background, brainstem, left/right parotids
 Note that this script is for inference only.
 Hence, no label information required. But if you have label of images
 and want to evaluate the performance, or further training based on the model,
-please see [here](../../exp/bs-ptd-nrrd).
+please see https://github.com/YuanYuYuan/MIS/tree/master/exp/bs-ptd-nrrd[here].
 
 == Latest results
 
@@ -21,7 +21,7 @@ please see [here](../../exp/bs-ptd-nrrd).
 
 === Prerequisites
 
-Check the link:../../README.md[installation] if needed.
+Check the https://github.com/YuanYuYuan/MIS#prerequisites[installation] if needed.
 
 === Download the trained model
 
