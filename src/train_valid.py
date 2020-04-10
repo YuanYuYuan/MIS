@@ -196,22 +196,22 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
             # revert the matching dice score to the whole one from batches
             scores = dict()
-            with tqdm(
+            progress_bar = tqdm(
                 reverter.on_batches(result_list),
                 total=len(reverter.data_list),
                 dynamic_ncols=True,
                 ncols=get_tty_columns(),
                 desc='[Data index]'
-            ) as progress_bar:
-                for reverted in progress_bar:
-                    data_idx = reverted['idx']
-                    scores[data_idx] = reverted['score']
-                    info = '[%s] ' % data_idx
-                    info += ', '.join(
-                        '%s: %.3f' % (key, val)
-                        for key, val in scores[data_idx].items()
-                    )
-                    progress_bar.set_description(info)
+            )
+            for reverted in progress_bar:
+                data_idx = reverted['idx']
+                scores[data_idx] = reverted['score']
+                info = '[%s] ' % data_idx
+                info += ', '.join(
+                    '%s: %.3f' % (key, val)
+                    for key, val in scores[data_idx].items()
+                )
+                progress_bar.set_description(info)
 
             # summerize roi score
             roi_scores = {
@@ -263,7 +263,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     )
 
     # adjust learning rate by epoch
-    if scheduler:
+    if scheduler and not terminated:
 
         if scheduler.use_reduce_lr and stage == 'valid' and scheduler_metric:
             scheduler.step(metric=scheduler_metric)
