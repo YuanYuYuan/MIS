@@ -1,29 +1,17 @@
 # Brainstem & Parotids Segmentation
 
-## Prepare dataset
+This is a sample script for segmentation on brainstem and parotids
+based on framework v2.
 
-Place your dataset folder in here and name it as __data__. Or you may
-directly create a link to the folder like this.
+## Validation performance on PDDCA dataset
 
-```bash
-ln -s YOUR_DATASET data
+```yaml
+Brainstem : 0.879390329990884
+Parotid_L : 0.7646160997046699
+Parotid_R : 0.7855193317156853
+mean      : 0.8098419204704131
 ```
-
-## Download the trained model
-
 
 ## Usage
 
-### Training
-
-```bash
-cd training
-make retrain CKPT=MODEL_CHECKPOINT
-```
-
-### Evaluation
-
-```bash
-cd evaluation
-make evaluate CKPT=MODEL_CHECKPOINT
-```
+Click [here](https://yuanyuyuan.github.io/MIS/depolyment/bs-ptd-v2/)

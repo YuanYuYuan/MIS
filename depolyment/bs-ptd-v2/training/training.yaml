@@ -1,8 +1,7 @@
 gpus: 0,1
 epochs: 1000
-validation_frequency: 1
-early_stopping_epochs: 15
-output_threshold: 0.3
+validation_frequency: 4
+early_stopping_epochs: 10
 data: data_list.yaml
 
 generator:
@@ -17,15 +16,15 @@ generator:
       ratios       : [0.3, 1, 1, 1]
       verbose      : False
 
-    Augmentor      :                  # do preprocessing and data augmentation
-      # zoom_range   : [0.8, 1.2]       # zoom the image/label with some scale in range, note that it only apply on x-y plane
-      # flip         : True             # flip the image/only on x-y plane with a fixed probability 0.5
-      # transpose    : False             # transpose the image/label on x-y plane with a fixed probability 0.5
-      noise        : True             # add a Gaussian noise with mean 0 and sigam 0.05 on the image
-      window_width : 100        # adjust the contrast with the given window width(or a range), default : 100
-      window_level : 50         # adjust the contrast with the given window level(or a range), default : 50
-      n_workers    : 2                # number of multi-thread workers
-      verbose      : False            # toggle the debug info of this generator
+    Augmentor      :
+      # zoom_range   : [0.8, 1.2]
+      # flip         : True
+      # transpose    : False
+      noise        : True
+      window_width : 100
+      window_level : 50
+      n_workers    : 2
+      verbose      : False
 
     BatchGenerator :
       batch_size   : 12
@@ -42,11 +41,11 @@ generator:
       ordered      : True
       verbose      : False
 
-    Augmentor      :                  # do preprocessing and data augmentation
-      window_width : 100              # adjust the contrast with the given window width(or a range), default : 100
-      window_level : 50               # adjust the contrast with the given window level(or a range), default : 50
-      n_workers    : 1                # number of multi-thread workers
-      verbose      : False            # toggle the debug info of this generator
+    Augmentor      :
+      window_width : 100
+      window_level : 50
+      n_workers    : 1
+      verbose      : False
 
     BatchGenerator :
       batch_size   : 36

@@ -9,7 +9,7 @@ evaluate:
 	@ make -C ./evaluation evaluate CKPT=../$(CKPT)
 
 predict:
-	@ make -C ./evaluation predic CKPT=../$(CKPT)
+	@ make -C ./evaluation predict CKPT=../$(CKPT)
 
 train:
 	@ make -C ./training retrain CKPT=../$(CKPT)

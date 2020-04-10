@@ -4,7 +4,6 @@ amount:
   train: 33
   valid: 15
 list:
-  test: []
   train:
   - 0522c0001
   - 0522c0003

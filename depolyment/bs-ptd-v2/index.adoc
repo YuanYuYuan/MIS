@@ -6,8 +6,8 @@
 
 === Prepare dataset
 
-Place your dataset folder in here and name it as __data__. Or you may
-directly create a link to the folder like this.
+Place your dataset folder in here(_MIDP/depolyment/ps-ptd-v2_) and name it as __data__. +
+Or you may directly create a link to the folder like this.
 
 ```bash
 ln -s YOUR_DATASET data
@@ -93,6 +93,8 @@ It will download a model checkpoint which achieved the performance as below.
 
 === Training
 
+Continue training with the trained model.
+
 [source, bash, linenums]
 ----
 make train
@@ -115,17 +117,30 @@ the condition is harder(the model makes prediction without considering threshold
 
 === Evaluation
 
+Directly evaluate the performance with the trained model checkpoint.
+
 [source, bash, linenums]
 ----
 make evaluate
 ----
 
+Evaluate the performance with a newly trained checkpoint.
+
+[source, bash, linenums]
+----
+make evaluate CKPT=training/_ckpts/SOME_BETTER_CHECKPOINT
+----
+
 .Evaluating
 image::./pics/evaluating.png[align="center"]
 
-[NOTE]
-There will be a gap between the validation score and the evaluation one since
-the condition is harder(make prediction without applying threshold).
+[TIP]
+One can observe the gap between the score of each batch(before reconstruction)
+and the evaluation one(after reconstruction,
+true dice score enclosed in *===== Restored =====*).
+Since there are additional processings like applying threshold
+, averaging the overlapping predictions, the performance will be
+better.
 
 The output result will be exported as _evaluation/score.json_.
 
@@ -146,4 +161,11 @@ For example,
   },
                 ⋮
 }
+----
+
+Besides making inference, save the predictions and store them into NRRD.
+
+[source, bash, linenums]
+----
+make predict
 ----
