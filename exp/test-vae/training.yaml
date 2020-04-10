@@ -2,7 +2,6 @@ gpus: 6,7
 epochs: 1000
 validation_frequency: 4
 early_stopping_epochs: 10
-output_threshold: 0.5
 data: data_list.yaml
 
 generator:
@@ -59,29 +58,14 @@ generator:
       n_workers    : 2
       verbose      : False
 
-# model:
-#   name          : VNet
-#   in_channels   : 1
-#   base_channels : 16
-#   kernel_size   : 5
-#   depth         : 4
-#   n_labels      : 4
-#   n_dim         : 3
-#   in_shape      : [128, 128, 30]
-#   out_shape     : [96, 96, 20]
-#   norm          : BatchNorm
-#   block_type    : 2
-#   attention     : True
-
 model: './vae_model.json5'
 meter: './vae_meter.json5'
 
 optimizer:
-  name     : Adam
-  # name     : SGD
+  name     : AdamW
   lr       : 0.0001
 
-# scheduler:
-#   T_mult   : 1
-#   T_up     : 10
-#   T_0      : 40
+scheduler:
+  T_mult   : 1
+  T_up     : 10
+  T_0      : 40

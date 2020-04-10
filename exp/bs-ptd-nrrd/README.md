@@ -70,6 +70,7 @@ model: ...
 make train
 ```
 
+
 ### Validate only
 
 ```bash
@@ -81,6 +82,7 @@ make validate CKPT=MODEL_CHECKPOINT
 ```bash
 make retrain CKPT=MODEL_CHECKPOINT
 ```
+
 
 ### Make inference
 
@@ -101,3 +103,16 @@ Run the following command and open http://localhost:6006 in browser.
 ```bash
 make log
 ```
+
+### Speed comparison
+
+Toggle the `resample` option in _data_list.yaml_ would trigger the resampling on the raw data w.r.t the value `spacing`.
+Note that the running speed would be slow down if resampling is on.
+
+Without resampling
+
+![NAME](./pic/training.png)
+
+With resampling
+
+![NAME](./pic/training-with-resampling.png)
