@@ -8,7 +8,7 @@ import os
 from utils import Trainer, Validator, epoch_info, ROIScoreWriter, EarlyStopper
 import yaml
 from training.optimizers import Optimizer
-from training.scheduler import CosineAnnealingWarmUpRestarts as Scheduler
+from training.scheduler import Scheduler
 from MIDP import DataLoader, DataGenerator
 import models
 
@@ -89,12 +89,9 @@ optimizer = Optimizer(config['optimizer'])(model)
 if 'scheduler' in config:
     scheduler = Scheduler(
         optimizer,
-        T_0=config['scheduler']['T_0'],
-        T_mult=config['scheduler']['T_mult'],
-        eta_max=config['optimizer']['lr'],
-        T_up=config['scheduler']['T_up'],
-        gamma=0.5
+        **config['scheduler']
     )
+    assert scheduler.mode == 'max'
 else:
     scheduler = None
 
@@ -153,6 +150,7 @@ if config['early_stopping_epochs'] > 1:
 else:
     early_stopper = None
 
+scheduler_metric = None
 for epoch in range(config['epochs']):
 
     try:
@@ -164,10 +162,6 @@ for epoch in range(config['epochs']):
         # train an epoch
         loss, accu = trainer.run(data_gen['train'])
 
-        # adjust learning rate by epoch
-        if scheduler is not None:
-            scheduler.step()
-
         # epoch summary
         print('Avg Loss: %.5f, Avg Accu: %.5f' % (loss, accu))
         if logger is not None:
@@ -178,6 +172,10 @@ for epoch in range(config['epochs']):
 
             # get validation score
             val_score = validator.run(data_gen['valid'])
+
+            # update metric for learning rate scheduler
+            if scheduler and scheduler.use_reduce_lr:
+                scheduler_metric = val_score['avg']
 
             # logging
             if logger is not None:
@@ -223,6 +221,13 @@ for epoch in range(config['epochs']):
                             'loss': loss,
                             'step': trainer.global_step
                         }, file_path)
+
+        # adjust learning rate by epoch
+        if scheduler:
+            if scheduler.use_reduce_lr and scheduler_metric:
+                scheduler.step(metric=scheduler_metric)
+            else:
+                scheduler.step()
 
     except KeyboardInterrupt:
 
