@@ -127,6 +127,7 @@ else:
 # main running loop
 terminated = False
 scheduler_metric = None
+stage_info = {'train': 'Training', 'valid': 'Validating'}
 for epoch in range(init_epoch, init_epoch + config['epochs']):
 
     if terminated:
@@ -147,7 +148,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             result_list = runner.run(
                 data_gen[stage],
                 training=training,
-                stage='Training' if training else 'Validating'
+                stage=stage_info[stage]
             )
 
         except KeyboardInterrupt:
@@ -187,9 +188,21 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         # record the performance
         if logger is not None:
             for key, val in result.items():
-                logger.add_scalar('%s/epoch/%s' % (stage, key), val, epoch)
-            logger.add_scalar('%s/epoch/mean_accu' % stage, mean_accu, epoch)
-            logger.add_scalars('%s/epoch/accu' % stage, accu_dict, epoch)
+                logger.add_scalar(
+                    '%s/epoch/%s' % (stage_info[stage], key),
+                    val,
+                    epoch
+                )
+            logger.add_scalar(
+                '%s/epoch/mean_accu' % stage_info[stage],
+                mean_accu,
+                epoch
+            )
+            logger.add_scalars(
+                '%s/epoch/accu' % stage_info[stage],
+                accu_dict,
+                epoch
+            )
 
         # do some stuffs depending on validation
         if stage == 'valid':
@@ -215,7 +228,9 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
             # summerize roi score
             roi_scores = {
-                roi: np.mean([scores[data_idx][roi] for data_idx in scores])
+                roi: np.mean([
+                    scores[data_idx][roi] for data_idx in scores
+                ])
                 for roi in ROIs
             }
             roi_scores.update({
@@ -231,7 +246,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             if logger is not None:
                 logger.add_scalars('roi_scores', roi_scores, epoch)
                 file_path = os.path.join(
-                    logger.log_dir,
+                    args.log_dir,
                     '%02d-%.5f.json' % (epoch, roi_scores['mean'])
                 )
                 with open(file_path, 'w') as f:
