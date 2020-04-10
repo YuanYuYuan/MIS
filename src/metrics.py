@@ -129,9 +129,12 @@ def dice_loss(
         batch_wise=batch_wise,
         smooth=smooth,
     )
-    if weight is not None:
-        assert len(score) == len(weight), (len(score), len(weight))
-        score *= weight
+
+    # TODO: implement it, and weight by frequency
+    # if weight is not None:
+    #     assert len(score) == len(weight), (len(score), len(weight))
+    #     score *= weight
+
     return 1 - score.mean()
 
 
