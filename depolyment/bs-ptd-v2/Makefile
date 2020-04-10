@@ -1,4 +1,4 @@
-MODEL_ID = "1E2Qbekb1mts_uOPiIA93EtUDYfXzS445"
+MODEL_ID = "1Yt0N2ipPMnOsVuX9s2gDhfJDUC6nAgJx"
 CKPT = 'model_checkpoint.pt'
 
 download_model:
@@ -9,3 +9,6 @@ evaluate:
 	@ cd ./evaluation
 	@ make evaluate CKPT=$(CKPT)
 
+train:
+	@ cd ./training
+	@ make retrain CKPT=$(CKPT)
