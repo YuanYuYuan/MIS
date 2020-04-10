@@ -1,6 +1,6 @@
 gpus: 0,1
 epochs: 1000
-validation_frequency: 4
+validation_frequency: 1
 early_stopping_epochs: 10
 data: data_list.yaml
 

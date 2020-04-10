@@ -169,3 +169,10 @@ Besides making inference, save the predictions and store them into NRRD.
 ----
 make predict
 ----
+
+The outputs will be stored in the folder _evaluation/outputs_.
+
+[NOTE]
+The process may be slow due to resampling twice before/after inference.
+And the current workflow will store the predictions of all cases
+and then do reconstruction, the memory usage might be large.
