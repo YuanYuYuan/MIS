@@ -1,4 +1,4 @@
-SRC_DIR := $$(pwd | sed 's/\(.*\)exp\/.*/\1src/')
+SRC_DIR := $$(pwd | sed 's/\(.*\)MIS\/.*/\1MIS\/src/')
 
 ## Verbose
 VERBOSE=0
