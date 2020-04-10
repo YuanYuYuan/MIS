@@ -582,8 +582,8 @@ performance on the testing data.
 <thead>
 <tr>
 <th class="tableblock halign-left valign-top">Brainstem</th>
-<th class="tableblock halign-left valign-top">Parotid_L</th>
-<th class="tableblock halign-left valign-top">Parotid_R</th>
+<th class="tableblock halign-left valign-top">Left Parotid</th>
+<th class="tableblock halign-left valign-top">Right Parotid</th>
 <th class="tableblock halign-left valign-top">Average</th>
 </tr>
 </thead>
@@ -716,13 +716,30 @@ better.
 <pre class="highlight"><code class="language-bash" data-lang="bash">make predict</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>The outputs will be stored in the folder <em>evaluation/outputs</em>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The process may be slow due to resampling twice before/after inference.
+And the current workflow will store the predictions of all cases
+and then do reconstruction, the memory usage might be large.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-11 04:40:12 +0800
+Last updated 2020-04-11 05:22:15 +0800
 </div>
 </div>
 </body>

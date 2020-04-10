@@ -83,7 +83,7 @@ It will download a model checkpoint which achieved the performance as below.
 .Validation performance on PDDCA dataset
 [options="header"]
 |===
-| Brainstem | Parotid_L | Parotid_R | Average
+| Brainstem | Left Parotid | Right Parotid | Average
 
 | 0.879390329990884
 | 0.7646160997046699
