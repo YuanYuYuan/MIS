@@ -6,7 +6,7 @@
 
 === Prepare dataset
 
-Place your dataset folder in here(_MIDP/depolyment/ps-ptd-v2_) and name it as __data__. +
+Place your dataset folder in here(_MIS/depolyment/ps-ptd-v2_) and name it as __data__. +
 Or you may directly create a link to the folder like this.
 
 ```bash
