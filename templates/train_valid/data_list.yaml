@@ -77,6 +77,6 @@ loader:
     Brainstem: 1
     Parotid_L: 2
     Parotid_R: 3
-  # test: true
+  test: false
+  # resample: true
   # spacing: 1
-  # resample: false
