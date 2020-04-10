@@ -151,6 +151,7 @@ class Validator:
                 roi_score = compute_dice(
                     torch.sum(results['match'][:partition_per_data], 0),
                     torch.sum(results['total'][:partition_per_data], 0),
+                    smooth=1e-5,
                 )
                 # exclude background
                 roi_score = roi_score[1:]

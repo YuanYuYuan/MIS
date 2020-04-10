@@ -64,7 +64,6 @@ class Trainer:
         else:
             self.model = self.model.cuda()
 
-
     def train(self, batch):
         with torch.set_grad_enabled(True):
             self.model.train()
@@ -84,7 +83,7 @@ class Trainer:
 
             return loss, accu
 
-    def run(self, data_gen, epoch):
+    def run(self, data_gen):
 
         running_loss = 0.0
         running_accu = 0.0
@@ -126,6 +125,5 @@ class Trainer:
 
         running_loss /= n_steps
         running_accu /= n_steps
-
 
         return running_loss, running_accu

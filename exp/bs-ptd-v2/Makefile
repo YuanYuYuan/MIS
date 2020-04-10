@@ -31,29 +31,17 @@ TRAIN_FLAGS += --pause-ckpt $(PAUSE_CKPT)
 
 run: clean train
 
-test:
-	@echo "===== Small data test ====="
-	$(EXECUTOR) $(SRC_DIR)/train.py $(TRAIN_FLAGS) --test
-
 train:
 	@echo "===== Training... ====="
-	$(EXECUTOR) $(SRC_DIR)/train.py $(TRAIN_FLAGS)
+	$(EXECUTOR) $(SRC_DIR)/train_valid.py $(TRAIN_FLAGS)
 
 retrain:
 	@echo "===== Training... ====="
-	$(EXECUTOR) $(SRC_DIR)/train.py $(TRAIN_FLAGS) --checkpoint $(CKPT)
+	$(EXECUTOR) $(SRC_DIR)/train_valid.py $(TRAIN_FLAGS) --checkpoint $(CKPT)
 
 continue:
 	@echo "===== Training... ====="
-	$(EXECUTOR) $(SRC_DIR)/train.py $(TRAIN_FLAGS) --checkpoint $(PAUSE_CKPT)
-
-validate:
-	@echo "===== Validating... ====="
-	$(EXECUTOR) $(SRC_DIR)/train.py $(TRAIN_FLAGS) --checkpoint $(CKPT) --validate-only
-
-infer:
-	@echo "===== Infering... ====="
-	$(EXECUTOR) $(SRC_DIR)/infer.py --config $(INFERING_CONFIG)
+	$(EXECUTOR) $(SRC_DIR)/train_valid.py $(TRAIN_FLAGS) --checkpoint $(PAUSE_CKPT)
 
 log:
 	@echo "===== Launch Tensorboard ====="

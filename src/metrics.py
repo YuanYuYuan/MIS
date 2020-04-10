@@ -1,5 +1,15 @@
 import torch
 import torch.nn.functional as F
+import math
+
+def VAE_KLD(latent_dist):
+    mean, std = latent_dist
+    std_square = std**2
+    return torch.mean(mean**2 + std_square - torch.log(1e-10+std_square) - 1)
+
+
+def VAE_L2(images, reconstructions):
+    return torch.mean((images - reconstructions)**2)
 
 
 '''
@@ -23,7 +33,17 @@ def mixed_dice_loss(logits, labels, *args):
     return dice * ce + (1 - dice) * dice
 
 
-def match_up(logits, labels, needs_softmax=True, batch_wise=False):
+def match_up(
+    logits,
+    labels,
+    needs_softmax=True,
+    batch_wise=False,
+    threshold=0.
+):
+
+    # requires torch tensors
+    assert isinstance(logits, torch.Tensor)
+    assert isinstance(labels, torch.Tensor)
 
     probas = F.softmax(logits, dim=1) if needs_softmax else logits
     n_classes = logits.shape[1]
@@ -45,9 +65,14 @@ def match_up(logits, labels, needs_softmax=True, batch_wise=False):
     labels = F.one_hot(labels, n_classes).permute(permute_dim).float()
     assert probas.shape == labels.shape, (probas.shape, labels.shape)
 
-    # # dice score without background
-    # match = torch.sum(probas[:, 1:, ...] * labels[:, 1:, ...], sum_dim)
-    # total = torch.sum(probas[:, 1:, ...] + labels[:, 1:, ...], sum_dim)
+    # binarize the probas according to given threshold
+    # NOTE: there might be multiple classes be 1
+    if threshold > 0.:
+        probas = (probas > threshold).float()
+
+    # equivalent to apply argmax
+    elif threshold == -1:
+        probas = (probas > 1/n_classes).float()
 
     match = torch.sum(probas * labels, sum_dim)
     total = torch.sum(probas + labels, sum_dim)
@@ -55,24 +80,61 @@ def match_up(logits, labels, needs_softmax=True, batch_wise=False):
     return match, total
 
 
-def compute_dice(match, total, smooth=1):
+def compute_dice(match, total, smooth):
     return ((2. * match + smooth) / (total + smooth))
 
 
-def dice_score(logits, labels, smooth=1, exclude_background=True):
-    match, total = match_up(logits, labels, needs_softmax=True)
-    multi_class_score = compute_dice(match, total, smooth=smooth)
+def dice_score(
+    logits,
+    labels,
+    smooth=1e-5,
+    exclude_background=True,
+    threshold=0.,
+    exclude_blank=False,
+    batch_wise=False,
+):
+    if exclude_blank and labels.sum() == 0:
+        multi_class_score = torch.tensor([math.nan]*logits.shape[1])
+
+    else:
+        match, total = match_up(
+            logits,
+            labels,
+            needs_softmax=True,
+            threshold=threshold,
+            batch_wise=batch_wise,
+        )
+        multi_class_score = compute_dice(match, total, smooth=smooth)
+        if batch_wise:
+            multi_class_score = torch.mean(multi_class_score, dim=0)
+
     if exclude_background:
         return multi_class_score[1:]
     else:
         return multi_class_score
 
 
-def dice_loss(logits, labels, weight=None):
-    score = dice_score(logits, labels, exclude_background=True)
-    if weight is not None:
-        assert len(score) == len(weight), (len(score), len(weight))
-        score *= weight
+def dice_loss(
+    logits,
+    labels,
+    weight=None,
+    exclude_background=True,
+    batch_wise=False,
+    smooth=1e-5,
+):
+    score = dice_score(
+        logits,
+        labels,
+        exclude_background=exclude_background,
+        batch_wise=batch_wise,
+        smooth=smooth,
+    )
+
+    # TODO: implement it, and weight by frequency
+    # if weight is not None:
+    #     assert len(score) == len(weight), (len(score), len(weight))
+    #     score *= weight
+
     return 1 - score.mean()
 
 

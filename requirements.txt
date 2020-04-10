@@ -1,5 +1,6 @@
 git+https://github.com/YuanYuYuan/MIDP
 tensorflow-gpu
+tensorboardX
 prettytable
 torch
 torchvision

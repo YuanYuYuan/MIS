@@ -1,0 +1,48 @@
+gpus: 0
+output_threshold: 0.2
+output_dir: outputs
+model_weight: model.pt
+
+loader:
+  name: NRRDLoader
+  data_dir: data
+  roi_map:
+    Brainstem: 1
+    Parotid_L: 2
+    Parotid_R: 3
+  spacing: 1
+  test: false
+  resample: false
+
+generator:
+  BlockGenerator :
+    block_shape  : [128, 128, 30]
+    out_shape    : [96, 96, 20]
+    n_workers    : 4
+    ordered      : True
+    verbose      : False
+
+  Augmentor      :
+    window_width : 100
+    window_level : 50
+    n_workers    : 2
+    verbose      : False
+
+  BatchGenerator :
+    n_workers    : 1
+    batch_size   : 12
+    verbose      : False
+
+model:
+  name          : VNet
+  in_channels   : 1
+  base_channels : 16
+  kernel_size   : 5
+  depth         : 4
+  n_labels      : 4
+  n_dim         : 3
+  in_shape      : [128, 128, 30]
+  out_shape     : [96, 96, 20]
+  norm          : BatchNorm
+  block_type    : 2
+  attention     : True

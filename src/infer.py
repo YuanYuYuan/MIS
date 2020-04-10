@@ -106,7 +106,7 @@ with torch.set_grad_enabled(False):
                 partition_counter += data_gen.struct['BG'].batch_size
 
             # save prediction
-            prediction = PG.restore(
+            prediction = PG.revert(
                 data_idx,
                 results[:partition_per_data]
             )

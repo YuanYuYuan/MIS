@@ -15,4 +15,4 @@ class NewVNet(nn.Module):
         )
 
     def forward(self, x):
-        return self.op(x)
+        return self.op(x)[0]

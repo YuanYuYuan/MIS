@@ -1,0 +1,34 @@
+# gpus: 2,3
+gpus: 3
+# data: train_list.yaml
+# data: valid_list.yaml
+data: ./valid_raw.yaml
+
+include_prediction: true
+output_threshold: 0.3
+
+generator:
+  BlockGenerator :
+    block_shape  : [96, 96, 96]
+    stride       : 48
+    # out_shape    : [96, 96, 20]
+    # crop_shape   : [256, 256, -1]
+    crop_shape   : [160, 120, -1]
+    n_workers    : 4
+    ordered      : True
+    verbose      : False
+
+  Augmentor      :
+    window_width : 100
+    window_level : 50
+    n_workers    : 1
+    verbose      : False
+
+  BatchGenerator :
+    # batch_size   : 48
+    batch_size   : 24
+    n_workers    : 1
+    verbose      : False
+
+model: './model.json5'
+meter: './meter.json5'

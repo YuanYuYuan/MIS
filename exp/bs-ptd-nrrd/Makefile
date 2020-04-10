@@ -1,1 +1,1 @@
-../Makefile
+../../utils/legacy.make
