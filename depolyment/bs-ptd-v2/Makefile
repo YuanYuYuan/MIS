@@ -6,9 +6,10 @@ download_model:
 	@ ../../utils/download_large_file_from_google_drive.sh $(MODEL_ID) $(CKPT)
 
 evaluate:
-	@ cd ./evaluation
-	@ make evaluate CKPT=$(CKPT)
+	@ make -C ./evaluation evaluate CKPT=../$(CKPT)
+
+predict:
+	@ make -C ./evaluation predic CKPT=../$(CKPT)
 
 train:
-	@ cd ./training
-	@ make retrain CKPT=$(CKPT)
+	@ make -C ./training retrain CKPT=../$(CKPT)

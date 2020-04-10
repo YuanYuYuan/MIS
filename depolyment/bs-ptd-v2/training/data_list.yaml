@@ -55,21 +55,6 @@ list:
   - 0522c0598
   - 0522c0708
   - 0522c0857
-  - 0522c0002
-  - 0522c0014
-  - 0522c0057
-  - 0522c0077
-  - 0522c0125
-  - 0522c0161
-  - 0522c0226
-  - 0522c0248
-  - 0522c0330
-  - 0522c0427
-  - 0522c0433
-  - 0522c0479
-  - 0522c0598
-  - 0522c0708
-  - 0522c0857
 loader:
   name: NRRDLoader
   data_dir: ../data
@@ -77,5 +62,5 @@ loader:
     Brainstem: 1
     Parotid_L: 2
     Parotid_R: 3
-  # spacing: 1
-  # resample: false
+  spacing: 1
+  resample: true
