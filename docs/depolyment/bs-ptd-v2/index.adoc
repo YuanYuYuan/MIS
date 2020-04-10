@@ -1,0 +1,178 @@
+= Brainstem & Parotids Segmentation V2
+:toc: left
+:icons: font
+
+== Prerequisites
+
+=== Prepare dataset
+
+Place your dataset folder in here(_MIDP/depolyment/ps-ptd-v2_) and name it as __data__. +
+Or you may directly create a link to the folder like this.
+
+```bash
+ln -s YOUR_DATASET data
+```
+
+=== Set the data list
+
+==== For training/validation, please modify _training/data_list.yaml_.
+
+[source, yaml, linenums]
+----
+amount:
+  test: 0
+  total: 48
+  train: 33
+  valid: 15
+list:                   // <1>
+  train:
+  - 0522c0001
+      ⋮
+  valid:
+  - 0522c0002
+      ⋮
+loader:
+  name: NRRDLoader
+  data_dir: ../data
+  roi_map:
+    Brainstem: 1
+    Parotid_L: 2
+    Parotid_R: 3
+  spacing: 1
+  resample: true
+----
+<1> Fill in the training/validation data list with the name of each case.
+
+For evaluation, please modify _evaluation/data_list.yaml_.
+
+
+[source, yaml, linenums]
+----
+list:
+- 0522c0002            // <1>
+    ⋮
+loader:
+  name: NRRDLoader
+  data_dir: ../data
+  roi_map:
+    Brainstem: 1
+    Parotid_L: 2
+    Parotid_R: 3
+  spacing: 1
+  resample: true
+----
+<1> Fill in the data list to be evaluated with the name of each case.
+
+[TIP]
+Note that you can split the dataset to training/validation/testing three parts.
+Train the model on training data, choose the best model in checkpoints
+according to the performance on the validation data, and finally evaluate the
+performance on the testing data.
+
+== Usage
+
+=== Download the trained model
+
+[source, bash, linenums]
+----
+make download_model
+----
+
+It will download a model checkpoint which achieved the performance as below.
+
+.Validation performance on PDDCA dataset
+[options="header"]
+|===
+| Brainstem | Left Parotid | Right Parotid | Average
+
+| 0.879390329990884
+| 0.7646160997046699
+| 0.7855193317156853
+| 0.8098419204704131
+|===
+
+=== Training
+
+Continue training with the trained model.
+
+[source, bash, linenums]
+----
+make train
+----
+
+.Training
+image::./pics/training.png[align="center"]
+
+[NOTE]
+The dice score here is computed with `smooth=1`(Laplacian smooth),
+which means the performance may be *overestimated*.
+But since this is early model trained with dice loss
+with `smooth=1`, and the checkpoint is selected according
+to the validation dice score with `smooth=1`,
+so we uses Laplacian smooth here the metrics here.
+
+[NOTE]
+There will be a gap between the validation score and the evaluation one since
+the condition is harder(the model makes prediction without considering threshold).
+
+=== Evaluation
+
+Directly evaluate the performance with the trained model checkpoint.
+
+[source, bash, linenums]
+----
+make evaluate
+----
+
+Evaluate the performance with a newly trained checkpoint.
+
+[source, bash, linenums]
+----
+make evaluate CKPT=training/_ckpts/SOME_BETTER_CHECKPOINT
+----
+
+.Evaluating
+image::./pics/evaluating.png[align="center"]
+
+[TIP]
+One can observe the gap between the score of each batch(before reconstruction)
+and the evaluation one(after reconstruction,
+true dice score enclosed in *===== Restored =====*).
+Since there are additional processings like applying threshold
+, averaging the overlapping predictions, the performance will be
+better.
+
+The output result will be exported as _evaluation/score.json_.
+
+For example,
+
+[source, json, linenums]
+----
+{
+  "0522c0002": {
+    "Brainstem": 0.9028694037020432,
+    "Parotid_L": 0.8119102638166763,
+    "Parotid_R": 0.7996425003943011
+  },
+  "0522c0014": {
+    "Brainstem": 0.8935291506648397,
+    "Parotid_L": 0.7024681698556086,
+    "Parotid_R": 0.7702638241661468
+  },
+                ⋮
+}
+----
+
+Besides making inference, save the predictions and store them into NRRD.
+
+[source, bash, linenums]
+----
+make predict
+----
+
+The outputs will be stored in the folder _evaluation/outputs_.
+
+[NOTE]
+The process may be slow due to resampling twice before/after inference.
+And the current workflow will store the predictions of all cases
+and then do reconstruction, the memory usage might be large.
