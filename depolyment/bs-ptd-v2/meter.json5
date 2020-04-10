@@ -3,19 +3,23 @@
     'loss_1': {
       'name': 'dice_loss',
       'batch_wise': true,
-      'exclude_background': true,
+      'smooth': 1.,
+      // 'exclude_background': false,
     },
     'loss_2': {'name': 'cross_entropy'},
     'loss_3': {'name': 'VAE_KLD'},
     'loss_4': {'name': 'VAE_L2'},
     'accu': {
-        'name': 'dice_score',
-        // 'threshold': 0.2,
-        'exclude_blank': true,
-        'batch_wise': true,
-        'smooth': 0.00001,
+      'name': 'dice_score',
+      'batch_wise': true,
+      'exclude_blank': true,
+      'smooth': 1.,
+      // 'threshold': 0.2,
     },
-    'sum': {'name': 'sum', 'weight': [1., 1., 0.1, 0.1]},
+    'sum': {
+      'name': 'sum',
+      'weight': [1., 1., 0.5, 0.5]
+    },
   },
   'links': {
     'inps': {
@@ -30,8 +34,8 @@
       'accu': 5,
       'KLD': 8,
       'L2': 9,
-      'ce':7,
-      'dice':6,
+      'CE':7,
+      'DICE':6,
     },
     'flow': {
       'accu': {'inps': [0, 3], 'outs': [5]},

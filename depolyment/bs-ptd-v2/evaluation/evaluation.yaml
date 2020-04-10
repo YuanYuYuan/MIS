@@ -1,5 +1,5 @@
 gpus: 0,1
-data: ./valid_list.yaml
+data: ./data_list.yaml
 
 include_prediction: true
 output_threshold: 0.3
@@ -25,5 +25,5 @@ generator:
     n_workers    : 1
     verbose      : False
 
-model: './model.json5'
-meter: './meter.json5'
+model: '../model.json5'
+meter: '../meter.json5'

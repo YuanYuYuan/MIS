@@ -16,11 +16,10 @@ list:
 - 0522c0857
 loader:
   name: NRRDLoader
-  data_dir: data
+  data_dir: ../data
   roi_map:
     Brainstem: 1
     Parotid_L: 2
     Parotid_R: 3
-  spacing: 1
-  test: false
-  resample: false
+  # spacing: 1
+  # resample: true

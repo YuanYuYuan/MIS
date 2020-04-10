@@ -53,8 +53,8 @@ generator:
       n_workers    : 1
       verbose      : False
 
-model: './model.json5'
-meter: './meter.json5'
+model: '../model.json5'
+meter: '../meter.json5'
 
 optimizer:
   name     : AdamW
