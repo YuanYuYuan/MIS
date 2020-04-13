@@ -39,9 +39,11 @@ loader:
     Parotid_L: 2
     Parotid_R: 3
   spacing: 1
-  resample: true
+  resample: true        // <2>
 ----
 <1> Fill in the training/validation data list with the name of each case.
+<2> If you're going to run the model on a dataset that has already been resampled, you may toggle off the `resample`. +
+    This way should accelerate the training.
 
 For evaluation, please modify _evaluation/data_list.yaml_.
 
@@ -59,9 +61,11 @@ loader:
     Parotid_L: 2
     Parotid_R: 3
   spacing: 1
-  resample: true
+  resample: true        // <2>
 ----
 <1> Fill in the data list to be evaluated with the name of each case.
+<2> If you're going to run the model on a dataset that has already been resampled, you may toggle off the `resample`. +
+    This way should accelerate the evaluation.
 
 [TIP]
 Note that you can split the dataset to training/validation/testing three parts.

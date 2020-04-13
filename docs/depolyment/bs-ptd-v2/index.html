@@ -501,7 +501,7 @@ loader:
     Parotid_L: 2
     Parotid_R: 3
   spacing: 1
-  resample: true</code></pre>
+  resample: true        <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -509,6 +509,11 @@ loader:
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
 <td>Fill in the training/validation data list with the name of each case.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>If you&#8217;re going to run the model on a dataset that has already been resampled, you may toggle off the <code>resample</code>.<br>
+This way should accelerate the training.</td>
 </tr>
 </table>
 </div>
@@ -528,7 +533,7 @@ loader:
     Parotid_L: 2
     Parotid_R: 3
   spacing: 1
-  resample: true</code></pre>
+  resample: true        <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -536,6 +541,11 @@ loader:
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
 <td>Fill in the data list to be evaluated with the name of each case.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>If you&#8217;re going to run the model on a dataset that has already been resampled, you may toggle off the <code>resample</code>.<br>
+This way should accelerate the evaluation.</td>
 </tr>
 </table>
 </div>
@@ -745,7 +755,7 @@ and then do reconstruction, the memory usage might be large.
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-11 05:47:49 +0800
+Last updated 2020-04-14 03:13:50 +0800
 </div>
 </div>
 </body>
