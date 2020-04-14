@@ -92,33 +92,6 @@ class ROIScoreWriter:
             f.write('\n')
 
 
-class EarlyStopper:
-
-    def __init__(self, patience):
-        self.patience = patience
-        self.n_stagnation = 0
-        self.best_score = 0.0
-
-    def check(self, score):
-        early_stop_or_not = False
-        improved = False
-
-        if score > self.best_score:
-            self.best_score = score
-            self.n_stagnation = 0
-            improved = True
-
-        elif score > self.best_score * 0.95:
-            pass
-
-        else:
-            self.n_stagnation += 1
-            if self.n_stagnation > self.patience:
-                early_stop_or_not = True
-
-        return early_stop_or_not, improved
-
-
 def load_config(config_file):
     file_ext = os.path.splitext(config_file)[-1].split('.')[-1]
     with open(config_file) as f:

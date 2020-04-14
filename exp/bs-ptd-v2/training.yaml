@@ -1,7 +1,6 @@
 gpus: 0,1
 epochs: 1000
 validation_frequency: 1
-early_stopping_epochs: 15
 output_threshold: 0.3
 data: data_list.yaml
 
@@ -65,3 +64,7 @@ scheduler:
   warmup: 10
   reduce_factor: 0.5
   patience: 50
+
+early_stopper:
+  mode: max
+  patience: 10

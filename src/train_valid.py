@@ -3,12 +3,9 @@ from tensorboardX import SummaryWriter
 import argparse
 import time
 import os
-from utils import epoch_info, EarlyStopper
+from utils import epoch_info
 import yaml
-from training.optimizers import Optimizer
-from training.scheduler import Scheduler
-from training.model_handler import ModelHandler
-from training.runner import Runner
+from training import Optimizer, Scheduler, EarlyStopper, ModelHandler, Runner
 from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
 import json
@@ -112,11 +109,10 @@ if checkpoint_dir:
     os.makedirs(checkpoint_dir, exist_ok=True)
 
 # early stopper
-if config['early_stopping_epochs'] > 1:
-    early_stopper = EarlyStopper(config['early_stopping_epochs'])
+if 'early_stopper' in config:
+    early_stopper = EarlyStopper(**config['early_stopper'])
 else:
     early_stopper = None
-
 
 # set proper initial epoch
 if model_handler.checkpoint is not None:
@@ -261,7 +257,11 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
             # check early stopping
             if early_stopper is not None:
-                early_stop, improved = early_stopper.check(roi_scores['mean'])
+                if early_stopper.mode == 'min':
+                    early_stopper_metric = result['loss']
+                else:
+                    early_stopper_metric = roi_scores['mean']
+                early_stop, improved = early_stopper.check(early_stopper_metric)
 
                 if early_stop:
                     print('Early stopped.')
@@ -272,7 +272,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     model_handler.save(
                         file_path=os.path.join(
                             checkpoint_dir,
-                            '%02d-%.5f.pt' % (epoch, roi_scores['mean'])
+                            '%02d-%.5f.pt' % (epoch, early_stopper_metric)
                         ),
                         additional_info={'epoch': epoch, 'step': runner.step}
                     )

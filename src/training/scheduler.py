@@ -50,7 +50,7 @@ class Scheduler(_LRScheduler):
         if self.best is None:
             return True
         elif self.mode == 'min':
-            return metric <= (self.best * threshold)
+            return (metric * threshold) <= self.best
         else:
             return metric >= (self.best * threshold)
 
