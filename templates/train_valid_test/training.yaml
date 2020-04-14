@@ -1,6 +1,6 @@
 gpus: 0,1,2,3
 epochs: 1000
-validation_frequency: 1
+validation_frequency: 4
 data: data_list.yaml
 
 generator:
