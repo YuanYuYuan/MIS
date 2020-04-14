@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.10">
-<title>Brainstem &amp; Parotids Segmentation V2</title>
+<title>PDDCA Brainstem and Parotids Segmentation</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -435,132 +435,80 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
-<body class="article toc2 toc-left">
+<body class="article">
 <div id="header">
-<h1>Brainstem &amp; Parotids Segmentation V2</h1>
-<div id="toc" class="toc2">
+<h1>PDDCA Brainstem and Parotids Segmentation</h1>
+<div id="toc" class="toc">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_prerequisites">Prerequisites</a>
+<li><a href="#_latest_results">Latest results</a></li>
+<li><a href="#_how_to_use">How to use</a>
 <ul class="sectlevel2">
-<li><a href="#_prepare_dataset">Prepare dataset</a></li>
-<li><a href="#_set_the_data_list">Set the data list</a></li>
-</ul>
-</li>
-<li><a href="#_usage">Usage</a>
-<ul class="sectlevel2">
+<li><a href="#_prerequisites">Prerequisites</a></li>
 <li><a href="#_download_the_trained_model">Download the trained model</a></li>
-<li><a href="#_training">Training</a></li>
-<li><a href="#_evaluation">Evaluation</a></li>
+<li><a href="#_check_the_data_format">Check the data format</a></li>
+<li><a href="#_configure_the_inference_behavior">Configure the inference behavior</a></li>
+<li><a href="#_make_inference">Make inference</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 <div id="content">
-<div class="sect1">
-<h2 id="_prerequisites">Prerequisites</h2>
+<div id="preamble">
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="_prepare_dataset">Prepare dataset</h3>
 <div class="paragraph">
-<p>Place your dataset folder in here(<em>MIDP/depolyment/ps-ptd-v2</em>) and name it as <em>data</em>.<br>
-Or you may directly create a link to the folder like this.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">ln -s YOUR_DATASET data</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_set_the_data_list">Set the data list</h3>
-<div class="sect3">
-<h4 id="_for_trainingvalidation_please_modify_trainingdata_list_yaml">For training/validation, please modify <em>training/data_list.yaml</em>.</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-yaml" data-lang="yaml">amount:
-  test: 0
-  total: 48
-  train: 33
-  valid: 15
-list:                   <i class="conum" data-value="1"></i><b>(1)</b>
-  train:
-  - 0522c0001
-      ⋮
-  valid:
-  - 0522c0002
-      ⋮
-loader:
-  name: NRRDLoader
-  data_dir: ../data
-  roi_map:
-    Brainstem: 1
-    Parotid_L: 2
-    Parotid_R: 3
-  spacing: 1
-  resample: true</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Fill in the training/validation data list with the name of each case.</td>
-</tr>
-</table>
+<p>Total 4 classes: background, brainstem, left/right parotids</p>
 </div>
 <div class="paragraph">
-<p>For evaluation, please modify <em>evaluation/data_list.yaml</em>.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-yaml" data-lang="yaml">list:
-- 0522c0002            <i class="conum" data-value="1"></i><b>(1)</b>
-    ⋮
-loader:
-  name: NRRDLoader
-  data_dir: ../data
-  roi_map:
-    Brainstem: 1
-    Parotid_L: 2
-    Parotid_R: 3
-  spacing: 1
-  resample: true</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Fill in the data list to be evaluated with the name of each case.</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-Note that you can split the dataset to training/validation/testing three parts.
-Train the model on training data, choose the best model in checkpoints
-according to the performance on the validation data, and finally evaluate the
-performance on the testing data.
-</td>
-</tr>
-</table>
-</div>
-</div>
+<p>Note that this script is for inference only.
+Hence, no label information required. But if you have label of images
+and want to evaluate the performance, or further training based on the model,
+please see <a href="https://github.com/YuanYuYuan/MIS/tree/master/exp/bs-ptd-nrrd">here</a>.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_usage">Usage</h2>
+<h2 id="_latest_results">Latest results</h2>
 <div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. Dice score of validation on PDDCA dataset (train/valid: 33/15)</caption>
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ROI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Brainstem</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Left Parotid</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Right Parotid</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Average</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Score</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.86830</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.75442</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.75059</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0.79111</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_to_use">How to use</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_prerequisites">Prerequisites</h3>
+<div class="paragraph">
+<p>Check the <a href="https://github.com/YuanYuYuan/MIS#prerequisites">installation</a> if needed.</p>
+</div>
+</div>
 <div class="sect2">
 <h3 id="_download_the_trained_model">Download the trained model</h3>
 <div class="listingblock">
@@ -569,151 +517,77 @@ performance on the testing data.
 </div>
 </div>
 <div class="paragraph">
-<p>It will download a model checkpoint which achieved the performance as below.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<caption class="title">Table 1. Validation performance on PDDCA dataset</caption>
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 25%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Brainstem</th>
-<th class="tableblock halign-left valign-top">Parotid_L</th>
-<th class="tableblock halign-left valign-top">Parotid_R</th>
-<th class="tableblock halign-left valign-top">Average</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0.879390329990884</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0.7646160997046699</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0.7855193317156853</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">0.8098419204704131</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_training">Training</h3>
-<div class="paragraph">
-<p>Continue training with the trained model.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make train</code></pre>
-</div>
-</div>
-<div class="imageblock text-center">
-<div class="content">
-<img src="./pics/training.png" alt="training">
-</div>
-<div class="title">Figure 1. Training</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-The dice score here is computed with <code>smooth=1</code>(Laplacian smooth),
-which means the performance may be <strong>overestimated</strong>.
-But since this is early model trained with dice loss
-with <code>smooth=1</code>, and the checkpoint is selected according
-to the validation dice score with <code>smooth=1</code>,
-so we uses Laplacian smooth here the metrics here.
-</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-There will be a gap between the validation score and the evaluation one since
-the condition is harder(the model makes prediction without considering threshold).
-</td>
-</tr>
-</table>
+<p>There will be a trained model weight downloaded and named as <em>model.pt</em>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_evaluation">Evaluation</h3>
+<h3 id="_check_the_data_format">Check the data format</h3>
 <div class="paragraph">
-<p>Directly evaluate the performance with the trained model checkpoint.</p>
+<p>The required data format is</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make evaluate</code></pre>
+<pre class="highlight"><code class="language-bash" data-lang="bash">DATA_DIR
+├── DATA_INDEX
+│   └──  img.nrrd
+...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configure_the_inference_behavior">Configure the inference behavior</h3>
+<div class="listingblock">
+<div class="title">infering.yaml</div>
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">gpus: 0                 &lt;-- YOU CAN SET "gpus: 0,1" IF THERE'RE TWO AVAILABE GPUS
+output_threshold: 0.2
+output_dir: outputs
+model_weight: model.pt
+
+loader:
+  name: NRRDLoader
+  data_dir: data        &lt;-- SPECIFY A DATA DIRECTORY
+  roi_map:
+    Brainstem: 1
+    Parotid_L: 2
+    Parotid_R: 3
+  spacing: 1
+  test: false
+  resample: false
+
+generator:
+  BlockGenerator : ...
+
+  Augmentor      : ...
+
+  BatchGenerator :
+    n_workers    : 1
+    batch_size   : 12      &lt;-- CHOOSE A PROPER BATCH SIZE
+    verbose      : False
+
+model: ...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_make_inference">Make inference</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">make infer</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Evaluate the performance with a newly trained checkpoint.</p>
+<p>The output results will be in NRRD format like</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make evaluate CKPT=training/_ckpts/SOME_BETTER_CHECKPOINT</code></pre>
-</div>
-</div>
-<div class="imageblock text-center">
-<div class="content">
-<img src="./pics/evaluating.png" alt="evaluating">
-</div>
-<div class="title">Figure 2. Evaluating</div>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-One can observe the gap between the score of each batch(before reconstruction)
-and the evaluation one(after reconstruction,
-true dice score enclosed in <strong>===== Restored =====</strong>).
-Since there are additional processings like applying threshold
-, averaging the overlapping predictions, the performance will be
-better.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>The output result will be exported as <em>evaluation/score.json</em>.</p>
-</div>
-<div class="paragraph">
-<p>For example,</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-json" data-lang="json">{
-  "0522c0002": {
-    "Brainstem": 0.9028694037020432,
-    "Parotid_L": 0.8119102638166763,
-    "Parotid_R": 0.7996425003943011
-  },
-  "0522c0014": {
-    "Brainstem": 0.8935291506648397,
-    "Parotid_L": 0.7024681698556086,
-    "Parotid_R": 0.7702638241661468
-  },
-                ⋮
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Besides making inference, save the predictions and store them into NRRD.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make predict</code></pre>
+<pre class="highlight"><code class="language-bash" data-lang="bash">OUTPUT_DIR
+├── DATA_INDEX
+│   └── structures
+│       ├── BrainStem.nrrd
+│       ├── Parotid_L.nrrd
+│       └── Parotid_R.nrrd
+...</code></pre>
 </div>
 </div>
 </div>
@@ -722,7 +596,7 @@ better.
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-11 04:40:12 +0800
+Last updated 2020-04-11 02:16:12 +0800
 </div>
 </div>
 </body>

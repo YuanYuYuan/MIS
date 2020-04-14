@@ -6,7 +6,7 @@
 
 === Prepare dataset
 
-Place your dataset folder in here(_MIDP/depolyment/ps-ptd-v2_) and name it as __data__. +
+Place your dataset folder in here(_MIS/depolyment/ps-ptd-v2_) and name it as __data__. +
 Or you may directly create a link to the folder like this.
 
 ```bash
@@ -39,9 +39,11 @@ loader:
     Parotid_L: 2
     Parotid_R: 3
   spacing: 1
-  resample: true
+  resample: true        // <2>
 ----
 <1> Fill in the training/validation data list with the name of each case.
+<2> If you're going to run the model on a dataset that has already been resampled, you may toggle off the `resample`. +
+    This way should accelerate the training.
 
 For evaluation, please modify _evaluation/data_list.yaml_.
 
@@ -59,9 +61,11 @@ loader:
     Parotid_L: 2
     Parotid_R: 3
   spacing: 1
-  resample: true
+  resample: true        // <2>
 ----
 <1> Fill in the data list to be evaluated with the name of each case.
+<2> If you're going to run the model on a dataset that has already been resampled, you may toggle off the `resample`. +
+    This way should accelerate the evaluation.
 
 [TIP]
 Note that you can split the dataset to training/validation/testing three parts.
@@ -83,7 +87,7 @@ It will download a model checkpoint which achieved the performance as below.
 .Validation performance on PDDCA dataset
 [options="header"]
 |===
-| Brainstem | Parotid_L | Parotid_R | Average
+| Brainstem | Left Parotid | Right Parotid | Average
 
 | 0.879390329990884
 | 0.7646160997046699
@@ -170,9 +174,14 @@ Besides making inference, save the predictions and store them into NRRD.
 make predict
 ----
 
+.Predicting
+image::./pics/predicting.png[align="center"]
+
 The outputs will be stored in the folder _evaluation/outputs_.
 
 [NOTE]
 The process may be slow due to resampling twice before/after inference.
 And the current workflow will store the predictions of all cases
 and then do reconstruction, the memory usage might be large.
+
+

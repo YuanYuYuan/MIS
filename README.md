@@ -20,3 +20,9 @@ pip install -r ./requirements.txt
 ### Prepare data
 
 See [here](https://github.com/YuanYuYuan/MIDP#prepare-data) for more details.
+
+## Deployments
+
+1. [Brainstem Parotids segmentation v1](https://yuanyuyuan.github.io/MIS/depolyments/bs-ptd/)
+2. [Brainstem Parotids segmentation v2](https://yuanyuyuan.github.io/MIS/depolyments/bs-ptd-v2/)
+
