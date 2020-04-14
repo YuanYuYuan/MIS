@@ -280,7 +280,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
     # adjust learning rate by epoch
     if scheduler and not terminated:
 
-        if scheduler.use_reduce_lr and stage == 'valid' and scheduler_metric:
+        if scheduler.use_reduce_lr and stage == 'valid' and scheduler_metric is not None:
             scheduler.step(metric=scheduler_metric)
         else:
             scheduler.step()
