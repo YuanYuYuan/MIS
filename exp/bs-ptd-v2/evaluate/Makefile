@@ -1,1 +1,1 @@
-../../../utils/evaluate.make
+../../../templates/evaluate/Makefile

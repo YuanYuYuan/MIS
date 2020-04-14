@@ -1,7 +1,6 @@
-gpus: 0,1
+gpus: 0,1,2,3
 epochs: 1000
 validation_frequency: 1
-early_stopping_epochs: 15
 data: data_list.yaml
 
 generator:
@@ -27,7 +26,7 @@ generator:
       verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
-      batch_size   : 12
+      batch_size   : 20
       n_workers    : 2
       verbose      : False
 
@@ -48,7 +47,7 @@ generator:
       verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
-      batch_size   : 36
+      batch_size   : 60
       n_workers    : 1
       verbose      : False
 

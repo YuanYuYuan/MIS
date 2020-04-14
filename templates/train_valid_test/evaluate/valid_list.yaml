@@ -1,0 +1,20 @@
+list:
+- 0522c0001
+- 0522c0014
+- 0522c0195
+- 0522c0248
+- 0522c0330
+- 0522c0555
+- 0522c0576
+- 0522c0667
+- 0522c0727
+loader:
+  name: NRRDLoader
+  data_dir: data
+  roi_map:
+    Brainstem: 1
+    Parotid_L: 2
+    Parotid_R: 3
+  # test: true
+  # spacing: 1
+  # resample: false
