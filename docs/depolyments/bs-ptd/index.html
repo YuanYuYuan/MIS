@@ -435,21 +435,22 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 #footer-text{color:rgba(0,0,0,.6);font-size:.9em}}
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
-<body class="article">
+<body class="article toc2 toc-left">
 <div id="header">
 <h1>PDDCA Brainstem and Parotids Segmentation</h1>
-<div id="toc" class="toc">
+<div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_latest_results">Latest results</a></li>
-<li><a href="#_how_to_use">How to use</a>
+<li><a href="#_latest_results">1. Latest results</a></li>
+<li><a href="#_how_to_use">2. How to use</a>
 <ul class="sectlevel2">
-<li><a href="#_prerequisites">Prerequisites</a></li>
-<li><a href="#_download_the_trained_model">Download the trained model</a></li>
-<li><a href="#_check_the_data_format">Check the data format</a></li>
-<li><a href="#_configure_the_inference_behavior">Configure the inference behavior</a></li>
-<li><a href="#_make_inference">Make inference</a></li>
+<li><a href="#_prerequisites">2.1. Prerequisites</a></li>
+<li><a href="#_download_the_trained_model">2.2. Download the trained model</a></li>
+<li><a href="#_check_the_data_format">2.3. Check the data format</a></li>
+<li><a href="#_configure_the_inference_behavior">2.4. Configure the inference behavior</a></li>
+<li><a href="#_make_inference">2.5. Make inference</a></li>
 </ul>
 </li>
 </ul>
@@ -461,6 +462,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="paragraph">
 <p>Total 4 classes: background, brainstem, left/right parotids</p>
 </div>
+<div class="sidebarblock">
+<div class="content">
 <div class="paragraph">
 <p>Note that this script is for inference only.
 Hence, no label information required. But if you have label of images
@@ -469,8 +472,10 @@ please see <a href="https://github.com/YuanYuYuan/MIS/tree/master/exp/bs-ptd-nrr
 </div>
 </div>
 </div>
+</div>
+</div>
 <div class="sect1">
-<h2 id="_latest_results">Latest results</h2>
+<h2 id="_latest_results"><a class="anchor" href="#_latest_results"></a><a class="link" href="#_latest_results">1. Latest results</a></h2>
 <div class="sectionbody">
 <table class="tableblock frame-all grid-all stretch">
 <caption class="title">Table 1. Dice score of validation on PDDCA dataset (train/valid: 33/15)</caption>
@@ -501,19 +506,19 @@ please see <a href="https://github.com/YuanYuYuan/MIS/tree/master/exp/bs-ptd-nrr
 </div>
 </div>
 <div class="sect1">
-<h2 id="_how_to_use">How to use</h2>
+<h2 id="_how_to_use"><a class="anchor" href="#_how_to_use"></a><a class="link" href="#_how_to_use">2. How to use</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_prerequisites">Prerequisites</h3>
+<h3 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a><a class="link" href="#_prerequisites">2.1. Prerequisites</a></h3>
 <div class="paragraph">
 <p>Check the <a href="https://github.com/YuanYuYuan/MIS#prerequisites">installation</a> if needed.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_download_the_trained_model">Download the trained model</h3>
-<div class="listingblock">
+<h3 id="_download_the_trained_model"><a class="anchor" href="#_download_the_trained_model"></a><a class="link" href="#_download_the_trained_model">2.2. Download the trained model</a></h3>
+<div class="literalblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make download_model</code></pre>
+<pre>make download_model</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -521,59 +526,59 @@ please see <a href="https://github.com/YuanYuYuan/MIS/tree/master/exp/bs-ptd-nrr
 </div>
 </div>
 <div class="sect2">
-<h3 id="_check_the_data_format">Check the data format</h3>
+<h3 id="_check_the_data_format"><a class="anchor" href="#_check_the_data_format"></a><a class="link" href="#_check_the_data_format">2.3. Check the data format</a></h3>
 <div class="paragraph">
 <p>The required data format is</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">DATA_DIR
+<pre class="rouge highlight"><code data-lang="console"><span class="go">DATA_DIR
 ├── DATA_INDEX
 │   └──  img.nrrd
-...</code></pre>
+</span><span class="c">...</span></code></pre>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configure_the_inference_behavior">Configure the inference behavior</h3>
+<h3 id="_configure_the_inference_behavior"><a class="anchor" href="#_configure_the_inference_behavior"></a><a class="link" href="#_configure_the_inference_behavior">2.4. Configure the inference behavior</a></h3>
 <div class="listingblock">
 <div class="title">infering.yaml</div>
 <div class="content">
-<pre class="highlight"><code class="language-yaml" data-lang="yaml">gpus: 0                 &lt;-- YOU CAN SET "gpus: 0,1" IF THERE'RE TWO AVAILABE GPUS
-output_threshold: 0.2
-output_dir: outputs
-model_weight: model.pt
+<pre class="rouge highlight"><code data-lang="yaml"><span class="na">gpus</span><span class="pi">:</span> <span class="s">0                 &lt;-- YOU CAN SET "gpus</span><span class="pi">:</span> <span class="s">0,1" IF THERE'RE TWO AVAILABE GPUS</span>
+<span class="na">output_threshold</span><span class="pi">:</span> <span class="m">0.2</span>
+<span class="na">output_dir</span><span class="pi">:</span> <span class="s">outputs</span>
+<span class="na">model_weight</span><span class="pi">:</span> <span class="s">model.pt</span>
 
-loader:
-  name: NRRDLoader
-  data_dir: data        &lt;-- SPECIFY A DATA DIRECTORY
-  roi_map:
-    Brainstem: 1
-    Parotid_L: 2
-    Parotid_R: 3
-  spacing: 1
-  test: false
-  resample: false
+<span class="na">loader</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">NRRDLoader</span>
+  <span class="na">data_dir</span><span class="pi">:</span> <span class="s">data        &lt;-- SPECIFY A DATA DIRECTORY</span>
+  <span class="na">roi_map</span><span class="pi">:</span>
+    <span class="na">Brainstem</span><span class="pi">:</span> <span class="m">1</span>
+    <span class="na">Parotid_L</span><span class="pi">:</span> <span class="m">2</span>
+    <span class="na">Parotid_R</span><span class="pi">:</span> <span class="m">3</span>
+  <span class="na">spacing</span><span class="pi">:</span> <span class="m">1</span>
+  <span class="na">test</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">resample</span><span class="pi">:</span> <span class="no">false</span>
 
-generator:
-  BlockGenerator : ...
+<span class="na">generator</span><span class="pi">:</span>
+  <span class="na">BlockGenerator </span><span class="pi">:</span> <span class="s">...</span>
 
-  Augmentor      : ...
+  <span class="na">Augmentor      </span><span class="pi">:</span> <span class="s">...</span>
 
-  BatchGenerator :
-    n_workers    : 1
-    batch_size   : 12      &lt;-- CHOOSE A PROPER BATCH SIZE
-    verbose      : False
+  <span class="na">BatchGenerator </span><span class="pi">:</span>
+    <span class="na">n_workers    </span><span class="pi">:</span> <span class="m">1</span>
+    <span class="na">batch_size   </span><span class="pi">:</span> <span class="s">12      &lt;-- CHOOSE A PROPER BATCH SIZE</span>
+    <span class="na">verbose      </span><span class="pi">:</span> <span class="s">False</span>
 
-model: ...</code></pre>
+<span class="na">model</span><span class="pi">:</span> <span class="s">...</span></code></pre>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_make_inference">Make inference</h3>
-<div class="listingblock">
+<h3 id="_make_inference"><a class="anchor" href="#_make_inference"></a><a class="link" href="#_make_inference">2.5. Make inference</a></h3>
+<div class="literalblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make infer</code></pre>
+<pre>make infer</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -581,13 +586,13 @@ model: ...</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">OUTPUT_DIR
+<pre class="rouge highlight"><code data-lang="console"><span class="go">OUTPUT_DIR
 ├── DATA_INDEX
 │   └── structures
 │       ├── BrainStem.nrrd
 │       ├── Parotid_L.nrrd
 │       └── Parotid_R.nrrd
-...</code></pre>
+</span><span class="c">...</span></code></pre>
 </div>
 </div>
 </div>
@@ -596,8 +601,182 @@ model: ...</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-11 02:16:12 +0800
+Last updated 2020-04-17 04:13:51 +0800
 </div>
 </div>
+<style>
+pre.rouge table td { padding: 5px; }
+pre.rouge table pre { margin: 0; }
+pre.rouge {
+  color: #faf6e4;
+  background-color: #122b3b;
+}
+pre.rouge .gl {
+  color: #dee5e7;
+  background-color: #4e5d62;
+}
+pre.rouge .gp {
+  color: #a8e1fe;
+  font-weight: bold;
+}
+pre.rouge .c, pre.rouge .ch, pre.rouge .cd, pre.rouge .cm, pre.rouge .cpf, pre.rouge .c1, pre.rouge .cs {
+  color: #6c8b9f;
+  font-style: italic;
+}
+pre.rouge .cp {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .err {
+  color: #fefeec;
+  background-color: #cc0000;
+}
+pre.rouge .gr {
+  color: #cc0000;
+  font-weight: bold;
+  font-style: italic;
+}
+pre.rouge .k, pre.rouge .kd, pre.rouge .kv {
+  color: #f6dd62;
+  font-weight: bold;
+}
+pre.rouge .o, pre.rouge .ow {
+  color: #4df4ff;
+  font-weight: bold;
+}
+pre.rouge .p, pre.rouge .pi {
+  color: #4df4ff;
+}
+pre.rouge .gd {
+  color: #cc0000;
+}
+pre.rouge .gi {
+  color: #b2fd6d;
+}
+pre.rouge .ge {
+  font-style: italic;
+}
+pre.rouge .gs {
+  font-weight: bold;
+}
+pre.rouge .gt {
+  color: #dee5e7;
+  background-color: #4e5d62;
+}
+pre.rouge .kc {
+  color: #f696db;
+  font-weight: bold;
+}
+pre.rouge .kn {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .kp {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .kr {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .gh {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .gu {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .kt {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .no {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .nc {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .nd {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .nn {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .bp {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .ne {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .nl {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .nt {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .m, pre.rouge .mb, pre.rouge .mf, pre.rouge .mh, pre.rouge .mi, pre.rouge .il, pre.rouge .mo, pre.rouge .mx {
+  color: #f696db;
+  font-weight: bold;
+}
+pre.rouge .ld {
+  color: #f696db;
+  font-weight: bold;
+}
+pre.rouge .ss {
+  color: #f696db;
+  font-weight: bold;
+}
+pre.rouge .s, pre.rouge .sa, pre.rouge .sb, pre.rouge .dl, pre.rouge .sd, pre.rouge .s2, pre.rouge .sh, pre.rouge .sx, pre.rouge .sr, pre.rouge .s1 {
+  color: #fff0a6;
+  font-weight: bold;
+}
+pre.rouge .se {
+  color: #4df4ff;
+  font-weight: bold;
+}
+pre.rouge .sc {
+  color: #4df4ff;
+  font-weight: bold;
+}
+pre.rouge .si {
+  color: #4df4ff;
+  font-weight: bold;
+}
+pre.rouge .nb {
+  font-weight: bold;
+}
+pre.rouge .ni {
+  color: #999999;
+  font-weight: bold;
+}
+pre.rouge .w {
+  color: #BBBBBB;
+}
+pre.rouge .go {
+  color: #BBBBBB;
+}
+pre.rouge .nf, pre.rouge .fm {
+  color: #a8e1fe;
+}
+pre.rouge .py {
+  color: #a8e1fe;
+}
+pre.rouge .na {
+  color: #a8e1fe;
+}
+pre.rouge .nv, pre.rouge .vc, pre.rouge .vg, pre.rouge .vi, pre.rouge .vm {
+  color: #a8e1fe;
+  font-weight: bold;
+}
+</style>
 </body>
 </html>

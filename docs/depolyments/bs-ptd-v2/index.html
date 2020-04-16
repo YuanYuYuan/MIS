@@ -443,65 +443,72 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_prerequisites">Prerequisites</a>
+<li><a href="#_prerequisites">1. Prerequisites</a>
 <ul class="sectlevel2">
-<li><a href="#_prepare_dataset">Prepare dataset</a></li>
-<li><a href="#_set_the_data_list">Set the data list</a></li>
+<li><a href="#_prepare_dataset">1.1. Prepare dataset</a></li>
+<li><a href="#_set_the_data_list">1.2. Set the data list</a></li>
 </ul>
 </li>
-<li><a href="#_usage">Usage</a>
+<li><a href="#_usage">2. Usage</a>
 <ul class="sectlevel2">
-<li><a href="#_download_the_trained_model">Download the trained model</a></li>
-<li><a href="#_training">Training</a></li>
-<li><a href="#_evaluation">Evaluation</a></li>
+<li><a href="#_download_the_trained_model">2.1. Download the trained model</a></li>
+<li><a href="#_training">2.2. Training</a></li>
+<li><a href="#_evaluation">2.3. Evaluation</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 <div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This document states how to use the example <code>MIS/depolyment/ps-ptd-v2</code>.</p>
+</div>
+</div>
+</div>
 <div class="sect1">
-<h2 id="_prerequisites">Prerequisites</h2>
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a><a class="link" href="#_prerequisites">1. Prerequisites</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_prepare_dataset">Prepare dataset</h3>
+<h3 id="_prepare_dataset"><a class="anchor" href="#_prepare_dataset"></a><a class="link" href="#_prepare_dataset">1.1. Prepare dataset</a></h3>
 <div class="paragraph">
-<p>Place your dataset folder in here(<em>MIS/depolyment/ps-ptd-v2</em>) and name it as <em>data</em>.<br>
+<p>Place your dataset folder in here(<em>MIS/depolyment/ps-ptd-v2</em>) and name it as <code>data</code>.<br>
 Or you may directly create a link to the folder like this.</p>
 </div>
-<div class="listingblock">
+<div class="literalblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">ln -s YOUR_DATASET data</code></pre>
+<pre>ln -s YOUR_DATASET data</pre>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_set_the_data_list">Set the data list</h3>
+<h3 id="_set_the_data_list"><a class="anchor" href="#_set_the_data_list"></a><a class="link" href="#_set_the_data_list">1.2. Set the data list</a></h3>
 <div class="sect3">
-<h4 id="_for_trainingvalidation_please_modify_trainingdata_list_yaml">For training/validation, please modify <em>training/data_list.yaml</em>.</h4>
+<h4 id="_for_trainingvalidation_please_modify_trainingdata_list_yaml"><a class="anchor" href="#_for_trainingvalidation_please_modify_trainingdata_list_yaml"></a><a class="link" href="#_for_trainingvalidation_please_modify_trainingdata_list_yaml">1.2.1. For training/validation, please modify <em>training/data_list.yaml</em>.</a></h4>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-yaml" data-lang="yaml">amount:
-  test: 0
-  total: 48
-  train: 33
-  valid: 15
-list:                   <i class="conum" data-value="1"></i><b>(1)</b>
-  train:
-  - 0522c0001
-      ⋮
-  valid:
-  - 0522c0002
-      ⋮
-loader:
-  name: NRRDLoader
-  data_dir: ../data
-  roi_map:
-    Brainstem: 1
-    Parotid_L: 2
-    Parotid_R: 3
-  spacing: 1
-  resample: true        <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+<pre class="rouge highlight"><code data-lang="yaml"><span class="na">amount</span><span class="pi">:</span>
+  <span class="na">test</span><span class="pi">:</span> <span class="m">0</span>
+  <span class="na">total</span><span class="pi">:</span> <span class="m">48</span>
+  <span class="na">train</span><span class="pi">:</span> <span class="m">33</span>
+  <span class="na">valid</span><span class="pi">:</span> <span class="m">15</span>
+<span class="na">list</span><span class="pi">:</span>                   <i class="conum" data-value="1"></i><b>(1)</b>
+  <span class="na">train</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">0522c0001</span>
+      <span class="s">⋮</span>
+  <span class="na">valid</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">0522c0002</span>
+      <span class="s">⋮</span>
+<span class="na">loader</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">NRRDLoader</span>
+  <span class="na">data_dir</span><span class="pi">:</span> <span class="s">../data</span>
+  <span class="na">roi_map</span><span class="pi">:</span>
+    <span class="na">Brainstem</span><span class="pi">:</span> <span class="m">1</span>
+    <span class="na">Parotid_L</span><span class="pi">:</span> <span class="m">2</span>
+    <span class="na">Parotid_R</span><span class="pi">:</span> <span class="m">3</span>
+  <span class="na">spacing</span><span class="pi">:</span> <span class="m">1</span>
+  <span class="na">resample</span><span class="pi">:</span> <span class="no">true</span>        <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -522,18 +529,18 @@ This way should accelerate the training.</td>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-yaml" data-lang="yaml">list:
-- 0522c0002            <i class="conum" data-value="1"></i><b>(1)</b>
-    ⋮
-loader:
-  name: NRRDLoader
-  data_dir: ../data
-  roi_map:
-    Brainstem: 1
-    Parotid_L: 2
-    Parotid_R: 3
-  spacing: 1
-  resample: true        <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+<pre class="rouge highlight"><code data-lang="yaml"><span class="na">list</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="s">0522c0002</span>            <i class="conum" data-value="1"></i><b>(1)</b>
+    <span class="s">⋮</span>
+<span class="na">loader</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">NRRDLoader</span>
+  <span class="na">data_dir</span><span class="pi">:</span> <span class="s">../data</span>
+  <span class="na">roi_map</span><span class="pi">:</span>
+    <span class="na">Brainstem</span><span class="pi">:</span> <span class="m">1</span>
+    <span class="na">Parotid_L</span><span class="pi">:</span> <span class="m">2</span>
+    <span class="na">Parotid_R</span><span class="pi">:</span> <span class="m">3</span>
+  <span class="na">spacing</span><span class="pi">:</span> <span class="m">1</span>
+  <span class="na">resample</span><span class="pi">:</span> <span class="no">true</span>        <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -564,24 +571,37 @@ performance on the testing data.
 </tr>
 </table>
 </div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+You can use the tools from MIDP to generate the data list.
+Please see <a href="https://yuanyuyuan.github.io/MIDP/usage#_generate_data_list_for_training">here</a> for the details.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_usage">Usage</h2>
+<h2 id="_usage"><a class="anchor" href="#_usage"></a><a class="link" href="#_usage">2. Usage</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_download_the_trained_model">Download the trained model</h3>
-<div class="listingblock">
+<h3 id="_download_the_trained_model"><a class="anchor" href="#_download_the_trained_model"></a><a class="link" href="#_download_the_trained_model">2.1. Download the trained model</a></h3>
+<div class="literalblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make download_model</code></pre>
+<pre>make download_model</pre>
 </div>
 </div>
 <div class="paragraph">
 <p>It will download a model checkpoint which achieved the performance as below.</p>
 </div>
-<table class="tableblock frame-all grid-all stretch">
+<table class="tableblock frame-none grid-all stretch">
 <caption class="title">Table 1. Validation performance on PDDCA dataset</caption>
 <colgroup>
 <col style="width: 25%;">
@@ -608,13 +628,13 @@ performance on the testing data.
 </table>
 </div>
 <div class="sect2">
-<h3 id="_training">Training</h3>
+<h3 id="_training"><a class="anchor" href="#_training"></a><a class="link" href="#_training">2.2. Training</a></h3>
 <div class="paragraph">
 <p>Continue training with the trained model.</p>
 </div>
-<div class="listingblock">
+<div class="literalblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make train</code></pre>
+<pre>make train</pre>
 </div>
 </div>
 <div class="imageblock text-center">
@@ -655,21 +675,21 @@ the condition is harder(the model makes prediction without considering threshold
 </div>
 </div>
 <div class="sect2">
-<h3 id="_evaluation">Evaluation</h3>
+<h3 id="_evaluation"><a class="anchor" href="#_evaluation"></a><a class="link" href="#_evaluation">2.3. Evaluation</a></h3>
 <div class="paragraph">
 <p>Directly evaluate the performance with the trained model checkpoint.</p>
 </div>
-<div class="listingblock">
+<div class="literalblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make evaluate</code></pre>
+<pre>make evaluate</pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Evaluate the performance with a newly trained checkpoint.</p>
 </div>
-<div class="listingblock">
+<div class="literalblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make evaluate CKPT=training/_ckpts/SOME_BETTER_CHECKPOINT</code></pre>
+<pre>make evaluate CKPT=training/_ckpts/SOME_BETTER_CHECKPOINT</pre>
 </div>
 </div>
 <div class="imageblock text-center">
@@ -687,7 +707,7 @@ the condition is harder(the model makes prediction without considering threshold
 <td class="content">
 One can observe the gap between the score of each batch(before reconstruction)
 and the evaluation one(after reconstruction,
-true dice score enclosed in <strong>===== Restored =====</strong>).
+true dice score enclosed in <strong>===== Restored =====</strong>).<br>
 Since there are additional processings like applying threshold
 , averaging the overlapping predictions, the performance will be
 better.
@@ -698,32 +718,99 @@ better.
 <div class="paragraph">
 <p>The output result will be exported as <em>evaluation/score.json</em>.</p>
 </div>
-<div class="paragraph">
-<p>For example,</p>
-</div>
-<div class="listingblock">
+<details>
+<summary class="title">[Result]</summary>
 <div class="content">
-<pre class="highlight"><code class="language-json" data-lang="json">{
-  "0522c0002": {
-    "Brainstem": 0.9028694037020432,
-    "Parotid_L": 0.8119102638166763,
-    "Parotid_R": 0.7996425003943011
-  },
-  "0522c0014": {
-    "Brainstem": 0.8935291506648397,
-    "Parotid_L": 0.7024681698556086,
-    "Parotid_R": 0.7702638241661468
-  },
-                ⋮
-}</code></pre>
+<div class="listingblock">
+<div class="title">score.json</div>
+<div class="content">
+<pre class="rouge highlight"><code data-lang="json"><span class="p">{</span><span class="w">
+  </span><span class="nl">"0522c0002"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9028694037020432</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8119102638166763</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7996425003943011</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0014"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8935291506648397</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7024681698556086</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7702638241661468</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0057"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8807874039521157</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.6785307517084282</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8405278584304605</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0077"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8953396583309751</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8370424150593979</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7786675576065735</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0125"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8044672789668922</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7051278059715433</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.6728889864939058</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0161"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9172809839938093</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7442935852026761</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8497808992136383</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0226"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8880701572310726</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7538168885948225</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7728004137693236</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0248"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.895500903494533</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7822063892294524</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7357568556809689</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0330"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8512992752342231</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8401635341230971</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7947188397865645</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0427"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8383990640959301</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.6847284486946383</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.768788733846134</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0433"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9045027857870661</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.792590844738084</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.831225229783287</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0479"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8967516758693284</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.7434027378350397</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.738557128063514</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0598"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8709916589434662</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8893883163544424</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8819805169174416</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0708"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8793746997302192</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8879443585780525</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8688722445067623</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"0522c0857"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"Brainstem"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8716908498667456</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_L"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.6156269858080915</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Parotid_R"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.6783183870762577</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span></code></pre>
 </div>
 </div>
+</div>
+</details>
 <div class="paragraph">
 <p>Besides making inference, save the predictions and store them into NRRD.</p>
 </div>
-<div class="listingblock">
+<div class="literalblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash">make predict</code></pre>
+<pre>make predict</pre>
 </div>
 </div>
 <div class="imageblock text-center">
@@ -755,8 +842,182 @@ and then do reconstruction, the memory usage might be large.
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-14 03:13:50 +0800
+Last updated 2020-04-17 04:12:53 +0800
 </div>
 </div>
+<style>
+pre.rouge table td { padding: 5px; }
+pre.rouge table pre { margin: 0; }
+pre.rouge {
+  color: #faf6e4;
+  background-color: #122b3b;
+}
+pre.rouge .gl {
+  color: #dee5e7;
+  background-color: #4e5d62;
+}
+pre.rouge .gp {
+  color: #a8e1fe;
+  font-weight: bold;
+}
+pre.rouge .c, pre.rouge .ch, pre.rouge .cd, pre.rouge .cm, pre.rouge .cpf, pre.rouge .c1, pre.rouge .cs {
+  color: #6c8b9f;
+  font-style: italic;
+}
+pre.rouge .cp {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .err {
+  color: #fefeec;
+  background-color: #cc0000;
+}
+pre.rouge .gr {
+  color: #cc0000;
+  font-weight: bold;
+  font-style: italic;
+}
+pre.rouge .k, pre.rouge .kd, pre.rouge .kv {
+  color: #f6dd62;
+  font-weight: bold;
+}
+pre.rouge .o, pre.rouge .ow {
+  color: #4df4ff;
+  font-weight: bold;
+}
+pre.rouge .p, pre.rouge .pi {
+  color: #4df4ff;
+}
+pre.rouge .gd {
+  color: #cc0000;
+}
+pre.rouge .gi {
+  color: #b2fd6d;
+}
+pre.rouge .ge {
+  font-style: italic;
+}
+pre.rouge .gs {
+  font-weight: bold;
+}
+pre.rouge .gt {
+  color: #dee5e7;
+  background-color: #4e5d62;
+}
+pre.rouge .kc {
+  color: #f696db;
+  font-weight: bold;
+}
+pre.rouge .kn {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .kp {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .kr {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .gh {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .gu {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .kt {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .no {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .nc {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .nd {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .nn {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .bp {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .ne {
+  color: #b2fd6d;
+  font-weight: bold;
+}
+pre.rouge .nl {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .nt {
+  color: #ffb000;
+  font-weight: bold;
+}
+pre.rouge .m, pre.rouge .mb, pre.rouge .mf, pre.rouge .mh, pre.rouge .mi, pre.rouge .il, pre.rouge .mo, pre.rouge .mx {
+  color: #f696db;
+  font-weight: bold;
+}
+pre.rouge .ld {
+  color: #f696db;
+  font-weight: bold;
+}
+pre.rouge .ss {
+  color: #f696db;
+  font-weight: bold;
+}
+pre.rouge .s, pre.rouge .sa, pre.rouge .sb, pre.rouge .dl, pre.rouge .sd, pre.rouge .s2, pre.rouge .sh, pre.rouge .sx, pre.rouge .sr, pre.rouge .s1 {
+  color: #fff0a6;
+  font-weight: bold;
+}
+pre.rouge .se {
+  color: #4df4ff;
+  font-weight: bold;
+}
+pre.rouge .sc {
+  color: #4df4ff;
+  font-weight: bold;
+}
+pre.rouge .si {
+  color: #4df4ff;
+  font-weight: bold;
+}
+pre.rouge .nb {
+  font-weight: bold;
+}
+pre.rouge .ni {
+  color: #999999;
+  font-weight: bold;
+}
+pre.rouge .w {
+  color: #BBBBBB;
+}
+pre.rouge .go {
+  color: #BBBBBB;
+}
+pre.rouge .nf, pre.rouge .fm {
+  color: #a8e1fe;
+}
+pre.rouge .py {
+  color: #a8e1fe;
+}
+pre.rouge .na {
+  color: #a8e1fe;
+}
+pre.rouge .nv, pre.rouge .vc, pre.rouge .vg, pre.rouge .vi, pre.rouge .vm {
+  color: #a8e1fe;
+  font-weight: bold;
+}
+</style>
 </body>
 </html>

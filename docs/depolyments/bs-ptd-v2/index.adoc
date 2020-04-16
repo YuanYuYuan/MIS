@@ -1,23 +1,28 @@
 = Brainstem & Parotids Segmentation V2
 :toc: left
 :icons: font
+:source-highlighter: rouge
+:rouge-style: thankful_eyes
+:sectnums:
+:sectlinks:
+:sectanchors:
+
+This document states how to use the example `MIS/depolyment/ps-ptd-v2`.
 
 == Prerequisites
 
 === Prepare dataset
 
-Place your dataset folder in here(_MIS/depolyment/ps-ptd-v2_) and name it as __data__. +
+Place your dataset folder in here(_MIS/depolyment/ps-ptd-v2_) and name it as `data`. +
 Or you may directly create a link to the folder like this.
 
-```bash
-ln -s YOUR_DATASET data
-```
+    ln -s YOUR_DATASET data
 
 === Set the data list
 
 ==== For training/validation, please modify _training/data_list.yaml_.
 
-[source, yaml, linenums]
+[source, yaml]
 ----
 amount:
   test: 0
@@ -48,7 +53,7 @@ loader:
 For evaluation, please modify _evaluation/data_list.yaml_.
 
 
-[source, yaml, linenums]
+[source, yaml]
 ----
 list:
 - 0522c0002            // <1>
@@ -73,19 +78,20 @@ Train the model on training data, choose the best model in checkpoints
 according to the performance on the validation data, and finally evaluate the
 performance on the testing data.
 
+[TIP]
+You can use the tools from MIDP to generate the data list.
+Please see https://yuanyuyuan.github.io/MIDP/usage#_generate_data_list_for_training[here] for the details.
+
 == Usage
 
 === Download the trained model
 
-[source, bash, linenums]
-----
-make download_model
-----
+    make download_model
 
 It will download a model checkpoint which achieved the performance as below.
 
 .Validation performance on PDDCA dataset
-[options="header"]
+[options="header", frame="none"]
 |===
 | Brainstem | Left Parotid | Right Parotid | Average
 
@@ -99,10 +105,7 @@ It will download a model checkpoint which achieved the performance as below.
 
 Continue training with the trained model.
 
-[source, bash, linenums]
-----
-make train
-----
+    make train
 
 .Training
 image::./pics/training.png[align="center"]
@@ -123,17 +126,11 @@ the condition is harder(the model makes prediction without considering threshold
 
 Directly evaluate the performance with the trained model checkpoint.
 
-[source, bash, linenums]
-----
-make evaluate
-----
+    make evaluate
 
 Evaluate the performance with a newly trained checkpoint.
 
-[source, bash, linenums]
-----
-make evaluate CKPT=training/_ckpts/SOME_BETTER_CHECKPOINT
-----
+    make evaluate CKPT=training/_ckpts/SOME_BETTER_CHECKPOINT
 
 .Evaluating
 image::./pics/evaluating.png[align="center"]
@@ -141,38 +138,26 @@ image::./pics/evaluating.png[align="center"]
 [TIP]
 One can observe the gap between the score of each batch(before reconstruction)
 and the evaluation one(after reconstruction,
-true dice score enclosed in *===== Restored =====*).
+true dice score enclosed in *===== Restored =====*). +
 Since there are additional processings like applying threshold
 , averaging the overlapping predictions, the performance will be
 better.
 
 The output result will be exported as _evaluation/score.json_.
 
-For example,
-
-[source, json, linenums]
+.[Result]
+[%collapsible]
+====
+.score.json
+[source, json]
 ----
-{
-  "0522c0002": {
-    "Brainstem": 0.9028694037020432,
-    "Parotid_L": 0.8119102638166763,
-    "Parotid_R": 0.7996425003943011
-  },
-  "0522c0014": {
-    "Brainstem": 0.8935291506648397,
-    "Parotid_L": 0.7024681698556086,
-    "Parotid_R": 0.7702638241661468
-  },
-                ⋮
-}
+include::score.json[]
 ----
+====
 
 Besides making inference, save the predictions and store them into NRRD.
 
-[source, bash, linenums]
-----
-make predict
-----
+    make predict
 
 .Predicting
 image::./pics/predicting.png[align="center"]

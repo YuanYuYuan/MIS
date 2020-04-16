@@ -1,12 +1,21 @@
 = PDDCA Brainstem and Parotids Segmentation
-:toc:
+:toc: left
+:toclevels: 3
+:icons: font
+:source-highlighter: rouge
+:rouge-style: thankful_eyes
+:sectnums:
+:sectlinks:
+:sectanchors:
 
 Total 4 classes: background, brainstem, left/right parotids
 
+****
 Note that this script is for inference only.
 Hence, no label information required. But if you have label of images
 and want to evaluate the performance, or further training based on the model,
 please see https://github.com/YuanYuYuan/MIS/tree/master/exp/bs-ptd-nrrd[here].
+****
 
 == Latest results
 
@@ -25,9 +34,7 @@ Check the https://github.com/YuanYuYuan/MIS#prerequisites[installation] if neede
 
 === Download the trained model
 
-```bash
-make download_model
-```
+    make download_model
 
 There will be a trained model weight downloaded and named as _model.pt_.
 
@@ -35,7 +42,7 @@ There will be a trained model weight downloaded and named as _model.pt_.
 
 The required data format is
 
-[source, bash, linenums]
+[source, console]
 ----
 DATA_DIR
 ├── DATA_INDEX
@@ -46,7 +53,7 @@ DATA_DIR
 === Configure the inference behavior
 
 .infering.yaml
-[source, yaml, linenums]
+[source, yaml]
 ----
 gpus: 0                 <-- YOU CAN SET "gpus: 0,1" IF THERE'RE TWO AVAILABE GPUS
 output_threshold: 0.2
@@ -80,14 +87,11 @@ model: ...
 
 === Make inference
 
-[source, bash, linenums]
-----
-make infer
-----
+    make infer
 
 The output results will be in NRRD format like
 
-[source, bash, linenums]
+[source, console]
 ----
 OUTPUT_DIR
 ├── DATA_INDEX
