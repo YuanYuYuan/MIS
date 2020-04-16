@@ -156,8 +156,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             terminated = True
             break
 
-        # collect results except those revertible ones,
-        # e.g., prediction, match dice score, ...
+        # collect results except those revertible ones, e.g., accu, losses
         result = {
             key: np.nanmean(
                 np.vstack([result[key] for result in result_list]),

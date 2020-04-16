@@ -123,7 +123,6 @@ class Runner:
             include_prediction = False
             compute_match = False
         else:
-            include_prediction = include_prediction
             compute_match = not include_prediction
 
         progress_bar = tqdm(
