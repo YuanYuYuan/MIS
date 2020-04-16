@@ -87,7 +87,7 @@ def compute_dice(match, total, smooth):
 def dice_score(
     logits,
     labels,
-    smooth=1e-5,
+    smooth=1e-9,
     exclude_background=True,
     threshold=0.,
     exclude_blank=False,
@@ -120,7 +120,7 @@ def dice_loss(
     weight=None,
     exclude_background=True,
     batch_wise=False,
-    smooth=1e-5,
+    smooth=1e-9,
 ):
     score = dice_score(
         logits,
