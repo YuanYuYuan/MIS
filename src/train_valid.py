@@ -12,6 +12,7 @@ import json
 from tqdm import tqdm
 from utils import get_tty_columns
 import numpy as np
+import torch
 
 
 parser = argparse.ArgumentParser()
@@ -69,6 +70,7 @@ reverter = Reverter(data_gen['valid'])
 
 # - GPUs
 os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
+torch.backends.cudnn.enabled = True
 
 # - model
 model_handler = ModelHandler(
