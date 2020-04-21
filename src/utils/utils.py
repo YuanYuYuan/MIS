@@ -92,6 +92,19 @@ class ROIScoreWriter:
             f.write('\n')
 
 
+def crop_range(prediction_shape, label_shape):
+    assert len(prediction_shape) == 3
+    assert len(label_shape) == 3
+    for p, l in zip(prediction_shape, label_shape):
+        assert p >= l
+    crop_range = (slice(None), slice(None))
+    crop_range += tuple(
+        slice((p-l) // 2, l + (p-l) // 2)
+        for p, l in zip(prediction_shape, label_shape)
+    )
+    return crop_range
+
+
 def load_config(config_file):
     file_ext = os.path.splitext(config_file)[-1].split('.')[-1]
     with open(config_file) as f:

@@ -5,7 +5,14 @@ import time
 import os
 from utils import epoch_info
 import yaml
-from training import Optimizer, Scheduler, EarlyStopper, ModelHandler, Runner
+from training import (
+    Optimizer,
+    Scheduler,
+    EarlyStopper,
+    ModelHandler,
+    Runner,
+    Learner
+)
 from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
 import json
@@ -98,9 +105,11 @@ timer = time.time()
 start = timer
 
 runner = Runner(
-    model=model_handler.model,
-    meter=MetricFlow(config['meter']),
-    optimizer=optimizer,
+    Learner(
+        model=model_handler.model,
+        meter=MetricFlow(config['meter']),
+        optim=optimizer,
+    ),
     logger=logger,
 )
 

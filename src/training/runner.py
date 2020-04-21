@@ -1,111 +1,16 @@
-import torch
 from tqdm import tqdm
 from utils import get_tty_columns
-from metrics import match_up
+from .learner import Learner
 import math
 import numpy as np
 
 
 class Runner:
 
-    def __init__(
-        self,
-        model,
-        meter,
-        optimizer=None,
-        logger=None,
-    ):
-        self.model = model
-        self.meter = meter
-        self.optimizer = optimizer
+    def __init__(self, learner: Learner, logger=None):
+        self.learner = learner
         self.logger = logger
         self.step = dict()
-
-    def process_batch(
-        self,
-        batch,
-        training=True,
-        include_prediction=False,
-        compute_match=False,
-    ):
-
-        def crop_range(prediction_shape, label_shape):
-            assert len(prediction_shape) == 3
-            assert len(label_shape) == 3
-            for p, l in zip(prediction_shape, label_shape):
-                assert p >= l
-            crop_range = (slice(None), slice(None))
-            crop_range += tuple(
-                slice((p-l) // 2, l + (p-l) // 2)
-                for p, l in zip(prediction_shape, label_shape)
-            )
-            return crop_range
-
-        data = {
-            'image': batch['image'].cuda(),
-            'label': batch['label'].cuda()
-        }
-
-        if training:
-            with torch.set_grad_enabled(True):
-                self.model.train()
-                self.optimizer.zero_grad()
-
-                outputs = self.model(data)
-
-                # crop if size mismatched
-                if outputs['prediction'].shape[2:] != data['label'].shape[1:]:
-                    outputs['prediction'] = outputs['prediction'][
-                        crop_range(
-                            outputs['prediction'].shape[2:],
-                            data['label'].shape[1:]
-                        )
-                    ]
-
-                data.update(outputs)
-                results = self.meter(data)
-
-                # back propagation
-                results['loss'].backward()
-                self.optimizer.step()
-
-        else:
-            with torch.set_grad_enabled(False):
-                self.model.eval()
-
-                outputs = self.model(data)
-
-                # crop if size mismatched
-                if outputs['prediction'].shape[2:] != data['label'].shape[1:]:
-                    outputs['prediction'] = outputs['prediction'][
-                        crop_range(
-                            outputs['prediction'].shape[2:],
-                            data['label'].shape[1:]
-                        )
-                    ]
-
-                data.update(outputs)
-                results = self.meter(data)
-
-        if include_prediction:
-            probas = torch.nn.functional.softmax(outputs['prediction'], dim=1)
-            results.update({'prediction': probas})
-
-        if compute_match:
-            match, total = match_up(
-                outputs['prediction'],
-                data['label'],
-                needs_softmax=True,
-                batch_wise=True,
-                threshold=-1,
-            )
-            results.update({'match': match, 'total': total})
-
-        # detach all, move to CPU, and convert to numpy
-        for key in results:
-            results[key] = results[key].detach().cpu().numpy()
-
-        return results
 
     def run(
         self,
@@ -118,12 +23,6 @@ class Runner:
         if stage is None:
             stage = 'train' if training else 'valid'
         n_steps = len(data_gen)
-
-        if training:
-            include_prediction = False
-            compute_match = False
-        else:
-            compute_match = not include_prediction
 
         progress_bar = tqdm(
             data_gen,
@@ -151,23 +50,34 @@ class Runner:
                 if ratio < min_ratio:
                     continue
 
-            result = self.process_batch(
-                batch,
-                training=training,
-                include_prediction=include_prediction,
-                compute_match=compute_match,
-            )
+            data = {
+                'image': batch['image'].cuda(),
+                'label': batch['label'].cuda()
+            }
 
-            step_accu = np.nanmean(result['accu'])
+            if training:
+                results = self.learner.learn(data)
+            else:
+                results = self.learner.infer(
+                    data,
+                    include_prediction=include_prediction,
+                    compute_match=(not include_prediction)
+                )
+
+            # detach all, move to CPU, and convert to numpy
+            for key in results:
+                results[key] = results[key].detach().cpu().numpy()
+
+            step_accu = np.nanmean(results['accu'])
             progress_bar.set_description(
                 '[%s] Loss: %.5f, Avg accu: %.5f'
-                % (stage, result['loss'], step_accu)
+                % (stage, results['loss'], step_accu)
             )
 
             if self.logger is not None:
                 self.logger.add_scalar(
                     '%s/step/loss' % stage,
-                    result['loss'],
+                    results['loss'],
                     self.step[stage]
                 )
                 self.logger.add_scalar(
@@ -179,7 +89,7 @@ class Runner:
             # if include_prediction:
             #     # XXX: deprecated
             #     # output_threshold = 0.3
-            #     # prediction = result.pop('prediction')
+            #     # prediction = results.pop('prediction')
             #     # for i in range(1, prediction.shape[1]):
             #     #     prediction[:, i, ...] += \
             #     #         (prediction[:, i, ...] >= output_threshold).astype(np.float)
@@ -187,8 +97,8 @@ class Runner:
             #     # prediction = np.argmax(prediction, 1)
             #     # prediction_list.append(prediction)
 
-            #     prediction_list.append(result.pop('prediction'))
+            #     prediction_list.append(results.pop('prediction'))
 
-            result_list.append(result)
+            result_list.append(results)
 
         return result_list

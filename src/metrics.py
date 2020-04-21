@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 import math
 
+
 def VAE_KLD(latent_dist):
     mean, std = latent_dist
     std_square = std**2
@@ -36,6 +37,7 @@ def mixed_dice_loss(logits, labels, *args):
 def match_up(
     logits,
     labels,
+    mask=None,
     needs_softmax=True,
     batch_wise=False,
     threshold=0.
@@ -74,9 +76,18 @@ def match_up(
     elif threshold == -1:
         probas = (probas > 1/n_classes).float()
 
-    match = torch.sum(probas * labels, sum_dim)
-    total = torch.sum(probas + labels, sum_dim)
-
+    if mask is None:
+        match = torch.sum(probas * labels, sum_dim)
+        total = torch.sum(probas + labels, sum_dim)
+    else:
+        for idx, (s1, s2) in enumerate(zip(
+            mask.shape,
+            probas.shape
+        )):
+            if idx != 1:
+                assert s1 == s2, (mask.shape, probas.shape)
+        match = torch.sum(probas * labels * mask, sum_dim)
+        total = torch.sum((probas + labels) * mask, sum_dim)
     return match, total
 
 
@@ -88,6 +99,7 @@ def dice_score(
     logits,
     labels,
     smooth=1e-9,
+    mask=None,
     exclude_background=True,
     threshold=0.,
     exclude_blank=False,
@@ -103,6 +115,7 @@ def dice_score(
             needs_softmax=True,
             threshold=threshold,
             batch_wise=batch_wise,
+            mask=mask,
         )
         multi_class_score = compute_dice(match, total, smooth=smooth)
         if batch_wise:
@@ -136,6 +149,48 @@ def dice_loss(
     #     score *= weight
 
     return 1 - score.mean()
+
+
+def pseudo_label(logits):
+    return torch.argmax(logits, dim=1)
+
+
+def confidence_mask(confidence_map, threshold=0.3):
+    return confidence_map >= threshold
+
+
+def masked_dice_loss(
+    logits,
+    labels,
+    mask,
+    exclude_background=True,
+    batch_wise=False,
+    smooth=1e-9,
+):
+    score = dice_score(
+        logits,
+        labels,
+        mask=mask,
+        exclude_background=exclude_background,
+        batch_wise=batch_wise,
+        smooth=smooth,
+    )
+    return 1 - score.mean()
+
+
+def masked_cross_entropy(
+    logits,
+    labels,
+    mask,
+):
+    loss = F.cross_entropy(
+        logits,
+        labels,
+        reduction='none'
+    )
+    mask = torch.squeeze(mask)
+    assert loss.shape == mask.shape, (loss.shape, mask.shape)
+    return torch.mean(loss * mask)
 
 
 def balanced_dice_loss(logits, labels):
