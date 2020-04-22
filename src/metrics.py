@@ -3,6 +3,11 @@ import torch.nn.functional as F
 import math
 
 
+def adversarial_loss(confidence_map):
+    z = torch.squeeze(confidence_map)
+    return F.binary_cross_entropy_with_logits(z, torch.ones(z.shape))
+
+
 def VAE_KLD(latent_dist):
     mean, std = latent_dist
     std_square = std**2
@@ -156,7 +161,7 @@ def pseudo_label(logits):
 
 
 def confidence_mask(confidence_map, threshold=0.3):
-    return confidence_map >= threshold
+    return F.sigmoid(confidence_map) >= threshold
 
 
 def masked_dice_loss(
