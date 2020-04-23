@@ -1,13 +1,13 @@
 from tqdm import tqdm
 from utils import get_tty_columns
-from .learner import Learner
+from .learners import SegLearner
 import math
 import numpy as np
 
 
 class Runner:
 
-    def __init__(self, learner: Learner, logger=None):
+    def __init__(self, learner: SegLearner, logger=None):
         self.learner = learner
         self.logger = logger
         self.step = dict()
@@ -68,7 +68,11 @@ class Runner:
             for key in results:
                 results[key] = results[key].detach().cpu().numpy()
 
-            step_accu = np.nanmean(results['accu'])
+            if 'accu' in results:
+                step_accu = np.nanmean(results['accu'])
+            else:
+                step_accu = math.nan
+
             progress_bar.set_description(
                 '[%s] Loss: %.5f, Avg accu: %.5f'
                 % (stage, results['loss'], step_accu)
