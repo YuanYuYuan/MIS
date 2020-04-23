@@ -95,7 +95,11 @@ class UpSample(nn.Module):
         super().__init__()
         ch_out = ch_in // 2
         self.op = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode="trilinear"),
+            nn.Upsample(
+                scale_factor=2,
+                mode='trilinear',
+                align_corners=True
+            ),
             nn.Conv3d(ch_in, ch_out, kernel_size=1, bias=False)
         )
 
