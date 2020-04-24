@@ -1,6 +1,6 @@
 from tqdm import tqdm
 from utils import get_tty_columns
-from .learners import SegLearner
+from .learners import SegLearner, AdvSegLearner, Learner
 import torch.nn.functional as F
 import math
 import numpy as np
@@ -118,7 +118,9 @@ class AdvRunner:
         logger=None
     ):
         assert 'seg' in learners
+        assert isinstance(learners['seg'], AdvSegLearner)
         assert 'dis' in learners
+        assert isinstance(learners['dis', Learner])
         self.learners = learners
         self.logger = logger
         self.step = dict()

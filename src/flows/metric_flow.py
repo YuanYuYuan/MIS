@@ -2,20 +2,30 @@ import json5
 import torch
 from .flow import Flow
 import metrics
+import inspect
 
 
+# TODO: Write sum metric into metrics by a class
 class Metric:
 
     def __init__(self, name, **kwargs):
+        self.need_kwargs = True
         if hasattr(metrics, name):
-            self.metric = getattr(metrics, name)
+            metric = getattr(metrics, name)
+            if inspect.isclass(metric):
+                self.need_kwargs = False
+                self.metric = metric(**kwargs)
+            else:
+                self.metric = getattr(metrics, name)
         elif hasattr(torch.nn.functional, name):
             self.metric = getattr(torch.nn.functional, name)
         elif name == 'sum':
             self.metric = 'sum'
         else:
             raise ValueError
-        self.kwargs = kwargs
+
+        if self.need_kwargs:
+            self.kwargs = kwargs
 
     def __call__(self, inp: list):
         if self.metric == 'sum':
@@ -27,7 +37,10 @@ class Metric:
             else:
                 return [sum(inp)]
         else:
-            return [self.metric(*inp, **self.kwargs)]
+            if self.need_kwargs:
+                return [self.metric(*inp, **self.kwargs)]
+            else:
+                return [self.metric(*inp)]
 
 
 class MetricFlow:

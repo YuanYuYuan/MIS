@@ -3,9 +3,41 @@ import torch.nn.functional as F
 import math
 
 
-def adversarial_loss(confidence_map):
-    z = torch.squeeze(confidence_map)
-    return F.binary_cross_entropy_with_logits(z, torch.ones(z.shape))
+class DiscriminatingLoss:
+
+    def __init__(self):
+        self.target = {}
+
+    def __call__(self, x, truth):
+        assert isinstance(truth, bool)
+        x = torch.squeeze(x)
+        if not self.target:
+            self.target = {
+                'truth': torch.ones(x.shape, device=x.device),
+                'fake': torch.zeros(x.shape, device=x.device)
+            }
+        else:
+            for key in self.target:
+                assert self.target[key].shape == x.shape
+
+        if truth:
+            return F.binary_cross_entropy_with_logits(x, self.target['truth'])
+        else:
+            return F.binary_cross_entropy_with_logits(x, self.target['fake'])
+
+
+class AdversarialLoss:
+
+    def __init__(self):
+        self.truth = None
+
+    def __call__(self, x):
+        x = torch.squeeze(x)
+        if self.truth is None:
+            self.truth = torch.ones(x.shape, device=x.device)
+        else:
+            assert self.truth.shape == x.shape
+        return F.binary_cross_entropy_with_logits(x, self.truth)
 
 
 def VAE_KLD(latent_dist):
@@ -161,7 +193,7 @@ def pseudo_label(logits):
 
 
 def confidence_mask(confidence_map, threshold=0.3):
-    return F.sigmoid(confidence_map) >= threshold
+    return torch.sigmoid(confidence_map) >= threshold
 
 
 def masked_dice_loss(
