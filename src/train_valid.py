@@ -11,7 +11,7 @@ from training import (
     EarlyStopper,
     ModelHandler,
     Runner,
-    Learner
+    SegLearner
 )
 from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
@@ -107,7 +107,7 @@ timer = time.time()
 start = timer
 
 runner = Runner(
-    Learner(
+    SegLearner(
         model=model_handler.model,
         meter=MetricFlow(config['meter']),
         optim=optimizer,
