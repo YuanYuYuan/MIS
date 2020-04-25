@@ -263,7 +263,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             model_handlers['dis'].save(
                 file_path=os.path.join(
                     checkpoint_dir,
-                    'best-dis-%02d.pt' % epoch
+                    'best-dis.pt'
                 ),
                 additional_info={'epoch': epoch, 'step': runner.step}
             )
