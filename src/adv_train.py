@@ -45,11 +45,6 @@ parser.add_argument(
     help='saved model checkpoints'
 )
 parser.add_argument(
-    '--unlabeled',
-    default=False,
-    help='train with unlabeled data'
-)
-parser.add_argument(
     '--log-dir',
     default='_logs',
     help='training logs'
@@ -60,6 +55,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+
 # load config
 with open(args.config) as f:
     config = yaml.safe_load(f)
@@ -69,6 +65,17 @@ with open(config['data']) as f:
     data_config = yaml.safe_load(f)
 data_list = data_config['list']
 loader_config = data_config['loader']
+
+# FIXME
+if 'train_dis' in config:
+    train_dis = config['train_dis']
+else:
+    train_dis = False
+
+if 'unlabeled' in config:
+    unlabeled = config['unlabeled']
+else:
+    unlabeled = False
 
 # - data pipeline
 data_gen = dict()
@@ -187,16 +194,19 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             result_list = runner.run(
                 data_gen[stage],
                 training=training,
-                unlabeled=args.unlabeled,  # FIXME
+                unlabeled=unlabeled,  # FIXME
+                train_dis=train_dis,  # FIXME
                 stage=stage_info[stage]
             )
 
         except KeyboardInterrupt:
             print('save temporary model into %s' % args.pause_ckpt)
-            model_handlers['seg'].save(
-                args.pause_ckpt,
-                additional_info={'epoch': epoch, 'step': runner.step}
-            )
+            # FIXME
+            if not train_dis:
+                model_handlers['seg'].save(
+                    args.pause_ckpt,
+                    additional_info={'epoch': epoch, 'step': runner.step}
+                )
             # TODO: improve code
             model_handlers['dis'].save(
                 'pause_dis.pt',
@@ -247,6 +257,17 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                 accu_dict,
                 epoch
             )
+
+        # FIXME
+        if train_dis:
+            model_handlers['dis'].save(
+                file_path=os.path.join(
+                    checkpoint_dir,
+                    'best-dis-%02d.pt' % epoch
+                ),
+                additional_info={'epoch': epoch, 'step': runner.step}
+            )
+            break
 
         # do some stuffs depending on validation
         if stage == 'valid':
@@ -303,6 +324,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                 else:
                     scheduler_metric = roi_scores['mean']
 
+            # TODO: separate early stopping and checkpoint saving
             # check early stopping
             if early_stopper is not None:
                 if early_stopper.mode == 'min':
@@ -335,7 +357,11 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
     # adjust learning rate by epoch
     if scheduler and not terminated:
 
-        if scheduler.use_reduce_lr and stage == 'valid' and scheduler_metric is not None:
+        if all((
+            scheduler.use_reduce_lr,
+            stage == 'valid',
+            scheduler_metric is not None
+        )):
             scheduler.step(metric=scheduler_metric)
         else:
             scheduler.step()

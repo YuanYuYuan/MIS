@@ -130,7 +130,8 @@ class AdvRunner:
         data_gen,
         training=True,
         stage=None,
-        unlabeled=False, # FIXME
+        unlabeled=False,  # FIXME
+        train_dis=False,  # FIXME
         min_ratio=0.,
         include_prediction=False,
     ):
@@ -169,30 +170,49 @@ class AdvRunner:
                 'label': batch['label'].cuda()
             }
 
-            if training:
-                results = self.learners['seg'].learn(data)
-                if not unlabeled:
-                    results_dis_fake = self.learners['dis'].learn({
-                        'label': F.softmax(data['prediction'].detach(), dim=1),
-                        'truth': False,
-                    })
-                    results_dis_truth = self.learners['dis'].learn({
-                        'label': F.one_hot(
-                            data['label'],
-                            data['prediction'].shape[1]
-                        ).permute((0, 4, 1, 2, 3)).float(),
-                        'truth': True,
-                    })
-                    results.update({
-                        'DIS_FAKE': results_dis_fake['loss'],
-                        'DIS_TRUTH':  results_dis_truth['loss']
-                    })
+            # FIXME
+            if train_dis:
+                results = self.learners['seg'].infer(data)
+                results_dis_fake = self.learners['dis'].learn({
+                    'label': F.softmax(data['prediction'].detach(), dim=1),
+                    'truth': False,
+                })
+                results_dis_truth = self.learners['dis'].learn({
+                    'label': F.one_hot(
+                        data['label'],
+                        data['prediction'].shape[1]
+                    ).permute((0, 4, 1, 2, 3)).float(),
+                    'truth': True,
+                })
+                results.update({
+                    'DIS_FAKE': results_dis_fake['loss'],
+                    'DIS_TRUTH':  results_dis_truth['loss']
+                })
             else:
-                results = self.learners['seg'].infer(
-                    data,
-                    include_prediction=include_prediction,
-                    compute_match=(not include_prediction)
-                )
+                if training:
+                    results = self.learners['seg'].learn(data)
+                    if not unlabeled:  # FIXME
+                        results_dis_fake = self.learners['dis'].learn({
+                            'label': F.softmax(data['prediction'].detach(), dim=1),
+                            'truth': False,
+                        })
+                        results_dis_truth = self.learners['dis'].learn({
+                            'label': F.one_hot(
+                                data['label'],
+                                data['prediction'].shape[1]
+                            ).permute((0, 4, 1, 2, 3)).float(),
+                            'truth': True,
+                        })
+                        results.update({
+                            'DIS_FAKE': results_dis_fake['loss'],
+                            'DIS_TRUTH':  results_dis_truth['loss']
+                        })
+                else:
+                    results = self.learners['seg'].infer(
+                        data,
+                        include_prediction=include_prediction,
+                        compute_match=(not include_prediction)
+                    )
 
             # detach all, move to CPU, and convert to numpy
             for key in results:
