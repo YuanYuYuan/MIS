@@ -126,6 +126,12 @@ else:
 timer = time.time()
 start = timer
 
+# FIXME
+if 'grad_accumulation' in config:
+    grad_accumulation = config['grad_accumulation']
+else:
+    grad_accumulation = 1
+
 learners = {
     'seg': AdvSegLearner(
         model=model_handlers['seg'].model,

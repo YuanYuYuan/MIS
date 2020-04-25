@@ -7,17 +7,26 @@ from flows import MetricFlow, ModuleFlow
 
 class Learner:
 
-    def __init__(self, model: ModuleFlow, meter: MetricFlow, optim):
+    def __init__(
+        self,
+        model: ModuleFlow,
+        meter: MetricFlow,
+        optim,
+        grad_accumulation=1
+    ):
         self.model = model
         self.meter = meter
         self.optim = optim
+        self.step = 0
+        self.model.zero_grad()
+        self.grad_accumulation = grad_accumulation
+        assert isinstance(self.grad_accumulation, int)
+        assert self.grad_accumulation >= 1
 
     def _model_run(self, data, training=True):
-
         if training:
             with torch.set_grad_enabled(True):
                 self.model.train()
-                self.optim.zero_grad()
                 return self.model(data)
         else:
             with torch.set_grad_enabled(False):
@@ -25,23 +34,25 @@ class Learner:
                 return self.model(data)
 
     def _evaluate(self, data, training=True):
+        with torch.set_grad_enabled(training):
+            return self.meter(data)
 
-        if training:
-            with torch.set_grad_enabled(True):
-                results = self.meter(data)
+    def _backpropagation(self, loss):
+        if self.grad_accumulation >= 1:
+            loss = loss / self.grad_accumulation
+        loss.backward()
+        self.step += 1
 
-                # back propagation
-                results['loss'].backward()
-                self.optim.step()
-                return results
-        else:
-            with torch.set_grad_enabled(False):
-                return self.meter(data)
+        if self.step % self.grad_accumulation == 0:
+            self.optim.step()
+            self.model.zero_grad()
 
     def learn(self, data):
         outputs = self._model_run(data, training=True)
         data.update(outputs)
-        return self._evaluate(data, training=True)
+        results = self._evaluate(data, training=True)
+        self._backpropagation(results['loss'])
+        return results
 
     def infer(self, data):
         outputs = self._model_run(data, training=False)
@@ -51,8 +62,8 @@ class Learner:
 
 class SegLearner(Learner):
 
-    def __init__(self, model: ModuleFlow, meter: MetricFlow, optim):
-        super().__init__(model, meter, optim)
+    def __init__(self, model: ModuleFlow, meter: MetricFlow, optim, **kwargs):
+        super().__init__(model, meter, optim, **kwargs)
 
     def match_prediction_size(self, outputs, data):
         if 'label' in data:
@@ -70,27 +81,35 @@ class SegLearner(Learner):
         outputs = self._model_run(data, training=True)
         self.match_prediction_size(outputs, data)
         data.update(outputs)
-        return self._evaluate(data, training=True)
+        results = self._evaluate(data, training=True)
+        self._backpropagation(results['loss'])
+        return results
+
+    def _include_prediction(self, data, results):
+        with torch.set_grad_enabled(False):
+            probas = F.softmax(data['prediction'], dim=1)
+            results.update({'prediction': probas})
+
+    def _compute_match(self, data, results):
+        with torch.set_grad_enabled(False):
+            match, total = match_up(
+                data['prediction'],
+                data['label'],
+                needs_softmax=True,
+                batch_wise=True,
+                threshold=-1,
+            )
+            results.update({'match': match, 'total': total})
 
     def infer(self, data, include_prediction=False, compute_match=False):
         outputs = self._model_run(data, training=False)
         self.match_prediction_size(outputs, data)
         data.update(outputs)
         results = self._evaluate(data, training=False)
-        with torch.set_grad_enabled(False):
-            if include_prediction:
-                probas = F.softmax(outputs['prediction'], dim=1)
-                results.update({'prediction': probas})
-
-            if compute_match:
-                match, total = match_up(
-                    outputs['prediction'],
-                    data['label'],
-                    needs_softmax=True,
-                    batch_wise=True,
-                    threshold=-1,
-                )
-                results.update({'match': match, 'total': total})
+        if include_prediction:
+            self._include_prediction(data, results)
+        if compute_match:
+            self._compute_match(data, results)
         return results
 
 
@@ -103,8 +122,9 @@ class AdvSegLearner(SegLearner):
         optim,
         discriminator: ModuleFlow,
         meter_unlabeled: MetricFlow = None,
+        **kwargs,
     ):
-        super().__init__(model, meter, optim)
+        super().__init__(model, meter, optim, **kwargs)
         self.discriminator = discriminator
         self.meter_unlabeled = meter_unlabeled
 
@@ -117,10 +137,16 @@ class AdvSegLearner(SegLearner):
         outputs = self._model_run(data, training=True)
         self.match_prediction_size(outputs, data)
         data.update(outputs)
-        outputs_dis = self.discriminator({'label': outputs['prediction']})
+
+        # add adversarial loss
+        model_prediction = torch.softmax(outputs['prediction'], dim=1)
+        outputs_dis = self.discriminator({'label': model_prediction})
         data.update(outputs_dis)
         self.toggle_discriminator(True)
-        return self._evaluate(data, training=True)
+
+        results = self._evaluate(data, training=True)
+        self._backpropagation(results['loss'])
+        return results
 
     def learn_unlabeled(self, data):
         assert 'label' not in data
@@ -132,16 +158,14 @@ class AdvSegLearner(SegLearner):
         data.update(outputs)
 
         # preprocess with softmax before feeding into discriminator
-        outputs_dis = self.discriminator({'label': torch.softmax(outputs['prediction'], dim=1)})
+        model_prediction = torch.softmax(outputs['prediction'], dim=1)
+        outputs_dis = self.discriminator({'label': model_prediction})
         data.update(outputs_dis)
+        self.toggle_discriminator(True)
 
         with torch.set_grad_enabled(True):
             results = self.meter_unlabeled(data)
-
-            # back propagation
-            results['loss'].backward()
-            self.optim.step()
-        self.toggle_discriminator(True)
+        self._backpropagation(results['loss'])
         return results
 
     def infer(self, data, include_prediction=False, compute_match=False):
@@ -151,18 +175,9 @@ class AdvSegLearner(SegLearner):
         outputs_dis = self.discriminator({'label': outputs['prediction']})
         data.update(outputs_dis)
         results = self._evaluate(data, training=False)
-        with torch.set_grad_enabled(False):
-            if include_prediction:
-                probas = F.softmax(outputs['prediction'], dim=1)
-                results.update({'prediction': probas})
 
-            if compute_match:
-                match, total = match_up(
-                    outputs['prediction'],
-                    data['label'],
-                    needs_softmax=True,
-                    batch_wise=True,
-                    threshold=-1,
-                )
-                results.update({'match': match, 'total': total})
+        if include_prediction:
+            self._include_prediction(data, results)
+        if compute_match:
+            self._compute_match(data, results)
         return results
