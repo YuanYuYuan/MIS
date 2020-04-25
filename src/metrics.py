@@ -11,14 +11,11 @@ class DiscriminatingLoss:
     def __call__(self, x, truth):
         assert isinstance(truth, bool)
         x = torch.squeeze(x)
-        if not self.target:
+        if not self.target or self.target['truth'].shape != x.shape:
             self.target = {
                 'truth': torch.ones(x.shape, device=x.device),
                 'fake': torch.zeros(x.shape, device=x.device)
             }
-        else:
-            for key in self.target:
-                assert self.target[key].shape == x.shape
 
         if truth:
             return F.binary_cross_entropy_with_logits(x, self.target['truth'])
@@ -33,10 +30,8 @@ class AdversarialLoss:
 
     def __call__(self, x):
         x = torch.squeeze(x)
-        if self.truth is None:
+        if self.truth is None or self.truth.shape != x.shape:
             self.truth = torch.ones(x.shape, device=x.device)
-        else:
-            assert self.truth.shape == x.shape
         return F.binary_cross_entropy_with_logits(x, self.truth)
 
 
@@ -193,7 +188,7 @@ def pseudo_label(logits):
 
 
 def confidence_mask(confidence_map, threshold=0.3):
-    return torch.sigmoid(confidence_map) >= threshold
+    return (torch.sigmoid(confidence_map) >= threshold).float()
 
 
 def masked_dice_loss(

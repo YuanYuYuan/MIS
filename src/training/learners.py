@@ -130,8 +130,11 @@ class AdvSegLearner(SegLearner):
         outputs = self._model_run(data, training=True)
         self.match_prediction_size(outputs, data)
         data.update(outputs)
-        outputs_dis = self.discriminator({'label': outputs['prediction']})
+
+        # preprocess with softmax before feeding into discriminator
+        outputs_dis = self.discriminator({'label': torch.softmax(outputs['prediction'], dim=1)})
         data.update(outputs_dis)
+
         with torch.set_grad_enabled(True):
             results = self.meter_unlabeled(data)
 
@@ -139,4 +142,27 @@ class AdvSegLearner(SegLearner):
             results['loss'].backward()
             self.optim.step()
         self.toggle_discriminator(True)
+        return results
+
+    def infer(self, data, include_prediction=False, compute_match=False):
+        outputs = self._model_run(data, training=False)
+        self.match_prediction_size(outputs, data)
+        data.update(outputs)
+        outputs_dis = self.discriminator({'label': outputs['prediction']})
+        data.update(outputs_dis)
+        results = self._evaluate(data, training=False)
+        with torch.set_grad_enabled(False):
+            if include_prediction:
+                probas = F.softmax(outputs['prediction'], dim=1)
+                results.update({'prediction': probas})
+
+            if compute_match:
+                match, total = match_up(
+                    outputs['prediction'],
+                    data['label'],
+                    needs_softmax=True,
+                    batch_wise=True,
+                    threshold=-1,
+                )
+                results.update({'match': match, 'total': total})
         return results

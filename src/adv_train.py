@@ -45,6 +45,11 @@ parser.add_argument(
     help='saved model checkpoints'
 )
 parser.add_argument(
+    '--unlabeled',
+    default=False,
+    help='train with unlabeled data'
+)
+parser.add_argument(
     '--log-dir',
     default='_logs',
     help='training logs'
@@ -176,6 +181,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             result_list = runner.run(
                 data_gen[stage],
                 training=training,
+                unlabeled=args.unlabeled,  # FIXME
                 stage=stage_info[stage]
             )
 
@@ -187,7 +193,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             )
             # TODO: improve code
             model_handlers['dis'].save(
-                'pause_dis.py',
+                'pause_dis.pt',
                 additional_info={'epoch': epoch, 'step': runner.step}
             )
             terminated = True

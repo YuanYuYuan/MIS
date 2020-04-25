@@ -120,7 +120,7 @@ class AdvRunner:
         assert 'seg' in learners
         assert isinstance(learners['seg'], AdvSegLearner)
         assert 'dis' in learners
-        assert isinstance(learners['dis', Learner])
+        assert isinstance(learners['dis'], Learner)
         self.learners = learners
         self.logger = logger
         self.step = dict()
@@ -130,6 +130,7 @@ class AdvRunner:
         data_gen,
         training=True,
         stage=None,
+        unlabeled=False, # FIXME
         min_ratio=0.,
         include_prediction=False,
     ):
@@ -170,23 +171,24 @@ class AdvRunner:
 
             if training:
                 results = self.learners['seg'].learn(data)
-                results_dis_fake = self.learners['dis'].learn({
-                    'label': data['prediction'].detach(),
-                    'truth': False,
-                })
-                results_dis_truth = self.learners['dis'].learn({
-                    'label': F.one_hot(
-                        data['label'],
-                        data['prediction'].shape[1]
-                    ).permute((0, 4, 1, 2, 3)).float(),
-                    'truth': True,
-                })
-                results.update({
-                    'loss_dis_fake': results_dis_fake['loss'],
-                    'loss_dis_truth':  results_dis_truth['loss']
-                })
+                if not unlabeled:
+                    results_dis_fake = self.learners['dis'].learn({
+                        'label': F.softmax(data['prediction'].detach(), dim=1),
+                        'truth': False,
+                    })
+                    results_dis_truth = self.learners['dis'].learn({
+                        'label': F.one_hot(
+                            data['label'],
+                            data['prediction'].shape[1]
+                        ).permute((0, 4, 1, 2, 3)).float(),
+                        'truth': True,
+                    })
+                    results.update({
+                        'DIS_FAKE': results_dis_fake['loss'],
+                        'DIS_TRUTH':  results_dis_truth['loss']
+                    })
             else:
-                results = self.learner['seg'].infer(
+                results = self.learners['seg'].infer(
                     data,
                     include_prediction=include_prediction,
                     compute_match=(not include_prediction)
