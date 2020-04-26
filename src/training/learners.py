@@ -208,7 +208,7 @@ class AdvSegLearner(SegLearner):
         self.match_prediction_size(outputs, data)
         data.update(outputs)
 
-        # preprocess with softmax before feeding into discriminator
+        # preprocess with softmax before fed into discriminator
         model_prediction = torch.softmax(outputs['prediction'], dim=1)
         outputs_dis = self.discriminator({'label': model_prediction})
         data.update(outputs_dis)

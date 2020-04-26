@@ -177,8 +177,10 @@ class AdvRunner:
                 results.update(self.learners['dis'].learn(data))
             else:
                 if training:
-                    results = self.learners['seg'].learn(data)
-                    if not unlabeled:  # FIXME
+                    if unlabeled:
+                        results = self.learners['seg'].learn_unlabeled(data)
+                    else:
+                        results = self.learners['seg'].learn(data)
                         if self.step[stage] >= self.start_adv:
                             results.update(self.learners['dis'].learn(data))
                 else:
