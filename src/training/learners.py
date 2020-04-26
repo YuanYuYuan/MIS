@@ -72,8 +72,8 @@ class DisLearner(Learner):
         label_mask = (data['label'] >= 0).unsequeeze(1)
         if not any(label_mask):
             return {
-                'DIS_FAKE': 0.,
                 'DIS_TRUTH': 0.,
+                'DIS_FAKE': 0.,
             }
 
         # train on ground truth
@@ -106,8 +106,8 @@ class DisLearner(Learner):
         self._backpropagation(fake_loss)
 
         return {
-            'DIS_FAKE': truth_loss,
-            'DIS_TRUTH': fake_loss,
+            'DIS_TRUTH': truth_loss,
+            'DIS_FAKE': fake_loss,
         }
 
 
