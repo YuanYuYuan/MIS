@@ -171,7 +171,7 @@ learners = {
 runner = AdvRunner(
     learners,
     logger=logger,
-    start_adv=stage,
+    start_adv=start_adv,
 )
 
 checkpoint_dir = args.checkpoint_dir
