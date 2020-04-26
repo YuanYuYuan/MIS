@@ -78,7 +78,7 @@ else:
     unlabeled = False
 
 if 'start_adv' in config:
-    start_adv = config['start_adv']
+    start_adv = int(config['start_adv'])
 else:
     start_adv = 1
 
