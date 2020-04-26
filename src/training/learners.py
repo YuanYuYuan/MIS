@@ -70,7 +70,7 @@ class DisLearner(Learner):
         assert 'label' in data
 
         label_mask = (data['label'] >= 0).unsqueeze(1)
-        if not any(label_mask):
+        if not torch.any(label_mask):
             return {
                 'DIS_TRUTH': 0.,
                 'DIS_FAKE': 0.,
