@@ -17,8 +17,8 @@
       'name': 'sum',
       'weight': [
         0.01, // adversarial_loss
-        0.1., // ss_dice_loss
-        0.1., // ss_cross_entropy
+        0.1, // ss_dice_loss
+        0.1, // ss_cross_entropy
       ],
     },
   },

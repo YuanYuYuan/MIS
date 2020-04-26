@@ -48,7 +48,7 @@ generator:
       verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
-      batch_size   : 30
+      batch_size   : 20
       n_workers    : 2
       verbose      : False
 
