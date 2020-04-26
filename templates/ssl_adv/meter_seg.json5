@@ -1,0 +1,61 @@
+{
+  'nodes': {
+    'loss_dice': {'name': 'dice_loss'},
+    'loss_ce': {'name': 'cross_entropy'},
+    'loss_adv': {'name': 'AdversarialLoss'},
+    'pseudo_label': {'name': 'pseudo_label'},
+    'mask': {
+      'name': 'confidence_mask',
+      'threshold': 0.3,
+    },
+    'ss_loss_ce': {'name': 'masked_cross_entropy'},
+    'ss_loss_dice': {'name': 'masked_dice_loss'},
+    'accu': {
+        'name': 'dice_score',
+        // 'threshold': 0.2,
+        'exclude_blank': true
+    },
+    'sum': {
+      'name': 'sum',
+      'weight': [
+        1., // dice loss
+        1., // cross_entropy
+        0.01, // adversarial_loss
+        0.1, // ss_dice_loss
+        0.1, // ss_cross_entropy
+      ],
+    },
+  },
+  'links': {
+    'inps': {
+      'prediction': 0,
+      'label': 1,
+      'confidence_map': 2,
+    },
+    'outs': {
+      'loss': 11,
+      'accu': 3,
+      'DICE':4,
+      'CE': 5,
+      'ADV': 6,
+      'SS_DICE': 9,
+      'SS_CE': 10,
+    },
+    'flow': {
+      // supervised learning
+      'accu': {'inps': [0, 1], 'outs': [3]},
+      'loss_dice': {'inps': [0, 1], 'outs': [4]},
+      'loss_ce': {'inps': [0, 1], 'outs': [5]},
+
+      // semi-supervised learnging
+      'loss_adv': {'inps': [2], 'outs': [6]},
+      'pseudo_label': {'inps': [0], 'outs': [7]},
+      'mask': {'inps': [2], 'outs': [8]},
+      'ss_loss_dice': {'inps': [0, 7, 8], 'outs': [9]},
+      'ss_loss_ce': {'inps': [0, 7, 8], 'outs': [10]},
+
+      // total loss
+      'sum': {'inps': [4, 5, 6, 9, 10], 'outs': [11]}
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  'nodes': {
+    'loss_dis': {'name': 'DiscriminatingLoss'}
+  },
+  'links': {
+    'inps': {'confidence_map': 0, 'truth': 1},
+    'outs': {'loss': 2},
+    'flow': {'loss_dis': {'inps': [0, 1], 'outs': [2]}}
+  }
+}
