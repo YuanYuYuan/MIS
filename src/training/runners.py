@@ -1,7 +1,6 @@
 from tqdm import tqdm
 from utils import get_tty_columns
-from .learners import SegLearner, AdvSegLearner, Learner
-import torch.nn.functional as F
+from .learners import SegLearner, AdvSegLearner, DisLearner
 import math
 import numpy as np
 
@@ -120,7 +119,7 @@ class AdvRunner:
         assert 'seg' in learners
         assert isinstance(learners['seg'], AdvSegLearner)
         assert 'dis' in learners
-        assert isinstance(learners['dis'], Learner)
+        assert isinstance(learners['dis'], DisLearner)
         self.learners = learners
         self.logger = logger
         self.step = dict()
@@ -173,40 +172,12 @@ class AdvRunner:
             # FIXME
             if train_dis:
                 results = self.learners['seg'].infer(data)
-                results_dis_fake = self.learners['dis'].learn({
-                    'label': F.softmax(data['prediction'].detach(), dim=1),
-                    'truth': False,
-                })
-                results_dis_truth = self.learners['dis'].learn({
-                    'label': F.one_hot(
-                        data['label'],
-                        data['prediction'].shape[1]
-                    ).permute((0, 4, 1, 2, 3)).float(),
-                    'truth': True,
-                })
-                results.update({
-                    'DIS_FAKE': results_dis_fake['loss'],
-                    'DIS_TRUTH':  results_dis_truth['loss']
-                })
+                results.update(self.learners['dis'].learn(data))
             else:
                 if training:
                     results = self.learners['seg'].learn(data)
                     if not unlabeled:  # FIXME
-                        results_dis_fake = self.learners['dis'].learn({
-                            'label': F.softmax(data['prediction'].detach(), dim=1),
-                            'truth': False,
-                        })
-                        results_dis_truth = self.learners['dis'].learn({
-                            'label': F.one_hot(
-                                data['label'],
-                                data['prediction'].shape[1]
-                            ).permute((0, 4, 1, 2, 3)).float(),
-                            'truth': True,
-                        })
-                        results.update({
-                            'DIS_FAKE': results_dis_fake['loss'],
-                            'DIS_TRUTH':  results_dis_truth['loss']
-                        })
+                        results.update(self.learners['dis'].learn(data))
                 else:
                     results = self.learners['seg'].infer(
                         data,

@@ -60,6 +60,57 @@ class Learner:
         return self._evaluate(data, training=False)
 
 
+class DisLearner(Learner):
+
+    def __init__(self, model: ModuleFlow, meter: MetricFlow, optim, **kwargs):
+        super().__init__(model, meter, optim, **kwargs)
+
+    def learn(self, data):
+        assert 'prediction' in data
+        assert 'label' in data
+
+        label_mask = (data['label'] >= 0).unsequeeze(1)
+        if not any(label_mask):
+            return {
+                'DIS_FAKE': 0.,
+                'DIS_TRUTH': 0.,
+            }
+
+        # train on ground truth
+        n_classes = data['prediction'].shape[1]
+        onehot_label = F.one_hot(data['label'], n_classes)
+        onehot_label = onehot_label.permute((0, 4, 1, 2, 3))
+        onehot_label = onehot_label.float()
+        outputs = self._model_run({'label': onehot_label}, training=True)
+        results = self._evaluate(
+            {
+                'confidence_map': outputs['confidence_map'][label_mask],
+                'truth': True
+            },
+            training=True
+        )
+        truth_loss = results['loss']
+        self._backpropagation(truth_loss)
+
+        # train on model prediction
+        model_prediction = F.softmax(data['prediction'].detach(), dim=1)
+        outputs = self._model_run({'label': model_prediction}, training=True)
+        results = self._evaluate(
+            {
+                'confidence_map': outputs['confidence_map'][label_mask],
+                'truth': False
+            },
+            training=True
+        )
+        fake_loss = results['loss']
+        self._backpropagation(fake_loss)
+
+        return {
+            'DIS_FAKE': truth_loss,
+            'DIS_TRUTH': fake_loss,
+        }
+
+
 class SegLearner(Learner):
 
     def __init__(self, model: ModuleFlow, meter: MetricFlow, optim, **kwargs):

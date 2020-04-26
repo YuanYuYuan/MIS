@@ -12,7 +12,7 @@ from training import (
     ModelHandler,
     AdvRunner,
     AdvSegLearner,
-    Learner
+    DisLearner
 )
 from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
@@ -146,7 +146,7 @@ learners = {
         optim=optimizers['seg'],
         discriminator=model_handlers['dis'].model,
     ),
-    'dis': Learner(
+    'dis': DisLearner(
         model=model_handlers['dis'].model,
         meter=MetricFlow(config['meters']['dis']),
         optim=optimizers['dis'],
