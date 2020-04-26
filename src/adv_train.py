@@ -76,6 +76,10 @@ if 'unlabeled' in config:
     unlabeled = config['unlabeled']
 else:
     unlabeled = False
+if train_dis:
+    print('Train discriminator only.')
+if unlabeled:
+    print('Train with unlabeled data.')
 
 # - data pipeline
 data_gen = dict()
@@ -138,6 +142,9 @@ if 'grad_accumulation' in config:
     grad_accumulation = config['grad_accumulation']
 else:
     grad_accumulation = 1
+if grad_accumulation > 1:
+    print('grad_accumulation:', grad_accumulation)
+
 
 learners = {
     'seg': AdvSegLearner(
