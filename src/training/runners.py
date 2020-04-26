@@ -114,7 +114,8 @@ class AdvRunner:
     def __init__(
         self,
         learners,
-        logger=None
+        start_adv=1,
+        logger=None,
     ):
         assert 'seg' in learners
         assert isinstance(learners['seg'], AdvSegLearner)
@@ -123,6 +124,7 @@ class AdvRunner:
         self.learners = learners
         self.logger = logger
         self.step = dict()
+        self.start_adv = start_adv
 
     def run(
         self,
@@ -177,7 +179,8 @@ class AdvRunner:
                 if training:
                     results = self.learners['seg'].learn(data)
                     if not unlabeled:  # FIXME
-                        results.update(self.learners['dis'].learn(data))
+                        if self.step[stage] >= self.start_adv:
+                            results.update(self.learners['dis'].learn(data))
                 else:
                     results = self.learners['seg'].infer(
                         data,

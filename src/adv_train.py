@@ -76,10 +76,19 @@ if 'unlabeled' in config:
     unlabeled = config['unlabeled']
 else:
     unlabeled = False
+
+if 'start_adv' in config:
+    start_adv = config['start_adv']
+else:
+    start_adv = 1
+
 if train_dis:
     print('Train discriminator only.')
 if unlabeled:
     print('Train with unlabeled data.')
+if start_adv:
+    print('Start adv after %d iterations.' % start_adv)
+
 
 # - data pipeline
 data_gen = dict()
@@ -159,7 +168,11 @@ learners = {
         optim=optimizers['dis'],
     ),
 }
-runner = AdvRunner(learners, logger=logger)
+runner = AdvRunner(
+    learners,
+    logger=logger,
+    start_adv=stage,
+)
 
 checkpoint_dir = args.checkpoint_dir
 if checkpoint_dir:
