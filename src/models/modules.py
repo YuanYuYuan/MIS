@@ -25,6 +25,7 @@ class ConvBlock(nn.Module):
                 'preprocess_norm',
                 nn.InstanceNorm3d(self.ch_in, affine=True)
             )
+            # FIXME
             self.op.add_module(
                 'preprocess_acti',
                 nn.ReLU(inplace=True) if activation == 'relu'
@@ -82,6 +83,7 @@ class ConvBlock(nn.Module):
                 'postprocess_norm',
                 nn.InstanceNorm3d(self.ch_out, affine=True)
             )
+            # FIXME
             self.op.add_module(
                 'postprocess_acti',
                 nn.ReLU(inplace=True) if activation == 'relu'

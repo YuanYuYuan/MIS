@@ -27,41 +27,82 @@
           'name': 'ConvBlock',
           'dim': '3D',
           'ch_in': 4,
-          'ch_out': 16
+          'ch_out': 16,
+          'activation': 'leaky_relu',
         },
 
         // downsample
         'd_1': {'name': 'DownSample', 'ch_in': 16},
 
         // layer 2
-        'l_21': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 32},
-        'l_22': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 32},
+        'l_21': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 32,
+          'activation': 'leaky_relu',
+        },
+        'l_22': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 32,
+          'activation': 'leaky_relu',
+        },
 
         // downsample
         'd_2': {'name': 'DownSample', 'ch_in': 32},
 
         // layer 3
-        'l_31': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 64},
-        'l_32': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 64},
+        'l_31': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 64,
+          'activation': 'leaky_relu'
+        },
+        'l_32': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 64,
+          'activation': 'leaky_relu',
+        },
 
         // downsample
         'd_3': {'name': 'DownSample', 'ch_in': 64},
 
         // layer 4
-        'l_41': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 128},
-        'l_42': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 128},
+        'l_41': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 128,
+          'activation': 'leaky_relu',
+        },
+        'l_42': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 128,
+          'activation': 'leaky_relu',
+        },
 
         // upsample
         'u_4': {'name': 'UpSample', 'ch_in': 128},
 
         // layer 5
-        'l_5': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 64},
+        'l_5': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 64,
+          'activation': 'leaky_relu',
+        },
 
         // upsample
         'u_5': {'name': 'UpSample', 'ch_in': 64},
 
         // layer 6
-        'l_6': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 32},
+        'l_6': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 32,
+          'activation': 'leaky_relu',
+        },
 
         // upsample
         'u_6': {'name': 'UpSample', 'ch_in': 32},
@@ -71,7 +112,8 @@
           'name': 'ConvBlock',
           'dim': '3D',
           'ch_in': 16,
-          'ch_out': 1
+          'ch_out': 1,
+          'postprocess': false,
         },
       },
     },

@@ -1,6 +1,6 @@
 {
   'nodes': {
-    'loss_adv': {'name': 'adversarial_loss'},
+    'loss_adv': {'name': 'AdversarialLoss'},
     'pseudo_label': {'name': 'pseudo_label'},
     'mask': {
       'name': 'confidence_mask',
@@ -40,7 +40,7 @@
       // 'loss_dice': {'inps': [0, 1], 'outs': [4]},
       // 'loss_ce': {'inps': [0, 1], 'outs': [5]},
 
-      // semi-supervised learnging
+      // semi-supervised learnging unlabeled
       'loss_adv': {'inps': [1], 'outs': [2]},
       'pseudo_label': {'inps': [0], 'outs': [3]},
       'mask': {'inps': [1], 'outs': [4]},

@@ -2,7 +2,7 @@
   'nodes': {
     'loss_dice': {'name': 'dice_loss'},
     'loss_ce': {'name': 'cross_entropy'},
-    'loss_adv': {'name': 'adversarial_loss'},
+    'loss_adv': {'name': 'AdversarialLoss'},
     'pseudo_label': {'name': 'pseudo_label'},
     'mask': {
       'name': 'confidence_mask',
