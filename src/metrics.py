@@ -5,8 +5,9 @@ import math
 
 class DiscriminatingLoss:
 
-    def __init__(self):
+    def __init__(self, label_smooth=True):
         self.target = {}
+        self.label_smooth = label_smooth
 
     def __call__(self, x, truth):
         assert isinstance(truth, bool)
@@ -16,6 +17,8 @@ class DiscriminatingLoss:
                 'truth': torch.ones(x.shape, device=x.device),
                 'fake': torch.zeros(x.shape, device=x.device)
             }
+            if self.label_smooth:
+                self.target['truth'] *= 0.9
 
         if truth:
             return F.binary_cross_entropy_with_logits(x, self.target['truth'])
@@ -25,13 +28,16 @@ class DiscriminatingLoss:
 
 class AdversarialLoss:
 
-    def __init__(self):
+    def __init__(self, label_smooth=True):
         self.truth = None
+        self.label_smooth = label_smooth
 
     def __call__(self, x):
         x = torch.squeeze(x)
         if self.truth is None or self.truth.shape != x.shape:
             self.truth = torch.ones(x.shape, device=x.device)
+            if self.label_smooth:
+                self.truth *= 0.9
         return F.binary_cross_entropy_with_logits(x, self.truth)
 
 
