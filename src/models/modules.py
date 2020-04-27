@@ -96,14 +96,14 @@ class ConvBlock(nn.Module):
 
 class UpSample(nn.Module):
 
-    def __init__(self, ch_in=16):
+    def __init__(self, ch_in=16, align_corners=True):
         super().__init__()
         ch_out = ch_in // 2
         self.op = nn.Sequential(
             nn.Upsample(
                 scale_factor=2,
                 mode='trilinear',
-                align_corners=True
+                align_corners=align_corners
             ),
             nn.Conv3d(ch_in, ch_out, kernel_size=1, bias=False)
         )
