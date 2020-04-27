@@ -12,6 +12,7 @@ class ConvBlock(nn.Module):
         ch_out: int = None,
         preprocess=False,
         postprocess=True,
+        activation='relu',
     ):
         super().__init__()
 
@@ -26,7 +27,8 @@ class ConvBlock(nn.Module):
             )
             self.op.add_module(
                 'preprocess_acti',
-                nn.ReLU(inplace=True)
+                nn.ReLU(inplace=True) if activation == 'relu'
+                else nn.LeakyReLU(negative_slope=0.2, inplace=True)
             )
 
         if dim == '2D':
@@ -82,7 +84,8 @@ class ConvBlock(nn.Module):
             )
             self.op.add_module(
                 'postprocess_acti',
-                nn.ReLU(inplace=True)
+                nn.ReLU(inplace=True) if activation == 'relu'
+                else nn.LeakyReLU(negative_slope=0.2, inplace=True)
             )
 
     def forward(self, x):
