@@ -40,7 +40,7 @@ class Runner:
         for batch in progress_bar:
 
             self.step[stage] += 1
-            if self.logger is not None:
+            if self.logger is not None and 'label' in batch:
                 ratio = (batch['label'] > 0).float().mean().item()
                 self.logger.add_scalar(
                     '%s/quality/ratio' % stage,
@@ -50,10 +50,7 @@ class Runner:
                 if ratio < min_ratio:
                     continue
 
-            data = {
-                'image': batch['image'].cuda(),
-                'label': batch['label'].cuda()
-            }
+            data = {key: batch[key].cuda() for key in batch}
 
             if training:
                 results = self.learner.learn(data, **kwargs)
