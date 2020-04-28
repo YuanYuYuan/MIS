@@ -53,7 +53,7 @@
       'pseudo_label': {'inps': [0], 'outs': [8]},
       'mask': {'inps': [3], 'outs': [9]},
       'ss_loss_dice': {'inps': [0, 8, 9], 'outs': [10]},
-      'ss_loss_ce': {'inps': [0, 9, 9], 'outs': [11]},
+      'ss_loss_ce': {'inps': [0, 8, 9], 'outs': [11]},
       'accu': {'inps': [0, 8], 'outs': [12]},
 
       // total loss
