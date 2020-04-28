@@ -8,6 +8,7 @@
     },
     'ss_loss_ce': {'name': 'masked_cross_entropy'},
     'ss_loss_dice': {'name': 'masked_dice_loss', 'batch_wise': true},
+    'accu': {'name': 'dice_score', 'exclude_blank': true, 'batch_wise': true},
     'sum': {
       'name': 'sum',
       'weight': [
@@ -23,7 +24,8 @@
       'confidence_map': 1,
     },
     'outs': {
-      'loss': 7,
+      'loss': 8,
+      'accu': 7,
       'ADV': 2,
       'SS_DICE': 5,
       'SS_CE': 6,
@@ -35,6 +37,7 @@
       'mask': {'inps': [1], 'outs': [4]},
       'ss_loss_dice': {'inps': [0, 3, 4], 'outs': [5]},
       'ss_loss_ce': {'inps': [0, 3, 4], 'outs': [6]},
+      'accu': {'inps': [0, 3], 'outs': [7]},
 
       // total loss
       'sum': {
@@ -43,7 +46,7 @@
           5, // ss_dice_loss
           6, // ss_cross_entropy
         ],
-        'outs': [7]
+        'outs': [8]
       }
     }
   }
