@@ -1,0 +1,103 @@
+gpus: 0,1
+epochs: 1000
+validation_frequency: 4
+early_stopping_epochs: 10
+data: data_list.yaml
+start_adv: 20
+
+generator:
+  train            :
+    BlockSampler   :
+      shuffle      : True
+      block_shape  : [96, 96, 96]
+      shift        : [16, 16, 16]
+      # out_shape    : [96, 96, 20]
+      n_workers    : 4
+      n_samples    : 16
+      ratios       : [0.3, 1, 1, 1]
+      verbose      : False
+
+    Augmentor      :                  # do preprocessing and data augmentation
+      # zoom_range   : [0.8, 1.2]       # zoom the image/label with some scale in range, note that it only apply on x-y plane
+      # flip         : True             # flip the image/only on x-y plane with a fixed probability 0.5
+      # transpose    : False             # transpose the image/label on x-y plane with a fixed probability 0.5
+      noise        : True             # add a Gaussian noise with mean 0 and sigam 0.05 on the image
+      window_width : 100        # adjust the contrast with the given window width(or a range), default : 100
+      window_level : 50         # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 2                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
+
+    BatchGenerator :
+      batch_size   : 20
+      n_workers    : 2
+      verbose      : False
+
+  train_ssl        :
+    BlockGenerator :
+      block_shape  : [96, 96, 96]
+      stride       : 48
+      # out_shape    : [96, 96, 20]
+      crop_shape   : [256, 256, -1]
+      include_label: False
+      n_workers    : 4
+      verbose      : False
+
+    Augmentor      :                  # do preprocessing and data augmentation
+      window_width : 100              # adjust the contrast with the given window width(or a range), default : 100
+      window_level : 50               # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 4                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
+
+    BatchGenerator :
+      batch_size   : 20
+      n_workers    : 2
+      verbose      : False
+
+  valid            :
+    BlockGenerator :
+      block_shape  : [96, 96, 96]
+      stride       : 48
+      # out_shape    : [96, 96, 20]
+      crop_shape   : [256, 256, -1]
+      n_workers    : 4
+      ordered      : True
+      verbose      : False
+
+    Augmentor      :                  # do preprocessing and data augmentation
+      window_width : 100              # adjust the contrast with the given window width(or a range), default : 100
+      window_level : 50               # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 1                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
+
+    BatchGenerator :
+      batch_size   : 60
+      n_workers    : 1
+      verbose      : False
+
+models:
+  seg: './models/seg_vae_reg.json5'
+  dis: './models/dis.json5'
+
+meters:
+  seg: './meters/seg.json5'
+  vae: './meters/vae.json5'
+  dis: './meters/dis.json5'
+  adv: './meters/adv.json5'
+
+optimizers:
+  seg:
+    name     : AdamW
+    lr       : 0.001
+  dis:
+    name     : AdamW
+    lr       : 0.001
+
+scheduler:
+  mode: max
+  warmup: 10
+  reduce_factor: 0.5
+  patience: 50
+
+early_stopper:
+  mode: max
+  patience: 10
