@@ -146,18 +146,20 @@ if grad_accumulation > 1:
     print('grad_accumulation:', grad_accumulation)
 
 
-learner = SegDisLearner(
-    models={
-        'seg': model_handlers['seg'].model,
-        'dis': model_handlers['dis'].model,
-    },
-    optims=optimizers,
-    meters={
-        key: MetricFlow(config['meters'][key])
-        for key in config['meters']
-    },
+runner = Runner(
+    learner=SegDisLearner(
+        models={
+            'seg': model_handlers['seg'].model,
+            'dis': model_handlers['dis'].model,
+        },
+        optims=optimizers,
+        meters={
+            key: MetricFlow(config['meters'][key])
+            for key in config['meters']
+        },
+    ),
+    logger=logger
 )
-runner = Runner(logger=logger)
 
 checkpoint_dir = args.checkpoint_dir
 if checkpoint_dir:
