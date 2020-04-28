@@ -1,13 +1,13 @@
 from tqdm import tqdm
 from utils import get_tty_columns
-from .learners import SegLearner, AdvSegLearner, DisLearner
+from .learners import AdvSegLearner, DisLearner
 import math
 import numpy as np
 
 
 class Runner:
 
-    def __init__(self, learner: SegLearner, logger=None):
+    def __init__(self, learner, logger=None):
         self.learner = learner
         self.logger = logger
         self.step = dict()

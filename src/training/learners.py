@@ -164,6 +164,196 @@ class SegLearner(Learner):
         return results
 
 
+class SegDisLearner:
+
+    def __init__(
+        self,
+        models,
+        optims,
+        meters,
+        grad_accumulation=1,
+    ):
+        # sanity check
+        for key in ['seg', 'dis']:
+            assert key in models, key
+            assert key in optims, key
+
+        for key in ['seg', 'dis', 'adv', 'vae']:
+            assert key in meters
+
+        # TODO: improve it
+        self.training_rules = {
+            'normal': ['seg', 'vae'],
+            'adv': ['seg', 'vae', 'adv'],
+            'ssl': ['vae', 'adv']
+        }
+
+        self.models = models
+        self.meters = meters
+        self.optims = optims
+        self.step = 0
+
+        for key in self.models:
+            self.models[key].zero_grad()
+
+        self.grad_accumulation = grad_accumulation
+        assert isinstance(self.grad_accumulation, int)
+        assert self.grad_accumulation >= 1
+
+    def _backpropagation(self, model_name, loss):
+        if self.grad_accumulation >= 1:
+            loss = loss / self.grad_accumulation
+        loss.backward()
+        self.step += 1
+
+        if self.step % self.grad_accumulation == 0:
+            self.optims[model_name].step()
+            self.models[model_name].zero_grad()
+
+    def _dis_run(self, data, training=True):
+        mask = (data['label'] >= 0).unsqueeze(1)
+
+        if not torch.any(mask):
+            return {
+                'DIS_TRUTH': 0.,
+                'DIS_FAKE': 0.,
+            }
+
+        else:
+            # Turn on dis if needed
+            if training:
+                for param in self.models['dis'].parameters():
+                    param.requires_grad = True
+                self.models['dis'].train()
+            else:
+                self.models['dis'].eval()
+
+            # on ground truth
+            n_classes = data['prediction'].shape[1]
+            onehot_label = F.one_hot(data['label'], n_classes)
+            onehot_label = onehot_label.permute((0, 4, 1, 2, 3))
+            onehot_label = onehot_label.float()
+
+            # dis produce confidence_map
+            outputs = self.models['dis']({'label': onehot_label})
+            truth_loss = self.meters['dis']({
+                'confidence_map': outputs['confidence_map'][mask],
+                'truth': True
+            })['loss']
+
+            if training:
+                self._backpropagation('dis', truth_loss)
+
+            # on model prediction
+            probas = F.softmax(data['prediction'].detach(), dim=1)
+            outputs = self.models['dis']({'label': probas})
+            fake_loss = self.meters['dis']({
+                'confidence_map': outputs['confidence_map'][mask],
+                'truth': False
+            })['loss']
+
+            if training:
+                self._backpropagation('dis', fake_loss)
+
+            return {
+                'DIS_TRUTH': truth_loss,
+                'DIS_FAKE': fake_loss,
+            }
+
+    def learn(self, data, mode='normal'):
+        assert mode in self.training_rules
+
+        # sanity check
+        if mode in ['noraml', 'adv']:
+            assert 'label' in data
+        if mode == 'ssl':
+            assert 'label' not in data
+
+        with torch.set_grad_enabled(True):
+
+            # run segmentation
+            self.models['seg'].train()
+            data.update(self.models['seg'](data))
+
+            if mode in ['adv', 'ssl']:
+                # post-process with softmax
+                probas = torch.softmax(data['prediction'], dim=1)
+
+                # Turn off dis
+                for param in self.models['dis'].parameters():
+                    param.requires_grad = False
+
+                # dis produce confidence_map
+                self.models['dis'].eval()
+                data.update(self.models['dis']({'label': probas}))
+
+            # evaluate the performance of seg
+            results = {}
+            loss = None
+            for key in self.training_rules[mode]:
+                result = self.meters[key](data)
+                if loss is None:
+                    loss = result.pop('loss')
+                else:
+                    loss = loss + result.pop('loss')
+                results.update(result)
+            results.update({'loss': loss})
+
+            # finally do backpropagation on segmentor
+            self._backpropagation('seg', loss)
+
+            # run discrimination
+            if mode == 'adv':
+                results.update(self._dis_run(data, training=True))
+
+        return results
+
+    def infer(self, data, include_prediction=False, compute_match=False):
+        # XXX: assume mode is adv
+        mode = 'adv'
+
+        with torch.set_grad_enabled(False):
+            self.models['seg'].eval()
+            data.update(self.models['seg'](data))
+
+            # post-process with softmax
+            probas = torch.softmax(data['prediction'], dim=1)
+
+            # dis produce confidence_map
+            self.models['dis'].eval()
+            data.update(self.models['dis']({'label': probas}))
+
+            # evaluate the performance of seg
+            results = {}
+            loss = None
+            for key in self.training_rules[mode]:
+                result = self.meters[key](data)
+                if loss is None:
+                    loss = result.pop('loss')
+                else:
+                    loss = loss + result.pop('loss')
+                results.update(result)
+            results.update({'loss': loss})
+
+            # evaluate the performance of dis
+            results.update(self._dis_run(data, training=False))
+
+            if include_prediction:
+                results.update({'prediction': probas})
+
+            if compute_match:
+                match, total = match_up(
+                    data['prediction'],
+                    data['label'],
+                    needs_softmax=True,
+                    batch_wise=True,
+                    threshold=-1,
+                )
+                results.update({'match': match, 'total': total})
+
+        return results
+
+
 class AdvSegLearner(SegLearner):
 
     def __init__(
