@@ -18,7 +18,7 @@ class Runner:
         training=True,
         stage=None,
         min_ratio=0.,
-        include_prediction=False,
+        **kwargs,
     ):
         if stage is None:
             stage = 'train' if training else 'valid'
@@ -56,13 +56,9 @@ class Runner:
             }
 
             if training:
-                results = self.learner.learn(data)
+                results = self.learner.learn(data, **kwargs)
             else:
-                results = self.learner.infer(
-                    data,
-                    include_prediction=include_prediction,
-                    compute_match=(not include_prediction)
-                )
+                results = self.learner.infer(data, **kwargs)
 
             # detach all, move to CPU, and convert to numpy
             for key in results:

@@ -10,9 +10,8 @@ from training import (
     Scheduler,
     EarlyStopper,
     ModelHandler,
-    AdvRunner,
-    AdvSegLearner,
-    DisLearner
+    Runner,
+    SegDisLearner,
 )
 from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
@@ -76,7 +75,7 @@ else:
     start_adv = 1
 
 if start_adv:
-    print('Start adv after %d iterations.' % start_adv)
+    print('Start adv after %d epochs.' % start_adv)
 
 
 # - data pipeline
@@ -147,25 +146,18 @@ if grad_accumulation > 1:
     print('grad_accumulation:', grad_accumulation)
 
 
-learners = {
-    'seg': AdvSegLearner(
-        model=model_handlers['seg'].model,
-        meter=MetricFlow(config['meters']['seg']),
-        optim=optimizers['seg'],
-        discriminator=model_handlers['dis'].model,
-        meter_unlabeled=MetricFlow(config['meters']['seg_ssl']),
-    ),
-    'dis': DisLearner(
-        model=model_handlers['dis'].model,
-        meter=MetricFlow(config['meters']['dis']),
-        optim=optimizers['dis'],
-    ),
-}
-runner = AdvRunner(
-    learners,
-    logger=logger,
-    start_adv=start_adv,
+learner = SegDisLearner(
+    models={
+        'seg': model_handlers['seg'].model,
+        'dis': model_handlers['dis'].model,
+    },
+    optims=optimizers,
+    meters={
+        key: MetricFlow(config['meters'][key])
+        for key in config['meters']
+    },
 )
+runner = Runner(logger=logger)
 
 checkpoint_dir = args.checkpoint_dir
 if checkpoint_dir:
@@ -206,14 +198,34 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         if not training and epoch % config['validation_frequency'] != 0:
             break
 
+        if (epoch - init_epoch) >= start_adv:
+            if stage == 'train_ssl':
+                mode = 'ssl'
+            else:
+                mode = 'adv'
+        else:
+            if stage == 'train_ssl':
+                break
+            else:
+                mode = 'normal'
+
         # run on an epoch
         try:
-            result_list = runner.run(
-                data_gen[stage],
-                training=training,
-                unlabeled=(stage == 'train_ssl'),
-                stage=stage_info[stage]
-            )
+            if training:
+
+                result_list = runner.run(
+                    data_gen[stage],
+                    training=training,
+                    stage=stage_info[stage],
+                    mode=mode,
+                )
+            else:
+                result_list = runner.run(
+                    data_gen[stage],
+                    training=training,
+                    stage=stage_info[stage],
+                    compute_match=True,
+                )
 
         except KeyboardInterrupt:
             print('save temporary model into %s' % args.pause_ckpt)
