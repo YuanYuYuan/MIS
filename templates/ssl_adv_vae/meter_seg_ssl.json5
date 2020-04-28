@@ -1,0 +1,72 @@
+{
+  'nodes': {
+    'loss_VAE_KLD': {'name': 'VAE_KLD'},
+    'loss_VAE_L2': {'name': 'VAE_L2'},
+    'loss_adv': {'name': 'AdversarialLoss'},
+    'pseudo_label': {'name': 'pseudo_label'},
+    'mask': {
+      'name': 'confidence_mask',
+      'threshold': 0.3,
+    },
+    'ss_loss_ce': {'name': 'masked_cross_entropy'},
+    'ss_loss_dice': {'name': 'masked_dice_loss', 'batch_wise': true},
+    'accu': {
+        'name': 'dice_score',
+        // 'threshold': 0.2,
+        'exclude_blank': true
+    },
+    'sum': {
+      'name': 'sum',
+      'weight': [
+        0.5, // VAE KLD
+        0.5, // VAE L2
+        0.001, // adversarial_loss
+        0.1, // ss_dice_loss
+        0.1, // ss_cross_entropy
+      ],
+    },
+  },
+  'links': {
+    'inps': {
+      'prediction': 0,
+      'latent': 1,
+      'reconstruction': 2,
+      'confidence_map': 3,
+      'image': 4,
+    },
+    'outs': {
+      'loss': 13,
+      'accu': 12,
+      'KLD': 5,
+      'L2': 6,
+      'ADV': 7,
+      'SS_DICE': 10,
+      'SS_CE': 11,
+    },
+    'flow': {
+      // VAE regularization unlabeled
+      'loss_VAE_KLD': {'inps': [1], 'outs': [5]},
+      'loss_VAE_L2': {'inps': [2, 4], 'outs': [6]},
+
+      // semi-supervised learnging unlabeled
+      'loss_adv': {'inps': [3], 'outs': [7]},
+      'pseudo_label': {'inps': [0], 'outs': [8]},
+      'mask': {'inps': [3], 'outs': [9]},
+      'ss_loss_dice': {'inps': [0, 8, 9], 'outs': [10]},
+      'ss_loss_ce': {'inps': [0, 9, 9], 'outs': [11]},
+      'accu': {'inps': [0, 8], 'outs': [12]},
+
+      // total loss
+      'sum': {
+        'inps': [
+          5, // VAE KLD
+          6, // VAE L2
+          7, // adversarial_loss
+          10, // ss_dice_loss
+          11, // ss_cross_entropy
+        ],
+        'outs': [13]
+      }
+    }
+  }
+}

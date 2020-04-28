@@ -1,0 +1,81 @@
+{
+  'nodes': {
+    'loss_dice': {'name': 'dice_loss', 'batch_wise': true},
+    'loss_ce': {'name': 'cross_entropy'},
+    'loss_adv': {'name': 'AdversarialLoss'},
+    'loss_VAE_KLD': {'name': 'VAE_KLD'},
+    'loss_VAE_L2': {'name': 'VAE_L2'},
+    'pseudo_label': {'name': 'pseudo_label'},
+    'mask': {
+      'name': 'confidence_mask',
+      'threshold': 0.3
+    },
+    'ss_loss_ce': {'name': 'masked_cross_entropy'},
+    'ss_loss_dice': {'name': 'masked_dice_loss', 'batch_wise': true},
+    'accu': {'name': 'dice_score', 'exclude_blank': true, 'batch_wise': true},
+    'sum': {
+      'name': 'sum',
+      'weight': [
+        1., // dice loss
+        1., // cross_entropy
+        0.5, // VAE KLD
+        0.5, // VAE L2
+        0.01, // adversarial_loss
+        0.1, // ss_dice_loss
+        0.1, // ss_cross_entropy
+      ],
+    },
+  },
+  'links': {
+    'inps': {
+      'prediction': 0,
+      'latent': 1,
+      'reconstruction': 2,
+      'label': 3,
+      'image': 4,
+      'confidence_map': 5,
+    },
+    'outs': {
+      'loss': 16,
+      'accu': 6,
+      'DICE': 7,
+      'CE': 8,
+      'KLD': 9,
+      'L2': 10,
+      'ADV': 11,
+      'SS_DICE': 14,
+      'SS_CE': 15,
+    },
+    'flow': {
+      // supervised learning
+      'accu': {'inps': [0, 3], 'outs': [6]},
+      'loss_dice': {'inps': [0, 3], 'outs': [7]},
+      'loss_ce': {'inps': [0, 3], 'outs': [8]},
+
+      // VAE regularization
+      'loss_VAE_KLD': {'inps': [1], 'outs': [9]},
+      'loss_VAE_L2': {'inps': [2, 4], 'outs': [10]},
+
+      // semi-supervised learnging
+      'loss_adv': {'inps': [5], 'outs': [11]},
+      'pseudo_label': {'inps': [0], 'outs': [12]},
+      'mask': {'inps': [5], 'outs': [13]},
+      'ss_loss_dice': {'inps': [0, 12, 13], 'outs': [14]},
+      'ss_loss_ce': {'inps': [0, 12, 13], 'outs': [15]},
+
+      // total loss
+      'sum': {
+        'inps': [
+          7, // dice loss
+          8, // cross_entropy
+          9, // VAE KLD
+          10, // VAE L2
+          11, // adversarial_loss
+          14, // ss_dice_loss
+          15, // ss_cross_entropy
+        ],
+        'outs': [16]
+      }
+    }
+  }
+}
