@@ -19,6 +19,7 @@ class DiscriminatingLoss:
             }
             if self.label_smooth:
                 self.target['truth'] *= 0.9
+                self.target['fake'] += 0.1
 
         if truth:
             return F.binary_cross_entropy_with_logits(x, self.target['truth'])
