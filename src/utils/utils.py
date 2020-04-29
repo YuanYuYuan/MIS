@@ -9,6 +9,7 @@ import yaml
 from typing import Dict
 import models
 import torch
+import sys
 
 
 class ModelHandler:
@@ -124,8 +125,11 @@ def score_dict_to_markdown(score_dict):
 
 
 def get_tty_columns():
-    rows, columns = os.popen('stty size', 'r').read().split()
-    return int(columns)
+    if sys.stdout.isatty():
+        return 112
+    else:
+        rows, columns = os.popen('stty size', 'r').read().split()
+        return int(columns)
 
 
 # TODO: move epoch + 1 -> epoch, remember to modify train.py and simple_run.py
