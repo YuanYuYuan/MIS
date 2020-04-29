@@ -126,10 +126,10 @@ def score_dict_to_markdown(score_dict):
 
 def get_tty_columns():
     if sys.stdout.isatty():
-        return 112
-    else:
         rows, columns = os.popen('stty size', 'r').read().split()
         return int(columns)
+    else:
+        return 112
 
 
 # TODO: move epoch + 1 -> epoch, remember to modify train.py and simple_run.py
