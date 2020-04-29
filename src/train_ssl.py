@@ -197,8 +197,11 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         training = True if 'train' in stage else False
 
         # skip validation stage by validation_frequency
-        if not training and epoch % config['validation_frequency'] != 0:
-            break
+        if all((
+            not training,
+            (epoch - init_epoch) % config['validation_frequency'] != 0
+        )):
+            continue
 
         if (epoch - init_epoch) >= start_adv:
             if stage == 'train_ssl':
@@ -207,14 +210,13 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                 mode = 'adv'
         else:
             if stage == 'train_ssl':
-                break
+                continue
             else:
                 mode = 'normal'
 
         # run on an epoch
         try:
             if training:
-
                 result_list = runner.run(
                     data_gen[stage],
                     training=training,
@@ -340,6 +342,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     scheduler_metric = result['loss']
                 else:
                     scheduler_metric = roi_scores['mean']
+                scheduler.step(metric=scheduler_metric)
 
             # TODO: separate early stopping and checkpoint saving
             # check early stopping
@@ -374,13 +377,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
     # adjust learning rate by epoch
     if scheduler and not terminated:
 
-        if all((
-            scheduler.use_reduce_lr,
-            stage == 'valid',
-            scheduler_metric is not None
-        )):
-            scheduler.step(metric=scheduler_metric)
-        else:
+        if (not scheduler.use_reduce_lr and stage != 'valid'):
             scheduler.step()
 
         if logger:
