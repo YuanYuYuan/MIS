@@ -19,8 +19,6 @@ TRAINING_CONFIG = './training.yaml'
 INFERING_CONFIG = './infering.yaml'
 TRAIN_LOG_DIR   = './_logs'
 CKPT_DIR  = './_ckpts'
-CKPT = 'seg.pt'
-CKPT_DIS = 'dis.pt'
 PAUSE_CKPT = 'pause.pt'
 
 # train
@@ -29,16 +27,20 @@ TRAIN_FLAGS += --log-dir $(TRAIN_LOG_DIR)
 TRAIN_FLAGS += --checkpoint-dir $(CKPT_DIR)
 TRAIN_FLAGS += --pause-ckpt $(PAUSE_CKPT)
 
+ifneq ($(SEG_CKPT),)
+	TRAIN_FLAGS += --checkpoint $(SEG_CKPT)
+endif
+
+ifneq ($(DIS_CKPT),)
+	TRAIN_FLAGS += --checkpoint $(DIS_CKPT)
+endif
+
 
 run: clean train
 
 train:
 	@echo "===== Training... ====="
 	$(EXECUTOR) $(SRC_DIR)/train_ssl.py $(TRAIN_FLAGS)
-
-retrain:
-	@echo "===== Training... ====="
-	$(EXECUTOR) $(SRC_DIR)/train_ssl.py $(TRAIN_FLAGS) --checkpoint $(CKPT) --checkpoint-dis $(CKPT_DIS)
 
 continue:
 	@echo "===== Training... ====="
