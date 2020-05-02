@@ -12,6 +12,7 @@ from training import (
     ModelHandler,
     Runner,
     SegDisLearner,
+    CheckpointHandler,
 )
 from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
@@ -27,21 +28,6 @@ parser.add_argument(
     '--config',
     required=True,
     help='training config'
-)
-parser.add_argument(
-    '--checkpoint',
-    default=None,
-    help='pretrained model checkpoint'
-)
-parser.add_argument(
-    '--checkpoint-dis',
-    default=None,
-    help='pretrained model checkpoint'
-)
-parser.add_argument(
-    '--checkpoint-dir',
-    default='_ckpts',
-    help='saved model checkpoints'
 )
 parser.add_argument(
     '--log-dir',
@@ -62,7 +48,12 @@ generator_config = config['generator']
 stages = generator_config.keys()
 assert 'train' in stages
 assert 'valid' in stages
-assert 'train_ssl' in stages
+
+# SSL
+# assert 'train_ssl' in stages
+if 'train_ssl' in stages:
+    print('SSL is included in the trianing.')
+
 with open(config['data']) as f:
     data_config = yaml.safe_load(f)
 data_list = data_config['list']
@@ -103,14 +94,20 @@ torch.backends.cudnn.enabled = True
 
 # - model
 model_handlers = {
-    'seg': ModelHandler(
-        config['models']['seg'],
-        checkpoint=args.checkpoint,
-    ),
-    'dis': ModelHandler(
-        config['models']['dis'],
-        checkpoint=args.checkpoint_dis,
-    ),
+    key: ModelHandler(**config['models'][key])
+    for key in config['models']
+}
+print('=====================================================')
+print('Models:', model_handlers)
+print('=====================================================')
+
+# - checkpoint handler
+ckpt_handlers = {
+    key: CheckpointHandler(
+        model_handlers[key],
+        **config['ckpt_handlers'][key]
+    )
+    for key in config['ckpt_handlers']
 }
 
 # - optimizer
@@ -121,13 +118,11 @@ optimizers = {
 
 # - scheduler
 if 'scheduler' in config:
-    scheduler = Scheduler(
-        optimizers['seg'],
-        **config['scheduler']
-    )
+    scheduler = Scheduler(optimizers['seg'], **config['scheduler'])
 else:
     scheduler = None
 
+# - load checkpoints
 
 if args.log_dir is not None:
     logger = SummaryWriter(args.log_dir)
@@ -344,7 +339,6 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     scheduler_metric = roi_scores['mean']
                 scheduler.step(metric=scheduler_metric)
 
-            # TODO: separate early stopping and checkpoint saving
             # check early stopping
             if early_stopper is not None:
                 if early_stopper.mode == 'min':
@@ -358,21 +352,17 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     terminated = True
                     break
 
-                elif improved and checkpoint_dir is not None:
-                    model_handlers['seg'].save(
-                        file_path=os.path.join(
-                            checkpoint_dir,
-                            '%02d-%.5f.pt' % (epoch, early_stopper_metric)
-                        ),
-                        additional_info={'epoch': epoch, 'step': runner.step}
-                    )
-                    model_handlers['dis'].save(
-                        file_path=os.path.join(
-                            checkpoint_dir,
-                            'dis-%02d-%.5f.pt' % (epoch, early_stopper_metric)
-                        ),
-                        additional_info={'epoch': epoch, 'step': runner.step}
-                    )
+            # save checkpoints
+            if ckpt_handlers[key].criterion == 'min':
+                metric = result['loss']
+            else:
+                metric = roi_scores['mean']
+            for key in ckpt_handlers:
+                ckpt_handlers[key].run(
+                    metric,
+                    epoch,
+                    additional_info={'epoch': epoch, 'step': runner.step}
+                )
 
     # adjust learning rate by epoch
     if scheduler and not terminated:

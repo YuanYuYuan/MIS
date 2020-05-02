@@ -36,10 +36,10 @@ class ModelHandler:
             model_state.update(pretrained_weights)
             self.model.load_state_dict(model_state)
 
-        # swicth between multi_gpu/single gpu modes
+        # multi_gpu/single gpu modes
         if torch.cuda.device_count() > 1:
             self.model = torch.nn.DataParallel(self.model).cuda()
-        else:
+        elif torch.cuda.device_count() == 1:
             self.model = self.model.cuda()
 
     def save(self, file_path, additional_info=dict()):
@@ -53,3 +53,4 @@ class ModelHandler:
         if len(additional_info) >= 1:
             content.update(additional_info)
         torch.save(content, file_path)
+        print('Checkpoint %s has been saved.' % file_path)

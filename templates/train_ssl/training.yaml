@@ -75,8 +75,22 @@ generator:
       verbose      : False
 
 models:
-  seg: './models/seg_vae_reg.json5'
-  dis: './models/dis.json5'
+  seg:
+    model_config: './models/seg_vae_reg.json5'
+    checkpoint: 'seg.pt'
+  dis:
+    model_config: './models/dis.json5'
+    checkpoint: 'dis.pt'
+
+ckpt_handlers:
+  seg:
+    checkpoint_dir: '_ckpts_seg'
+    mode: 'improved'
+    criterion: 'max'
+  dis:
+    checkpoint_dir: '_ckpts_dis'
+    mode: 'improved'
+    criterion: 'max'
 
 meters:
   seg: './meters/seg.json5'

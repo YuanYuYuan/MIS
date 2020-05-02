@@ -311,7 +311,7 @@ class SegDisLearner:
             # finally do backpropagation on segmentor
             self._backpropagation('seg', loss)
 
-            # run discrimination
+            # run training of discriminator only on 'adv' mode
             if mode == 'adv':
                 results.update(self._dis_run(data, training=True))
 

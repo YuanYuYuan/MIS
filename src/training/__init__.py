@@ -4,3 +4,4 @@ from .optimizers import Optimizer
 from .runners import *
 from .scheduler import Scheduler
 from .learners import *
+from .checkpoint_handler import CheckpointHandler
