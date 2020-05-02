@@ -290,6 +290,7 @@ class SegDisLearner:
             # evaluate the performance of seg
             results = {}
             loss = None
+            accu = None
             for key in self.training_rules[mode]:
                 result = self.meters[key](data)
 
@@ -299,14 +300,19 @@ class SegDisLearner:
                 else:
                     loss = loss + result.pop('loss')
 
-                # isolate those accus except the seg accu
-                if 'accu' in result and key != 'seg':
-                    results.update({
-                        '%s_accu' % key: result.pop('accu')
-                    })
+                # tackle with the duplicated accus
+                if 'accu' in result:
+                    if accu is None:
+                        accu = result.pop('accu')
+                    else:
+                        results.update({
+                            '%s_accu' % key: torch.mean(result.pop('accu'))
+                        })
 
                 results.update(result)
             results.update({'loss': loss})
+            assert accu is not None
+            results.update({'accu': accu})
 
             # finally do backpropagation on segmentor
             self._backpropagation('seg', loss)
