@@ -301,7 +301,9 @@ class SegDisLearner:
 
                 # isolate those accus except the seg accu
                 if 'accu' in result and key != 'seg':
-                    results.update({key+'_accu': result.pop('accu')})
+                    results.update({
+                        '%s_accu' % key: result.pop('accu')
+                    })
 
                 results.update(result)
             results.update({'loss': loss})
