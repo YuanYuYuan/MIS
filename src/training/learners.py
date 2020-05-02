@@ -292,10 +292,17 @@ class SegDisLearner:
             loss = None
             for key in self.training_rules[mode]:
                 result = self.meters[key](data)
+
+                # sum loss
                 if loss is None:
                     loss = result.pop('loss')
                 else:
                     loss = loss + result.pop('loss')
+
+                # isolate those accus except the seg accu
+                if 'accu' in result and key != 'seg':
+                    results.update({key+'_accu': result.pop('accu')})
+
                 results.update(result)
             results.update({'loss': loss})
 
