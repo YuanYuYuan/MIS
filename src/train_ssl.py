@@ -97,9 +97,6 @@ model_handlers = {
     key: ModelHandler(**config['models'][key])
     for key in config['models']
 }
-print('=====================================================')
-print('Models:', model_handlers)
-print('=====================================================')
 
 # - checkpoint handler
 ckpt_handlers = {
@@ -156,9 +153,6 @@ runner = Runner(
     logger=logger
 )
 
-checkpoint_dir = args.checkpoint_dir
-if checkpoint_dir:
-    os.makedirs(checkpoint_dir, exist_ok=True)
 
 # early stopper
 if 'early_stopper' in config:
@@ -353,11 +347,13 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     break
 
             # save checkpoints
-            if ckpt_handlers[key].criterion == 'min':
-                metric = result['loss']
-            else:
-                metric = roi_scores['mean']
             for key in ckpt_handlers:
+                if ckpt_handlers[key].mode == 'each':
+                    metric = roi_scores['mean']
+                elif ckpt_handlers[key].criterion == 'min':
+                    metric = result['loss']
+                else:
+                    metric = roi_scores['mean']
                 ckpt_handlers[key].run(
                     metric,
                     epoch,
