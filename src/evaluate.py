@@ -4,8 +4,11 @@ import argparse
 import time
 import os
 import yaml
-from training.model_handler import ModelHandler
-from training.runner import Runner
+from training import (
+    ModelHandler,
+    Runner,
+    SegLearner
+)
 from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
 from tqdm import tqdm
@@ -97,8 +100,11 @@ os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
 # - model
 model_handler = ModelHandler(config['model'], checkpoint=args.checkpoint)
 runner = Runner(
-    model=model_handler.model,
-    meter=MetricFlow(config['meter']),
+    learner=SegLearner(
+        model=model_handler.model,
+        meter=MetricFlow(config['meter']),
+        optim=dict()
+    ),
     logger=logger,
 )
 
