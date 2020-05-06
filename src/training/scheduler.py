@@ -1,5 +1,4 @@
 from torch.optim.lr_scheduler import _LRScheduler
-import math
 
 
 class Scheduler(_LRScheduler):
@@ -9,6 +8,7 @@ class Scheduler(_LRScheduler):
         optimizer,
         warmup=0,
         reduce_factor=1.,
+        threshold=0.95,
         patience=0,
         mode='min'
     ):
@@ -30,6 +30,7 @@ class Scheduler(_LRScheduler):
             self.best = None
 
         self.stage = 'init'
+        self.threshold = threshold
         super().__init__(optimizer)
 
     def get_lr(self):
@@ -46,13 +47,13 @@ class Scheduler(_LRScheduler):
             self.stage = 'constant'
             return self.base_lrs
 
-    def check_improved(self, metric, threshold=0.95):
+    def check_improved(self, metric):
         if self.best is None:
             return True
         elif self.mode == 'min':
-            return (metric * threshold) <= self.best
+            return (metric * self.threshold) < self.best
         else:
-            return metric >= (self.best * threshold)
+            return metric > (self.best * self.threshold)
 
     def step(self, epoch=None, metric=None):
         if self.stage == 'init':

@@ -52,7 +52,7 @@ assert 'valid' in stages
 # SSL
 # assert 'train_ssl' in stages
 if 'train_ssl' in stages:
-    print('SSL is included in the trianing.')
+    print('SSL is included in the training.')
 
 with open(config['data']) as f:
     data_config = yaml.safe_load(f)
@@ -363,7 +363,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
     # adjust learning rate by epoch
     if scheduler and not terminated:
 
-        if (not scheduler.use_reduce_lr and stage != 'valid'):
+        if not scheduler.use_reduce_lr and stage != 'valid':
             scheduler.step()
 
         if logger:
@@ -376,6 +376,11 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                 logger.add_scalar(
                     'scheduler/best_metric',
                     scheduler.best,
+                    epoch
+                )
+                logger.add_scalar(
+                    'scheduler/n_stagnation',
+                    scheduler.n_stagnation,
                     epoch
                 )
 

@@ -131,7 +131,9 @@ def match_up(
 
 
 def compute_dice(match, total, smooth):
-    return ((2. * match + smooth) / (total + smooth))
+    # XXX
+    # return ((2. * match + smooth) / (total + smooth))
+    return ((2. * match) / (total + 1e-9))
 
 
 def dice_score(
