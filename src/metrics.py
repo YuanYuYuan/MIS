@@ -42,6 +42,16 @@ class AdversarialLoss:
         return F.binary_cross_entropy_with_logits(x, self.truth)
 
 
+# this loss assumes the input is after sigomid
+def adversarial_loss(x):
+    return 1. - x.mean()
+
+
+# this loss assumes the inputs are after sigomid
+def discriminating_loss(x_true, x_fake):
+    return x_true.mean() - x_fake.mean()
+
+
 def VAE_KLD(latent_dist):
     mean, std = latent_dist
     std_square = std**2
@@ -196,8 +206,11 @@ def pseudo_label(logits):
     return torch.argmax(logits, dim=1)
 
 
-def confidence_mask(confidence_map, threshold=0.3):
-    return (torch.sigmoid(confidence_map) >= threshold).float()
+def confidence_mask(confidence_map, threshold=0.3, need_sigmoid=False):
+    if need_sigmoid:
+        return (torch.sigmoid(confidence_map) >= threshold).float()
+    else:
+        return (confidence_map >= threshold).float()
 
 
 def masked_dice_loss(

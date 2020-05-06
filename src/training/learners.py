@@ -178,7 +178,9 @@ class SegDisLearner:
             assert key in models, key
             assert key in optims, key
 
-        for key in ['seg', 'dis', 'adv', 'vae']:
+        # for key in ['seg', 'dis', 'adv', 'vae']:
+        #     assert key in meters
+        for key in ['seg', 'adv', 'vae']:
             assert key in meters
 
         # TODO: improve it
@@ -234,31 +236,50 @@ class SegDisLearner:
             onehot_label = onehot_label.permute((0, 4, 1, 2, 3))
             onehot_label = onehot_label.float()
 
-            # dis produce confidence_map
-            outputs = self.models['dis']({'label': onehot_label})
-            truth_loss = self.meters['dis']({
-                'confidence_map': outputs['confidence_map'][mask],
-                'truth': True
-            })['loss']
-
-            if training:
-                self._backpropagation('dis', truth_loss)
-
             # on model prediction
             probas = F.softmax(data['prediction'].detach(), dim=1)
-            outputs = self.models['dis']({'label': probas})
-            fake_loss = self.meters['dis']({
-                'confidence_map': outputs['confidence_map'][mask],
-                'truth': False
-            })['loss']
+
+            # mean of the masked confidence_map from each label
+            cmap = {
+                'from_model': self.models['dis']({'label': probas})[mask].mean(),
+                'from_label': self.models['dis']({'label': onehot_label})[mask].mean(),
+            }
 
             if training:
-                self._backpropagation('dis', fake_loss)
+                dis_loss = cmap['from_model'] - cmap['from_model']
+                self._backpropagation('dis', dis_loss)
 
             return {
-                'DIS_TRUTH': truth_loss,
-                'DIS_FAKE': fake_loss,
+                'cmap_from_model': cmap['from_model'],
+                'cmap_from_label': cmap['from_label'],
+                'DIS_LOSS': dis_loss,
             }
+
+            # # dis produce confidence_map
+            # outputs = self.models['dis']({'label': onehot_label})
+            # truth_loss = self.meters['dis']({
+            #     'confidence_map': outputs['confidence_map'][mask],
+            #     'truth': True
+            # })['loss']
+
+            # if training:
+            #     self._backpropagation('dis', truth_loss)
+
+            # # on model prediction
+            # probas = F.softmax(data['prediction'].detach(), dim=1)
+            # outputs = self.models['dis']({'label': probas})
+            # fake_loss = self.meters['dis']({
+            #     'confidence_map': outputs['confidence_map'][mask],
+            #     'truth': False
+            # })['loss']
+
+            # if training:
+            #     self._backpropagation('dis', fake_loss)
+
+            # return {
+            #     'DIS_TRUTH': truth_loss,
+            #     'DIS_FAKE': fake_loss,
+            # }
 
     def learn(self, data, mode='normal'):
         assert mode in self.training_rules
