@@ -144,7 +144,10 @@ print('Accu: ' + ', '.join(
 
 scores = dict()
 with tqdm(
-    reverter.on_batches(result_list),
+    reverter.on_batches(
+        result_list,
+        output_threshold=config['output_threshold']
+    ),
     total=len(reverter.data_list),
     dynamic_ncols=True,
     ncols=get_tty_columns(),

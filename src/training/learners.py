@@ -213,73 +213,46 @@ class SegDisLearner:
             self.models[model_name].zero_grad()
 
     def _dis_run(self, data, training=True):
-        mask = (data['label'] >= 0).unsqueeze(1)
-
-        if not torch.any(mask):
-            return {
-                'DIS_TRUTH': 0.,
-                'DIS_FAKE': 0.,
-            }
-
+        # Turn on dis if needed
+        if training:
+            for param in self.models['dis'].parameters():
+                param.requires_grad = True
+            self.models['dis'].train()
         else:
-            # Turn on dis if needed
-            if training:
-                for param in self.models['dis'].parameters():
-                    param.requires_grad = True
-                self.models['dis'].train()
-            else:
-                self.models['dis'].eval()
+            self.models['dis'].eval()
 
-            # on ground truth
-            n_classes = data['prediction'].shape[1]
-            onehot_label = F.one_hot(data['label'], n_classes)
-            onehot_label = onehot_label.permute((0, 4, 1, 2, 3))
-            onehot_label = onehot_label.float()
+        # ground truth
+        n_classes = data['prediction'].shape[1]
+        onehot_label = F.one_hot(data['label'], n_classes)
+        onehot_label = onehot_label.permute((0, 4, 1, 2, 3))
+        onehot_label = onehot_label.float()
 
-            # on model prediction
-            probas = F.softmax(data['prediction'].detach(), dim=1)
+        # model prediction
+        probas = F.softmax(data['prediction'].detach(), dim=1)
 
-            # mean of the masked confidence_map from each label
-            cmap = {
-                'from_model': self.models['dis']({'label': probas})[mask].mean(),
-                'from_label': self.models['dis']({'label': onehot_label})[mask].mean(),
-            }
+        # mean of the masked confidence_map from each label
+        cmap = {
+            'from_model': self.models['dis']({'label': probas}),
+            'from_label': self.models['dis']({'label': onehot_label}),
+        }
+        mask = (data['label'] >= 0).unsqueeze(1)
+        cmap = {
+            key: cmap[key]['confidence_map'][mask].mean()
+            for key in cmap
+        }
+        results = {
+            'cmap_from_model': cmap['from_model'],
+            'cmap_from_label': cmap['from_label'],
+        }
 
-            if training:
-                dis_loss = cmap['from_model'] - cmap['from_model']
-                self._backpropagation('dis', dis_loss)
-
-            return {
-                'cmap_from_model': cmap['from_model'],
-                'cmap_from_label': cmap['from_label'],
+        if training:
+            dis_loss = cmap['from_model'] - cmap['from_label']
+            self._backpropagation('dis', dis_loss)
+            results.update({
                 'DIS_LOSS': dis_loss,
-            }
+            })
 
-            # # dis produce confidence_map
-            # outputs = self.models['dis']({'label': onehot_label})
-            # truth_loss = self.meters['dis']({
-            #     'confidence_map': outputs['confidence_map'][mask],
-            #     'truth': True
-            # })['loss']
-
-            # if training:
-            #     self._backpropagation('dis', truth_loss)
-
-            # # on model prediction
-            # probas = F.softmax(data['prediction'].detach(), dim=1)
-            # outputs = self.models['dis']({'label': probas})
-            # fake_loss = self.meters['dis']({
-            #     'confidence_map': outputs['confidence_map'][mask],
-            #     'truth': False
-            # })['loss']
-
-            # if training:
-            #     self._backpropagation('dis', fake_loss)
-
-            # return {
-            #     'DIS_TRUTH': truth_loss,
-            #     'DIS_FAKE': fake_loss,
-            # }
+        return results
 
     def learn(self, data, mode='normal'):
         assert mode in self.training_rules
@@ -362,14 +335,28 @@ class SegDisLearner:
             # evaluate the performance of seg
             results = {}
             loss = None
+            accu = None
             for key in self.training_rules[mode]:
                 result = self.meters[key](data)
                 if loss is None:
                     loss = result.pop('loss')
                 else:
                     loss = loss + result.pop('loss')
+
+                # tackle with the duplicated accus
+                if 'accu' in result:
+                    if accu is None:
+                        accu = result.pop('accu')
+                    else:
+                        results.update({
+                            '%s_accu' % key: torch.mean(result.pop('accu'))
+                        })
                 results.update(result)
             results.update({'loss': loss})
+
+            # NOTE: improve me
+            assert accu is not None
+            results.update({'accu': accu})
 
             # evaluate the performance of dis
             results.update(self._dis_run(data, training=False))
