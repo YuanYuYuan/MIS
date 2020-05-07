@@ -1,6 +1,39 @@
 import torch
 import torch.nn.functional as F
 import math
+import torch.autograd as autograd
+
+
+# ref: https://github.com/eriklindernoren/PyTorch-GAN/blob/22ce15edd1abeb4f735be11592569720e2dd3018/implementations/wgan_gp/wgan_gp.py
+def gradient_norm(discriminator, real, fake):
+    assert real.shape == fake.shape
+    batch_size = real.shape[0]
+
+    # create x by interpolating between real and fake inputs
+    coef_shape = (batch_size,) + (1,) * (len(real.shape) - 1)
+    coef = torch.rand(coef_shape, device=real.device)
+    x = (coef * real + (1 - coef) * fake).requires_grad_(True)
+    y = discriminator(x)
+    grad = autograd.grad(
+        outputs=y,
+        inputs=x,
+        grad_outputs=torch.ones_like(
+            y,
+            device=real.device,
+            requires_grad=False
+        ),
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True
+    )[0].view(batch_size, -1)
+
+    # manually compute norm to avoid small gradients
+    grad_norm = torch.sqrt(torch.sum(grad ** 2, dim=1) + 1e-12)
+    return grad_norm
+
+
+def gradient_penalty(grad_norm):
+    return ((grad_norm - 1) ** 2).mean()
 
 
 class DiscriminatingLoss:

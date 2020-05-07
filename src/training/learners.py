@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from utils import crop_range
-from metrics import match_up
+from metrics import match_up, gradient_norm, gradient_penalty
 from flows import MetricFlow, ModuleFlow
 
 
@@ -246,10 +246,14 @@ class SegDisLearner:
         }
 
         if training:
-            dis_loss = cmap['from_model'] - cmap['from_label']
+            grad_norm = gradient_norm(self.models['dis'], onehot_label, probas)
+            grad_penalty = gradient_penalty(grad_norm)
+            dis_loss = cmap['from_model'] - cmap['from_label'] + grad_penalty
             self._backpropagation('dis', dis_loss)
             results.update({
                 'DIS_LOSS': dis_loss,
+                'grad_norm': grad_norm,
+                'grad_penalty': grad_penalty,
             })
 
         return results
