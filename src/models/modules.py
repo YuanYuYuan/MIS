@@ -13,12 +13,15 @@ class ConvBlock(nn.Module):
         preprocess=False,
         postprocess=True,
         activation='relu',
+        tag=None,
     ):
         super().__init__()
 
         self.op = nn.Sequential()
         self.ch_in = ch_in
         self.ch_out = ch_in if ch_out is None else ch_out
+        self.dim = dim
+        self.tag = tag
 
         if preprocess:
             self.op.add_module(
@@ -91,6 +94,7 @@ class ConvBlock(nn.Module):
             )
 
     def forward(self, x):
+        assert x.shape[1] == self.ch_in, (self.dim, x.shape, self.ch_in, self.ch_out, self.tag)
         return self.op(x)
 
 
@@ -98,6 +102,7 @@ class UpSample(nn.Module):
 
     def __init__(self, ch_in=16, align_corners=True):
         super().__init__()
+        self.ch_in = ch_in
         ch_out = ch_in // 2
         self.op = nn.Sequential(
             nn.Upsample(
@@ -109,6 +114,7 @@ class UpSample(nn.Module):
         )
 
     def forward(self, x):
+        assert x.shape[1] == self.ch_in, (x.shape, self.ch_in)
         return self.op(x)
 
 
@@ -116,6 +122,7 @@ class DownSample(nn.Module):
 
     def __init__(self, ch_in=16):
         super().__init__()
+        self.ch_in = ch_in
         ch_out = ch_in * 2
         self.op = nn.Conv3d(
             ch_in,
@@ -127,6 +134,7 @@ class DownSample(nn.Module):
         )
 
     def forward(self, x):
+        assert x.shape[1] == self.ch_in, (x.shape, self.ch_in)
         return self.op(x)
 
 
@@ -144,7 +152,7 @@ class LatentReparametrization(nn.Module):
         self.in_shape = in_shape
 
     def forward(self, x):
-        assert x.shape[1:] == self.in_shape, (x.shape[1:], self.in_shape)
+        assert x.shape[1:] == self.in_shape, (x.shape, self.in_shape)
         x = torch.flatten(x, start_dim=1)
         mean = self.op['mean'](x)
         std = self.op['std'](x)

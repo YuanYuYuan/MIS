@@ -130,7 +130,13 @@ timer = time.time()
 start = timer
 
 # TODO: integrate them into the formal framework
-print(config['exp'])
+if 'exp' in config:
+    print(config['exp'])
+    if 'learner' in config['exp']:
+        exp_leaner_config = config['exp']['learner']
+else:
+    exp_leaner_config = {}
+
 
 runner = Runner(
     learner=SegDisLearner(
@@ -145,7 +151,7 @@ runner = Runner(
         },
 
         # integrate them into the formal framework
-        **config['exp']['learner'],
+        **exp_leaner_config,
     ),
     logger=logger
 )
