@@ -7,7 +7,7 @@ import torch.autograd as autograd
 
 
 # ref: https://github.com/eriklindernoren/PyTorch-GAN/blob/22ce15edd1abeb4f735be11592569720e2dd3018/implementations/wgan_gp/wgan_gp.py
-def gradient_norm(discriminator, real, fake):
+def gradient_norm(discriminator, real, fake, image=None):
     assert real.shape == fake.shape
     # real.requires_grad = True
     batch_size = real.shape[0]
@@ -16,7 +16,10 @@ def gradient_norm(discriminator, real, fake):
     coef_shape = (batch_size,) + (1,) * (len(real.shape) - 1)
     coef = torch.rand(coef_shape, device=real.device)
     x = (coef * real + (1 - coef) * fake).requires_grad_(True)
-    y = discriminator({'label': x})['confidence_map']
+    inputs = {'label': x}
+    if image is not None:
+        inputs.update({'image': image})
+    y = discriminator(inputs)['confidence_map']
     grad = autograd.grad(
         outputs=y,
         inputs=x,
@@ -273,7 +276,12 @@ class SegDisLearner:
         probas = F.softmax(data['prediction'].detach(), dim=1)
 
         if training and self.use_grad_penalty:
-            grad_norm = gradient_norm(self.models['dis'], onehot_label, probas)
+            grad_norm = gradient_norm(
+                self.models['dis'],
+                onehot_label,
+                probas,
+                image=data['image'] if self.dis_inlcude_image else None
+            )
             grad_penalty = gradient_penalty(grad_norm)
 
         # mean of the masked confidence_map from each label
@@ -394,7 +402,10 @@ class SegDisLearner:
 
             # dis produce confidence_map
             self.models['dis'].eval()
-            data.update(self.models['dis']({'label': probas}))
+            dis_inputs = {'label': probas}
+            if self.dis_inlcude_image:
+                dis_inputs.update({'image': data['image']})
+            data.update(self.models['dis'](dis_inputs))
 
             # evaluate the performance of seg
             results = {}
