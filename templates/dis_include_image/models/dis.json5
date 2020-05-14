@@ -139,7 +139,7 @@
       'confidence_map': 2,
     },
     'flow': {
-      'discrimniator': {'inps': [0, 1], 'outs': [1]},
+      'discrimniator': {'inps': [0, 1], 'outs': [2]},
     }
   }
 }
