@@ -1,8 +1,42 @@
 import torch
 import torch.nn.functional as F
 from utils import crop_range
-from metrics import match_up, gradient_norm, gradient_penalty
+from metrics import match_up
 from flows import MetricFlow, ModuleFlow
+import torch.autograd as autograd
+
+
+# ref: https://github.com/eriklindernoren/PyTorch-GAN/blob/22ce15edd1abeb4f735be11592569720e2dd3018/implementations/wgan_gp/wgan_gp.py
+def gradient_norm(discriminator, real, fake):
+    assert real.shape == fake.shape
+    # real.requires_grad = True
+    batch_size = real.shape[0]
+
+    # create x by interpolating between real and fake inputs
+    coef_shape = (batch_size,) + (1,) * (len(real.shape) - 1)
+    coef = torch.rand(coef_shape, device=real.device)
+    x = (coef * real + (1 - coef) * fake).requires_grad_(True)
+    y = discriminator({'label': x})['confidence_map']
+    grad = autograd.grad(
+        outputs=y,
+        inputs=x,
+        grad_outputs=torch.ones_like(
+            y,
+            device=real.device,
+            requires_grad=False
+        ),
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True
+    )[0].view(batch_size, -1)
+
+    # manually compute norm to avoid small gradients
+    grad_norm = torch.sqrt(torch.sum(grad ** 2, dim=1) + 1e-12)
+    return grad_norm
+
+
+def gradient_penalty(grad_norm):
+    return ((grad_norm - 1) ** 2).mean()
 
 
 class Learner:
@@ -205,7 +239,10 @@ class SegDisLearner:
     def _backpropagation(self, model_name, loss):
         if self.grad_accumulation >= 1:
             loss = loss / self.grad_accumulation
-        loss.backward()
+        if model_name == 'dis':
+            loss.backward(retain_graph=True)
+        else:
+            loss.backward()
         self.step += 1
 
         if self.step % self.grad_accumulation == 0:
@@ -230,6 +267,10 @@ class SegDisLearner:
         # model prediction
         probas = F.softmax(data['prediction'].detach(), dim=1)
 
+        if training:
+            grad_norm = gradient_norm(self.models['dis'], onehot_label, probas)
+            grad_penalty = gradient_penalty(grad_norm)
+
         # mean of the masked confidence_map from each label
         cmap = {
             'from_model': self.models['dis']({'label': probas}),
@@ -246,13 +287,11 @@ class SegDisLearner:
         }
 
         if training:
-            grad_norm = gradient_norm(self.models['dis'], onehot_label, probas)
-            grad_penalty = gradient_penalty(grad_norm)
             dis_loss = cmap['from_model'] - cmap['from_label'] + grad_penalty
             self._backpropagation('dis', dis_loss)
             results.update({
                 'DIS_LOSS': dis_loss,
-                'grad_norm': grad_norm,
+                'grad_norm': grad_norm.mean(),
                 'grad_penalty': grad_penalty,
             })
 

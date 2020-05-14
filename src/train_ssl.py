@@ -369,7 +369,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         if logger:
             logger.add_scalar(
                 'scheduler/lr_rate',
-                optimizers['dis'].param_groups[0]['lr'],
+                optimizers['seg'].param_groups[0]['lr'],
                 epoch
             )
             if scheduler.best is not None:
