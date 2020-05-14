@@ -1,0 +1,145 @@
+{
+  'nodes': {
+    'discrimniator': {
+      'inps': [0, 1],
+      'outs': [18],
+      'topo': {
+        '2': {
+          'l_1_label': 0,
+          'l_1_image': 1
+        },
+        '3': 'd_1',
+        '4': 'l_21',
+        '5': 'l_22',
+        '6': 'd_2',
+        '7': 'l_31',
+        '8': 'l_32',
+        '9': 'd_3',
+        '10': 'l_41',
+        '11': 'l_42',
+        '12': 'u_4',
+        '13': 'l_5',
+        '14': 'u_5',
+        '15': 'l_6',
+        '16': 'u_6',
+        '17': 'l_7',
+        '18': 'l_8',
+      },
+      'maps': {
+        // layer 1 for the prediction or label
+        'l_1_label': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 4,
+          'ch_out': 16,
+          'activation': 'leaky_relu',
+        },
+
+        // layer 1 for the image
+        'l_1_image': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 1,
+          'ch_out': 16,
+          'activation': 'leaky_relu',
+        },
+
+        // downsample
+        'd_1': {'name': 'DownSample', 'ch_in': 16},
+
+        // layer 2
+        'l_21': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 32,
+          'activation': 'leaky_relu',
+        },
+        'l_22': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 32,
+          'activation': 'leaky_relu',
+        },
+
+        // downsample
+        'd_2': {'name': 'DownSample', 'ch_in': 32},
+
+        // layer 3
+        'l_31': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 64,
+          'activation': 'leaky_relu'
+        },
+        'l_32': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 64,
+          'activation': 'leaky_relu',
+        },
+
+        // downsample
+        'd_3': {'name': 'DownSample', 'ch_in': 64},
+
+        // layer 4
+        'l_41': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 128,
+          'activation': 'leaky_relu',
+        },
+        'l_42': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 128,
+          'activation': 'leaky_relu',
+        },
+
+        // upsample
+        'u_4': {'name': 'UpSample', 'ch_in': 128},
+
+        // layer 5
+        'l_5': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 64,
+          'activation': 'leaky_relu',
+        },
+
+        // upsample
+        'u_5': {'name': 'UpSample', 'ch_in': 64},
+
+        // layer 6
+        'l_6': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 32,
+          'activation': 'leaky_relu',
+        },
+
+        // upsample
+        'u_6': {'name': 'UpSample', 'ch_in': 32},
+
+        // layer 7
+        'l_7': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 16,
+          'ch_out': 1,
+          'postprocess': false,
+        },
+
+        'l_8': {'name': 'Sigmoid'},
+      },
+    },
+  },
+  'links': {
+    'inps': {'label': 0, 'image': 1},
+    'outs': {
+      'confidence_map': 2,
+    },
+    'flow': {
+      'discrimniator': {'inps': [0, 1], 'outs': [1]},
+    }
+  }
+}

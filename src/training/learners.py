@@ -206,6 +206,8 @@ class SegDisLearner:
         optims,
         meters,
         grad_accumulation=1,
+        use_grad_penalty=False,
+        dis_inlcude_image=False,
     ):
         # sanity check
         for key in ['seg', 'dis']:
@@ -235,6 +237,9 @@ class SegDisLearner:
         self.grad_accumulation = grad_accumulation
         assert isinstance(self.grad_accumulation, int)
         assert self.grad_accumulation >= 1
+
+        self.use_grad_penalty = use_grad_penalty
+        self.dis_inlcude_image = dis_inlcude_image
 
     def _backpropagation(self, model_name, loss):
         if self.grad_accumulation >= 1:
@@ -267,14 +272,22 @@ class SegDisLearner:
         # model prediction
         probas = F.softmax(data['prediction'].detach(), dim=1)
 
-        if training:
+        if training and self.use_grad_penalty:
             grad_norm = gradient_norm(self.models['dis'], onehot_label, probas)
             grad_penalty = gradient_penalty(grad_norm)
 
         # mean of the masked confidence_map from each label
+        inputs = {
+            'from_model': {'label': probas},
+            'from_label': {'label': onehot_label}
+        }
+        if self.dis_inlcude_image:
+            for key in inputs:
+                inputs[key].update({'image': data['image']})
+
         cmap = {
-            'from_model': self.models['dis']({'label': probas}),
-            'from_label': self.models['dis']({'label': onehot_label}),
+            key: self.models['dis'](inputs[key])
+            for key in inputs
         }
         mask = (data['label'] >= 0).unsqueeze(1)
         cmap = {
@@ -287,13 +300,18 @@ class SegDisLearner:
         }
 
         if training:
-            dis_loss = cmap['from_model'] - cmap['from_label'] + grad_penalty
+            dis_loss = cmap['from_model'] - cmap['from_label']
+
+            # grad penalty
+            if self.use_grad_penalty:
+                dis_loss = dis_loss + grad_penalty
+                results.update({
+                    'DIS_LOSS': dis_loss,
+                    'grad_norm': grad_norm.mean(),
+                    'grad_penalty': grad_penalty,
+                })
+
             self._backpropagation('dis', dis_loss)
-            results.update({
-                'DIS_LOSS': dis_loss,
-                'grad_norm': grad_norm.mean(),
-                'grad_penalty': grad_penalty,
-            })
 
         return results
 
@@ -322,7 +340,10 @@ class SegDisLearner:
 
                 # dis produce confidence_map
                 self.models['dis'].eval()
-                data.update(self.models['dis']({'label': probas}))
+                if self.dis_inlcude_image:
+                    data.update(self.models['dis']({'label': probas, 'image': data['image']}))
+                else:
+                    data.update(self.models['dis']({'label': probas}))
 
             # evaluate the performance of seg
             results = {}

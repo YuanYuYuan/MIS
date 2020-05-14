@@ -129,14 +129,8 @@ else:
 timer = time.time()
 start = timer
 
-# FIXME
-if 'grad_accumulation' in config:
-    grad_accumulation = config['grad_accumulation']
-else:
-    grad_accumulation = 1
-if grad_accumulation > 1:
-    print('grad_accumulation:', grad_accumulation)
-
+# TODO: integrate them into the formal framework
+print(config['exp'])
 
 runner = Runner(
     learner=SegDisLearner(
@@ -149,6 +143,9 @@ runner = Runner(
             key: MetricFlow(config['meters'][key])
             for key in config['meters']
         },
+
+        # integrate them into the formal framework
+        **config['exp']['learner'],
     ),
     logger=logger
 )
