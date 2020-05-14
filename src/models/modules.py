@@ -70,7 +70,7 @@ class ConvBlock(nn.Module):
             self.op.add_module(
                 'P3D_2',
                 nn.Conv3d(
-                    self.ch_in,
+                    self.ch_out,
                     self.ch_out,
                     kernel_size=(1, 1, 3),
                     padding=(0, 0, 1),

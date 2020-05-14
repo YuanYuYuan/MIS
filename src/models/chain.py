@@ -1,5 +1,6 @@
 import torch.nn as nn
 from . import modules
+import torch
 
 
 class Map(nn.Module):
@@ -52,12 +53,25 @@ class Chain(nn.Module):
             if isinstance(maps, str):
                 state[state_out_idx] = self.ops[maps](state[state_out_idx-1])
             else:
+                assert isinstance(maps, dict)
+                if 'mode' in maps:
+                    mode = maps.pop('mode')
+                    assert mode in ['sum', 'cat']
+                else:
+                    mode = 'sum'
+
                 tmp = None
                 for map_idx, state_in_idx in maps.items():
                     if tmp is None:
                         tmp = self.ops[map_idx](state[state_in_idx])
                     else:
-                        tmp = tmp + self.ops[map_idx](state[state_in_idx])
+                        new = self.ops[map_idx](state[state_in_idx])
+                        if mode == 'sum':
+                            assert tmp.shape == new.shape
+                            tmp = tmp + new
+                        elif mode == 'cat':
+                            assert tmp.shape[2:] == new.shape[2:]
+                            tmp = torch.cat((tmp, new), dim=1)
                 state[state_out_idx] = tmp
 
         # if len(self.outs) > 1:
