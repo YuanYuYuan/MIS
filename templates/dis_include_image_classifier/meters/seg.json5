@@ -1,0 +1,41 @@
+{
+  'nodes': {
+    'loss_dice': {'name': 'dice_loss', 'batch_wise': true},
+    'loss_ce': {'name': 'cross_entropy'},
+    'accu': {'name': 'dice_score', 'exclude_blank': true, 'batch_wise': true},
+    'sum': {
+      'name': 'sum',
+      'weight': [
+        1., // dice loss
+        1., // cross_entropy
+      ],
+    },
+  },
+  'links': {
+    'inps': {
+      'prediction': 0,
+      'label': 1,
+    },
+    'outs': {
+      'loss': 5,
+      'accu': 2,
+      'DICE': 3,
+      'CE': 4,
+    },
+    'flow': {
+      // supervised learning
+      'accu': {'inps': [0, 1], 'outs': [2]},
+      'loss_dice': {'inps': [0, 1], 'outs': [3]},
+      'loss_ce': {'inps': [0, 1], 'outs': [4]},
+
+      // total loss
+      'sum': {
+        'inps': [
+          3, // dice loss
+          4, // cross_entropy
+        ],
+        'outs': [5]
+      }
+    }
+  }
+}

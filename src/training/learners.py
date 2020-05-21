@@ -308,6 +308,7 @@ class SegDisLearner:
         }
 
         if training:
+            # loss of discriminator: mean(masked(D(S(X))) - masked(D(Y)))
             dis_loss = cmap['from_model'] - cmap['from_label']
 
             # grad penalty
@@ -349,7 +350,10 @@ class SegDisLearner:
                 # dis produce confidence_map
                 self.models['dis'].eval()
                 if self.dis_inlcude_image:
-                    data.update(self.models['dis']({'label': probas, 'image': data['image']}))
+                    data.update(self.models['dis']({
+                        'label': probas,
+                        'image': data['image']
+                    }))
                 else:
                     data.update(self.models['dis']({'label': probas}))
 

@@ -177,6 +177,7 @@ stage_info = {
     'train_ssl': 'Training_SSL',
     'valid': 'Validating',
 }
+
 for epoch in range(init_epoch, init_epoch + config['epochs']):
 
     if terminated:
