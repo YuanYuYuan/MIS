@@ -23,6 +23,7 @@ See [here](https://github.com/YuanYuYuan/MIDP#prepare-data) for more details.
 
 ## Deployments
 
-1. [Brainstem Parotids segmentation v1](https://yuanyuyuan.github.io/MIS/depolyments/bs-ptd/)
-2. [Brainstem Parotids segmentation v2](https://yuanyuyuan.github.io/MIS/depolyments/bs-ptd-v2/)
+1. [Brainstem Parotids segmentation v1](https://yuanyuyuan.github.io/MIS/deployments/bs-ptd/)
+2. [Brainstem Parotids segmentation v2](https://yuanyuyuan.github.io/MIS/deployments/bs-ptd-v2/)
+3. [Visual System segmentation](https://yuanyuyuan.github.io/MIS/deployments/visual-system/)
 

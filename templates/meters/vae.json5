@@ -1,0 +1,39 @@
+{
+  'nodes': {
+    'loss_VAE_KLD': {'name': 'VAE_KLD'},
+    'loss_VAE_L2': {'name': 'VAE_L2'},
+    'sum': {
+      'name': 'sum',
+      'weight': [
+        0.5, // VAE KLD
+        0.5, // VAE L2
+      ],
+    },
+  },
+  'links': {
+    'inps': {
+      'latent': 0,
+      'reconstruction': 1,
+      'image': 2,
+    },
+    'outs': {
+      'loss': 5,
+      'KLD': 3,
+      'L2': 4,
+    },
+    'flow': {
+      // VAE regularization
+      'loss_VAE_KLD': {'inps': [0], 'outs': [3]},
+      'loss_VAE_L2': {'inps': [1, 2], 'outs': [4]},
+
+      // total loss
+      'sum': {
+        'inps': [
+          3, // VAE KLD
+          4, // VAE L2
+        ],
+        'outs': [5]
+      }
+    }
+  }
+}
