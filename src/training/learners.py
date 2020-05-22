@@ -298,10 +298,17 @@ class SegDisLearner:
             for key in inputs
         }
         mask = (data['label'] >= 0).unsqueeze(1)
-        cmap = {
-            key: cmap[key]['confidence_map'][mask].mean()
-            for key in cmap
-        }
+        if mask.shape == cmap['from_model']['confidence_map'].shape:
+            cmap = {
+                key: cmap[key]['confidence_map'][mask].mean()
+                for key in cmap
+            }
+        else:
+            cmap = {
+                key: cmap[key]['confidence_map'].mean()
+                for key in cmap
+            }
+
         results = {
             'cmap_from_model': cmap['from_model'],
             'cmap_from_label': cmap['from_label'],
