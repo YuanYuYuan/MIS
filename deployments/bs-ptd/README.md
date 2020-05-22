@@ -13,4 +13,4 @@ Dice score of validation on PDDCA dataset (train/valid: 33/15)
 
 ## Instruction
 
-Please click [here](https://yuanyuyuan.github.io/MIS/depolyment/bs-ptd/)
+Please click [here](https://yuanyuyuan.github.io/MIS/deployment/bs-ptd/)

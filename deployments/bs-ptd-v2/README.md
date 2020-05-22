@@ -14,5 +14,5 @@ mean      : 0.8098419204704131
 
 ## Usage
 
-Click [here](https://yuanyuyuan.github.io/MIS/depolyment/bs-ptd-v2/) to see
+Click [here](https://yuanyuyuan.github.io/MIS/deployment/bs-ptd-v2/) to see
 the instruction.
