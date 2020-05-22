@@ -1,6 +1,6 @@
 {
   'nodes': {
-    'loss_adv': {'name': 'AdversarialLoss'},
+    'loss_adv': {'name': 'adversarial_loss'},
     'pseudo_label': {'name': 'pseudo_label'},
     'mask': {
       'name': 'confidence_mask',
