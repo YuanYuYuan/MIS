@@ -1,18 +1,18 @@
-# Brainstem & Parotids Segmentation
+# Optic Nerves & Chiasm Segmentation
 
-This is a sample script for segmentation on brainstem and parotids
+This is a sample script for segmentation on optic nerves and chiasm
 based on framework v2.
 
 ## Validation performance on PDDCA dataset
 
 ```yaml
-Brainstem : 0.879390329990884
-Parotid_L : 0.7646160997046699
-Parotid_R : 0.7855193317156853
-mean      : 0.8098419204704131
+Left Optic Nerve  : 0.5777
+Right Optic Nerve : 0.5987
+Chiasm            : 0.3251
+Average           : 0.5005
 ```
 
 ## Usage
 
-Click [here](https://yuanyuyuan.github.io/MIS/depolyment/bs-ptd-v2/) to see
+Click [here](https://yuanyuyuan.github.io/MIS/deployment/visual-system/) to see
 the instruction.

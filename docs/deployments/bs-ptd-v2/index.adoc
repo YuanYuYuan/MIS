@@ -7,13 +7,13 @@
 :sectlinks:
 :sectanchors:
 
-This document states how to use the example `MIS/depolyment/ps-ptd-v2`.
+This document states how to use the example `MIS/deployments/ps-ptd-v2`.
 
 == Prerequisites
 
 === Prepare dataset
 
-Place your dataset folder in here(_MIS/depolyment/ps-ptd-v2_) and name it as `data`. +
+Place your dataset folder in here(_MIS/deployments/ps-ptd-v2_) and name it as `data`. +
 Or you may directly create a link to the folder like this.
 
     ln -s YOUR_DATASET data
