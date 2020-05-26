@@ -78,7 +78,7 @@ class KfacLearner:
             data.update({'prediction': self._model_run(data, training=True)})
             results = self._evaluate(data, training=True)
             results['loss'].backward(create_graph=False)
-            nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
+            # nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
             return results
 
         results = self.optim.step(closure=closure)

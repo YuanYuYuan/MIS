@@ -1,0 +1,75 @@
+gpus: 3         # torch-curv only support single gpu
+epochs: 1000
+validation_frequency: 4
+early_stopping_epochs: 10
+data: data_list.yaml
+output_threshold: 0.35
+
+generator:
+  train            :
+    PatchGenerator :
+      shuffle      : True
+      crop_shape   : [160, 160, -1]
+      n_workers    : 4
+      verbose      : False
+
+    Augmentor      :                  # do preprocessing and data augmentation
+      # zoom_range   : [0.8, 1.2]       # zoom the image/label with some scale in range, note that it only apply on x-y plane
+      # flip         : True             # flip the image/only on x-y plane with a fixed probability 0.5
+      # transpose    : False             # transpose the image/label on x-y plane with a fixed probability 0.5
+      noise        : True             # add a Gaussian noise with mean 0 and sigam 0.05 on the image
+      window_width : 100        # adjust the contrast with the given window width(or a range), default : 100
+      window_level : 50         # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 2                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
+
+    BatchGenerator :
+      batch_size   : 2
+      n_workers    : 2
+      verbose      : False
+
+  valid            :
+    PatchGenerator :
+      crop_shape   : [160, 160, -1]
+      shuffle      : False
+      n_workers    : 1
+      verbose      : False
+
+    Augmentor      :                  # do preprocessing and data augmentation
+      window_width : 100              # adjust the contrast with the given window width(or a range), default : 100
+      window_level : 50               # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 1                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
+
+    BatchGenerator :
+      batch_size   : 6
+      n_workers    : 1
+      verbose      : False
+
+model:
+  model_config:
+    name: 'UNet2D'
+    n_channels: 1
+    n_classes: 4
+  # checkpoint: 'ckpt.pt'
+
+ckpt_handler:
+  checkpoint_dir: '_ckpts'
+  mode: 'improved'
+  criterion: 'max'
+
+meter: 'meter.json5'
+
+optimizer:
+  name     : AdamW
+  lr       : 0.001
+
+scheduler:
+  mode: max
+  warmup: 10
+  reduce_factor: 0.5
+  patience: 50
+
+early_stopper:
+  mode: max
+  patience: 10

@@ -91,13 +91,16 @@ model_handler = ModelHandler(**config['model'])
 ckpt_handler = CheckpointHandler(model_handler, **config['ckpt_handler'])
 
 # - optimizer
-with open('./optimizer-config.json') as f:
-    optim_config = json.load(f)
-optimizer = SecondOrderOptimizer(
-    model_handler.model,
-    **optim_config['optim_args'],
-    **optim_config['curv_args']
-)
+if 'optimizer' in config:
+    optimizer = Optimizer(config['optimizer'])(model_handler.model)
+else:
+    with open('./optimizer-config.json') as f:
+        optim_config = json.load(f)
+    optimizer = SecondOrderOptimizer(
+        model_handler.model,
+        **optim_config['optim_args'],
+        **optim_config['curv_args']
+    )
 
 # - scheduler
 if 'scheduler' in config:
