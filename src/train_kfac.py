@@ -174,6 +174,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         # run on an epoch
         try:
             if training:
+
                 result_list = runner.run(
                     data_gen[stage],
                     training=training,
