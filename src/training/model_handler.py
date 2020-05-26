@@ -1,5 +1,6 @@
 import torch
 from flows import ModuleFlow
+import models
 
 
 class ModelHandler:
@@ -9,7 +10,13 @@ class ModelHandler:
         model_config,
         checkpoint=None,
     ):
-        self.model = ModuleFlow(model_config)
+        if isinstance(model_config, str):
+            self.model = ModuleFlow(model_config)
+        elif isinstance(model_config, dict):
+            model_name = model_config.pop('name')
+            self.model = getattr(models, model_name)(**model_config)
+        else:
+            raise NotImplementedError
 
         # load checkpoint
         if checkpoint is None:

@@ -8,7 +8,7 @@ import torch
 
 class UNet2D(nn.Module):
 
-    def __init__(self, n_channels, n_classes):
+    def __init__(self, n_channels=1, n_classes=4):
         super().__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes

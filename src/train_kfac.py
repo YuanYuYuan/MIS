@@ -60,15 +60,6 @@ with open(config['data']) as f:
 data_list = data_config['list']
 loader_config = data_config['loader']
 
-# FIXME
-if 'start_adv' in config:
-    start_adv = int(config['start_adv'])
-else:
-    start_adv = 1
-
-if start_adv:
-    print('Start adv after %d epochs.' % start_adv)
-
 
 # - data pipeline
 data_gen = dict()
@@ -134,11 +125,8 @@ else:
 runner = Runner(
     learner=KfacLearner(
         model=model_handler.model,
-        optims=optimizer,
+        optim=optimizer,
         meter=MetricFlow(config['meter']),
-
-        # integrate them into the formal framework
-        **exp_leaner_config,
     ),
     logger=logger
 )
@@ -183,17 +171,6 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         )):
             continue
 
-        if (epoch - init_epoch) >= start_adv:
-            if stage == 'train_ssl':
-                mode = 'ssl'
-            else:
-                mode = 'adv'
-        else:
-            if stage == 'train_ssl':
-                continue
-            else:
-                mode = 'normal'
-
         # run on an epoch
         try:
             if training:
@@ -201,7 +178,6 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                     data_gen[stage],
                     training=training,
                     stage=stage_info[stage],
-                    mode=mode,
                 )
             else:
                 result_list = runner.run(
