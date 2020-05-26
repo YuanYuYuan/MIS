@@ -119,8 +119,6 @@ if 'scheduler' in config:
 else:
     scheduler = None
 
-# - load checkpoints
-
 if args.log_dir is not None:
     logger = SummaryWriter(args.log_dir)
 else:
