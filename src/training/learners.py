@@ -84,9 +84,30 @@ class KfacLearner:
         results = self.optim.step(closure=closure)
         return results
 
-    def infer(self, data):
+    def _compute_match(self, data, results):
+        with torch.set_grad_enabled(False):
+            match, total = match_up(
+                data['prediction'],
+                data['label'],
+                needs_softmax=True,
+                batch_wise=True,
+                threshold=-1,
+            )
+            results.update({'match': match, 'total': total})
+
+    def _include_prediction(self, data, results):
+        with torch.set_grad_enabled(False):
+            probas = F.softmax(data['prediction'], dim=1)
+            results.update({'prediction': probas})
+
+    def infer(self, data, include_prediction=False, compute_match=False):
         data.update({'prediction': self._model_run(data, training=False)})
-        return self._evaluate(data, training=False)
+        results = self._evaluate(data, training=False)
+        if include_prediction:
+            self._include_prediction(data, results)
+        if compute_match:
+            self._compute_match(data, results)
+        return results
 
 
 class Learner:
@@ -138,30 +159,10 @@ class Learner:
         self._backpropagation(results['loss'])
         return results
 
-    def _compute_match(self, data, results):
-        with torch.set_grad_enabled(False):
-            match, total = match_up(
-                data['prediction'],
-                data['label'],
-                needs_softmax=True,
-                batch_wise=True,
-                threshold=-1,
-            )
-            results.update({'match': match, 'total': total})
-
-    def _include_prediction(self, data, results):
-        with torch.set_grad_enabled(False):
-            probas = F.softmax(data['prediction'], dim=1)
-            results.update({'prediction': probas})
-
-    def infer(self, data, include_prediction=False, compute_match=False):
+    def infer(self, data):
         outputs = self._model_run(data, training=False)
         data.update(outputs)
         results = self._evaluate(data, training=False)
-        if include_prediction:
-            self._include_prediction(data, results)
-        if compute_match:
-            self._compute_match(data, results)
         return results
 
 
