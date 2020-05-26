@@ -3,7 +3,6 @@ epochs: 1000
 validation_frequency: 4
 early_stopping_epochs: 10
 data: data_list.yaml
-start_adv: 20
 
 generator:
   train            :
