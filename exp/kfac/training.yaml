@@ -60,10 +60,6 @@ ckpt_handler:
 
 meter: 'meter.json5'
 
-optimizer:
-  name     : AdamW
-  lr       : 0.001
-
 scheduler:
   mode: max
   warmup: 10
