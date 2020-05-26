@@ -56,7 +56,7 @@ list:
   - 0522c0667
   - 0522c0727
 loader:
-  data_dir: data
+  data_dir: /fast/cyberknife/PDDCA-2mm
   name: NRRDLoader
   roi_map:
     Brainstem: 1

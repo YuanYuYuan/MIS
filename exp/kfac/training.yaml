@@ -1,4 +1,4 @@
-gpus: 0,1
+gpus: 3         # torch-curv only support single gpu
 epochs: 1000
 validation_frequency: 4
 early_stopping_epochs: 10
@@ -7,14 +7,10 @@ start_adv: 20
 
 generator:
   train            :
-    BlockSampler   :
+    PatchGenerator :
       shuffle      : True
-      block_shape  : [96, 96, 96]
-      shift        : [16, 16, 16]
-      # out_shape    : [96, 96, 20]
+      crop_shape   : [196, 196, -1]
       n_workers    : 4
-      n_samples    : 16
-      ratios       : [0.3, 1, 1, 1]
       verbose      : False
 
     Augmentor      :                  # do preprocessing and data augmentation
@@ -28,39 +24,15 @@ generator:
       verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
-      batch_size   : 20
-      n_workers    : 2
-      verbose      : False
-
-  train_ssl        :
-    BlockGenerator :
-      block_shape  : [96, 96, 96]
-      stride       : 48
-      # out_shape    : [96, 96, 20]
-      crop_shape   : [256, 256, -1]
-      include_label: False
-      n_workers    : 4
-      verbose      : False
-
-    Augmentor      :                  # do preprocessing and data augmentation
-      window_width : 100              # adjust the contrast with the given window width(or a range), default : 100
-      window_level : 50               # adjust the contrast with the given window level(or a range), default : 50
-      n_workers    : 4                # number of multi-thread workers
-      verbose      : False            # toggle the debug info of this generator
-
-    BatchGenerator :
-      batch_size   : 20
+      batch_size   : 2
       n_workers    : 2
       verbose      : False
 
   valid            :
-    BlockGenerator :
-      block_shape  : [96, 96, 96]
-      stride       : 48
-      # out_shape    : [96, 96, 20]
-      crop_shape   : [256, 256, -1]
-      n_workers    : 4
-      ordered      : True
+    PatchGenerator :
+      crop_shape   : [196, 196, -1]
+      shuffle      : False
+      n_workers    : 1
       verbose      : False
 
     Augmentor      :                  # do preprocessing and data augmentation
@@ -70,13 +42,16 @@ generator:
       verbose      : False            # toggle the debug info of this generator
 
     BatchGenerator :
-      batch_size   : 60
+      batch_size   : 6
       n_workers    : 1
       verbose      : False
 
 model:
-  model_config: './models/seg_vae_reg.json5'
-  checkpoint: 'ckpt.pt'
+  model_config:
+    name: 'UNet2D'
+    n_channels: 1
+    n_classes: 4
+  # checkpoint: 'ckpt.pt'
 
 ckpt_handler:
   checkpoint_dir: '_ckpts'
