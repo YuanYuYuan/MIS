@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from utils import crop_range
 from metrics import match_up
@@ -40,6 +41,52 @@ def gradient_norm(discriminator, real, fake, image=None):
 
 def gradient_penalty(grad_norm):
     return ((grad_norm - 1) ** 2).mean()
+
+
+class KfacLearner:
+
+    def __init__(
+        self,
+        model,
+        meter: MetricFlow,
+        optim,
+    ):
+        self.model = model
+        self.meter = meter
+        self.optim = optim
+        self.step = 0
+        self.model.zero_grad()
+
+    def _model_run(self, data, training=True):
+        if training:
+            with torch.set_grad_enabled(True):
+                self.model.train()
+                return self.model(data['image'])
+        else:
+            with torch.set_grad_enabled(False):
+                self.model.eval()
+                return self.model(data['image'])
+
+    def _evaluate(self, data, training=True):
+        with torch.set_grad_enabled(training):
+            return self.meter(data)
+
+    def learn(self, data):
+
+        def closure():
+            self.optim.zero_grad()
+            data.update({'prediction': self._model_run(data, training=True)})
+            results = self._evaluate(data, training=True)
+            results['loss'].backward(create_graph=False)
+            nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
+            return results
+
+        results = self.optim.step(closure=closure)
+        return results
+
+    def infer(self, data):
+        data.update({'prediction': self._model_run(data, training=False)})
+        return self._evaluate(data, training=False)
 
 
 class Learner:
