@@ -287,7 +287,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                 logger.add_scalars('roi_scores', roi_scores, epoch)
                 file_path = os.path.join(
                     args.log_dir,
-                    '%02d-%.5f.json' % (epoch, roi_scores['mean'])
+                    '%03d-%.5f.json' % (epoch, roi_scores['mean'])
                 )
                 with open(file_path, 'w') as f:
                     json.dump(scores, f, indent=2)
