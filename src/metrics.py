@@ -1,7 +1,21 @@
 import torch
 import torch.nn.functional as F
 import math
-import torch.autograd as autograd
+from medpy.metric import hd95
+
+
+def housdorff_distance_95(logits, label):
+    predis = F.softmax(logits, dim=1)
+    n_classes = logits.shape[1]
+
+    result = []
+    for cls in range(1, n_classes):
+        result.append(hd95(
+            predis[:, cls, ...].squeeze(),
+            label == cls
+        ))
+
+    return result
 
 
 class DiscriminatingLoss:
