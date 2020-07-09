@@ -282,7 +282,7 @@ class DetLearner(Learner):
     def reduce_label(self, label):
         assert len(label.shape) == 4
         label = torch.sum(label, dim=(1, 2, 3))
-        label = (label > 0).long()
+        label = (label > 0).float()
         label = torch.unsqueeze(label, dim=1)
         return label
 

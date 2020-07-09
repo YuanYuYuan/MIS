@@ -287,31 +287,31 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         #                 additional_info={'epoch': epoch, 'step': runner.step}
         #             )
 
-    # adjust learning rate by epoch
-    if scheduler and not terminated:
+    # # adjust learning rate by epoch
+    # if scheduler and not terminated:
 
-        if scheduler.use_reduce_lr and stage == 'valid' and scheduler_metric is not None:
-            scheduler.step(metric=scheduler_metric)
-        else:
-            scheduler.step()
+    #     if scheduler.use_reduce_lr and stage == 'valid' and scheduler_metric is not None:
+    #         scheduler.step(metric=scheduler_metric)
+    #     else:
+    #         scheduler.step()
 
-        if logger:
-            logger.add_scalar(
-                'scheduler/lr_rate',
-                optimizer.param_groups[0]['lr'],
-                epoch
-            )
-            if scheduler.best is not None:
-                logger.add_scalar(
-                    'scheduler/best_metric',
-                    scheduler.best,
-                    epoch
-                )
-                logger.add_scalar(
-                    'scheduler/n_stagnation',
-                    scheduler.n_stagnation,
-                    epoch
-                )
+    #     if logger:
+    #         logger.add_scalar(
+    #             'scheduler/lr_rate',
+    #             optimizer.param_groups[0]['lr'],
+    #             epoch
+    #         )
+    #         if scheduler.best is not None:
+    #             logger.add_scalar(
+    #                 'scheduler/best_metric',
+    #                 scheduler.best,
+    #                 epoch
+    #             )
+    #             logger.add_scalar(
+    #                 'scheduler/n_stagnation',
+    #                 scheduler.n_stagnation,
+    #                 epoch
+    #             )
 
 logger.close()
 print('Total:', time.time()-start)
