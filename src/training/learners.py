@@ -269,6 +269,41 @@ class SegLearner(Learner):
             self._compute_match(data, results)
         return results
 
+class DetLearner(Learner):
+
+    def __init__(self, model: ModuleFlow, meter: MetricFlow, optim, **kwargs):
+        super().__init__(model, meter, optim, **kwargs)
+
+    def _evaluate(self, data, training=True):
+        with torch.set_grad_enabled(training):
+            return self.meter(data)
+
+    # Only for binary
+    def reduce_label(self, label):
+        assert len(label.shape) == 4
+        label = torch.sum(label, dim=(1, 2, 3))
+        label = (label > 0).long()
+        label = torch.unsqueeze(label, dim=1)
+        return label
+
+    def learn(self, data):
+        data['label'] = self.reduce_label(data['label'])
+        outputs = self._model_run(data, training=True)
+        data.update(outputs)
+        results = self._evaluate(data, training=True)
+        self._backpropagation(results['loss'])
+        return results
+
+    def infer(self, data):
+        data['label'] = self.reduce_label(data['label'])
+        outputs = self._model_run(data, training=False)
+        data.update(outputs)
+        results = self._evaluate(data, training=False)
+        # if include_prediction:
+        #     self._include_prediction(data, results)
+        # if compute_match:
+        #     self._compute_match(data, results)
+        return results
 
 class SegDisLearner:
 
