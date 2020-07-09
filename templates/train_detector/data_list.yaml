@@ -71,12 +71,5 @@ list:
   - 0522c0708
   - 0522c0857
 loader:
-  name: NRRDLoader
+  name: NIfTILoader
   data_dir: data
-  roi_map:
-    Brainstem: 1
-    Parotid_L: 2
-    Parotid_R: 3
-  test: false
-  # resample: true
-  # spacing: 1

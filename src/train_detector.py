@@ -13,6 +13,8 @@ from training import (
     Runner,
     DetLearner
 )
+import torch.nn.functional as F
+from models import Classifier
 from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
 import json
@@ -62,74 +64,45 @@ loader_config = data_config['loader']
 # - data pipeline
 data_gen = dict()
 loader_name = loader_config.pop('name')
-ROIs = None
 for stage in stages:
     data_loader = DataLoader(loader_name, **loader_config)
     if data_list[stage] is not None:
         data_loader.set_data_list(data_list[stage])
     data_gen[stage] = DataGenerator(data_loader, generator_config[stage])
 
-    if ROIs is None:
-        ROIs = data_loader.ROIs
-
-# FIXME
-reverter = Reverter(data_gen['valid'])
-
-# - GPUs
-os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
-torch.backends.cudnn.enabled = True
+# # - GPUs
+# os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
+# torch.backends.cudnn.enabled = True
 
 # - model
-model_handler = ModelHandler(
-    config['model'],
-    checkpoint=args.checkpoint,
-)
+model = Classifier(out_channels=2)
+model.zero_grad()
 
 # - optimizer
-optimizer = Optimizer(config['optimizer'])(model_handler.model)
+optim = Optimizer(config['optimizer'])(model)
+optim.zero_grad()
 
-# - scheduler
-if 'scheduler' in config:
-    scheduler = Scheduler(
-        optimizer,
-        **config['scheduler']
-    )
-else:
-    scheduler = None
+weight = torch.Tensor([0.001, 0.999])
+# weight = torch.Tensor([0.5, 0.5])
+# weight = torch.Tensor([0.99, 0.01])
+criterion = torch.nn.CrossEntropyLoss(weight=weight)
+def F1_score(predis, labels):
+    return 2 * torch.sum(predis * labels) / torch.sum(predis + labels)
 
-
-if args.log_dir is not None:
-    logger = SummaryWriter(args.log_dir)
-else:
-    logger = None
+def precision(predis, labels):
+    TP = 2 * torch.sum(predis * labels)
+    FP = torch.sum(labels) - TP
+    FN = torch.sum(predis) - TP
+    return TP / (TP + FP)
 
 timer = time.time()
 start = timer
-
-runner = Runner(
-    DetLearner(
-        model=model_handler.model,
-        meter=MetricFlow(config['meter']),
-        optim=optimizer,
-    ),
-    logger=logger,
-)
 
 checkpoint_dir = args.checkpoint_dir
 if checkpoint_dir:
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-# early stopper
-if 'early_stopper' in config:
-    early_stopper = EarlyStopper(**config['early_stopper'])
-else:
-    early_stopper = None
-
-# set proper initial epoch
-if model_handler.checkpoint is not None:
-    init_epoch = model_handler.checkpoint['epoch']
-else:
-    init_epoch = 1
+init_epoch = 1
 
 # main running loop
 terminated = False
@@ -152,167 +125,78 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
         # run on an epoch
         try:
-            result_list = runner.run(
+            n_steps = len(data_gen[stage])
+            progress_bar = tqdm(
                 data_gen[stage],
-                training=training,
-                stage=stage_info[stage]
+                total=n_steps,
+                ncols=get_tty_columns(),
+                dynamic_ncols=True,
+                desc='[%s] Loss: %.5f, Accu: %.5f'
+                % (stage_info[stage], 0.0, 0.0)
+            )
+
+            avg_loss = 0.0
+            avg_accu = 0.0
+            union = 0.0
+            match = 0.0
+            counter = 0
+
+            training = stage == 'train'
+            if training:
+                model.train()
+            else:
+                model.eval()
+
+            for data in progress_bar:
+                labels = (torch.sum(data['label'], dim=(1, 2, 3)) > 0).long()
+                # labels = torch.unsqueeze(labels, dim=1).float()
+
+                images = data['image']
+                if torch.sum(images) > 0:
+
+                    # label = label.cuda()
+                    # image = image.cuda()
+
+                    with torch.set_grad_enabled(training):
+
+                        logits = model(images)
+                        loss = criterion(logits, labels)
+                        predis = torch.argmax(logits, dim=1).float()
+                        accu = 1 - F.mse_loss(predis, labels)
+                        # accu = precision(predis, labels)
+
+                        union += torch.sum(predis + labels)
+                        match += torch.sum(predis * labels)
+
+                        if training:
+                            loss.backward()
+                            optim.step()
+                            model.zero_grad()
+
+                    avg_loss += loss.detach().cpu().item()
+                    avg_accu += accu.detach().cpu().item()
+                    counter += 1
+
+                else:
+                    loss = -1
+                    accu = -1
+
+                progress_bar.set_description(
+                    '[%s] Running loss: %.5f, accu: %.5f'
+                    % (stage_info[stage], loss, accu)
+                )
+
+
+            dice = 2 * match / union
+            print(
+                '[%s] Avg loss: %.5f, accu: %.5f, dice: %.5f'
+                % (stage_info[stage], avg_loss / counter, avg_accu / counter, dice)
             )
 
         except KeyboardInterrupt:
             print('save temporary model into %s' % args.pause_ckpt)
-            model_handler.save(
-                args.pause_ckpt,
-                additional_info={'epoch': epoch, 'step': runner.step}
-            )
             terminated = True
             break
 
-        # collect results except those revertible ones, e.g., accu, losses
-        result = {
-            key: np.nanmean(
-                np.vstack([result[key] for result in result_list]),
-                axis=0
-            )
-            for key in result_list[0].keys()
-            if key not in reverter.revertible
-        }
-
-        # summarize the performance
-        accu = result.pop('accu')
-        accu_dict = {key: val for key, val in zip(ROIs, accu)}
-        mean_accu = np.nanmean(accu)
-        accu_dict.update({'mean': mean_accu})
-        print(', '.join(
-            '%s: %.5f' % (key, val)
-            for key, val in result.items()
-        ))
-        print('Accu: ' + ', '.join(
-            '%s: %.5f' % (key, val)
-            for key, val in accu_dict.items()
-        ))
-
-        # record the performance
-        if logger is not None:
-            for key, val in result.items():
-                logger.add_scalar(
-                    '%s/epoch/%s' % (stage_info[stage], key),
-                    val,
-                    epoch
-                )
-            logger.add_scalar(
-                '%s/epoch/mean_accu' % stage_info[stage],
-                mean_accu,
-                epoch
-            )
-            logger.add_scalars(
-                '%s/epoch/accu' % stage_info[stage],
-                accu_dict,
-                epoch
-            )
-
-        # # do some stuffs depending on validation
-        # if stage == 'valid':
-
-        #     # revert the matching dice score to the whole one from batches
-        #     scores = dict()
-        #     progress_bar = tqdm(
-        #         reverter.on_batches(result_list, config['output_threshold']),
-        #         total=len(reverter.data_list),
-        #         dynamic_ncols=True,
-        #         ncols=get_tty_columns(),
-        #         desc='[Data index]'
-        #     )
-        #     for reverted in progress_bar:
-        #         data_idx = reverted['idx']
-        #         scores[data_idx] = reverted['score']
-        #         info = '[%s] ' % data_idx
-        #         info += ', '.join(
-        #             '%s: %.3f' % (key, val)
-        #             for key, val in scores[data_idx].items()
-        #         )
-        #         progress_bar.set_description(info)
-
-        #     # summerize roi score
-        #     roi_scores = {
-        #         roi: np.mean([
-        #             scores[data_idx][roi] for data_idx in scores
-        #         ])
-        #         for roi in ROIs
-        #     }
-        #     roi_scores.update({
-        #         'mean': np.mean([
-        #             roi_scores[roi]
-        #             for roi in ROIs
-        #         ])
-        #     })
-        #     print('Scores: ' + ', '.join(
-        #         '%s: %.5f' % (key, val)
-        #         for key, val in roi_scores.items()
-        #     ))
-        #     if logger is not None:
-        #         logger.add_scalars('roi_scores', roi_scores, epoch)
-        #         file_path = os.path.join(
-        #             args.log_dir,
-        #             '%03d-%.5f.json' % (epoch, roi_scores['mean'])
-        #         )
-        #         with open(file_path, 'w') as f:
-        #             json.dump(scores, f, indent=2)
-
-        #     # update metric for learning rate scheduler
-        #     if scheduler and scheduler.use_reduce_lr:
-        #         if scheduler.mode == 'min':
-        #             scheduler_metric = result['loss']
-        #         else:
-        #             scheduler_metric = roi_scores['mean']
-
-        #     # check early stopping
-        #     if early_stopper is not None:
-        #         if early_stopper.mode == 'min':
-        #             early_stopper_metric = result['loss']
-        #         else:
-        #             early_stopper_metric = roi_scores['mean']
-        #         early_stop, improved = early_stopper.check(early_stopper_metric)
-
-        #         if early_stop:
-        #             print('Early stopped.')
-        #             terminated = True
-        #             break
-
-        #         elif improved and checkpoint_dir is not None:
-        #             model_handler.save(
-        #                 file_path=os.path.join(
-        #                     checkpoint_dir,
-        #                     '%02d-%.5f.pt' % (epoch, early_stopper_metric)
-        #                 ),
-        #                 additional_info={'epoch': epoch, 'step': runner.step}
-        #             )
-
-    # # adjust learning rate by epoch
-    # if scheduler and not terminated:
-
-    #     if scheduler.use_reduce_lr and stage == 'valid' and scheduler_metric is not None:
-    #         scheduler.step(metric=scheduler_metric)
-    #     else:
-    #         scheduler.step()
-
-    #     if logger:
-    #         logger.add_scalar(
-    #             'scheduler/lr_rate',
-    #             optimizer.param_groups[0]['lr'],
-    #             epoch
-    #         )
-    #         if scheduler.best is not None:
-    #             logger.add_scalar(
-    #                 'scheduler/best_metric',
-    #                 scheduler.best,
-    #                 epoch
-    #             )
-    #             logger.add_scalar(
-    #                 'scheduler/n_stagnation',
-    #                 scheduler.n_stagnation,
-    #                 epoch
-    #             )
-
-logger.close()
 print('Total:', time.time()-start)
 print('Finished Training')
