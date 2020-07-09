@@ -1,0 +1,97 @@
+{
+  'nodes': {
+    'detector': {
+      'inps': [0],
+      'outs': [11],
+      'topo': {
+        '1': 'l_1',
+        '2': 'd_1',
+        '3': 'l_21',
+        '4': 'l_22',
+        '5': 'd_2',
+        '6': 'l_31',
+        '7': 'l_32',
+        '8': 'd_3',
+        '9': 'l_41',
+        '10': 'l_42',
+        '11': 'l_51',
+      },
+      'maps': {
+        // layer 1 for the image
+        'l_1': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 1,
+          'ch_out': 16,
+          'activation': 'leaky_relu',
+        },
+
+        // downsample
+        'd_1': {'name': 'DownSample', 'ch_in': 16},
+
+        // layer 2
+        'l_21': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 32,
+          'activation': 'leaky_relu',
+        },
+        'l_22': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 32,
+          'activation': 'leaky_relu',
+        },
+
+        // downsample
+        'd_2': {'name': 'DownSample', 'ch_in': 32},
+
+        // layer 3
+        'l_31': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 64,
+          'activation': 'leaky_relu'
+        },
+        'l_32': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 64,
+          'activation': 'leaky_relu',
+        },
+
+        // downsample
+        'd_3': {'name': 'DownSample', 'ch_in': 64},
+
+        // layer 4
+        'l_41': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 128,
+          'activation': 'leaky_relu',
+        },
+        'l_42': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 128,
+          'activation': 'leaky_relu',
+        },
+
+        // layer 5
+        'l_51': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 128,
+          'ch_out': 2,
+          'activation': 'leaky_relu',
+          'postprocess': false,
+        },
+      },
+    },
+  },
+  'links': {
+    'inps': {'image': 0},
+    'outs': {'prediction': 1, },
+    'flow': {'detector': {'inps': [0], 'outs': [1]}, }
+  }
+}

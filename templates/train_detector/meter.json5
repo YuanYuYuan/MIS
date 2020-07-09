@@ -1,0 +1,17 @@
+{
+  'nodes': {
+    'loss': {'name': 'cross_entropy'},
+    'accu': {'name': 'mse_loss'},
+  },
+  'links': {
+    'inps': {'prediction': 0, 'label': 1},
+    'outs': {
+      'loss': 2,
+      'accu': 3,
+    },
+    'flow': {
+      'accu': {'inps': [0, 1], 'outs': [2]},
+      'loss': {'inps': [0, 1], 'outs': [3]},
+    }
+  }
+}
