@@ -1,22 +1,13 @@
 #!/usr/bin/env python3
-from tensorboardX import SummaryWriter
 import argparse
 import time
 import os
 from utils import epoch_info
 import yaml
-from training import (
-    Optimizer,
-    Scheduler,
-    EarlyStopper,
-    ModelHandler,
-    Runner,
-    DetLearner
-)
+from training import Optimizer
 import torch.nn.functional as F
 from models import Classifier
 from MIDP import DataLoader, DataGenerator, Reverter
-from flows import MetricFlow
 import json
 from tqdm import tqdm
 from utils import get_tty_columns
@@ -39,6 +30,11 @@ parser.add_argument(
     '--checkpoint-dir',
     default='_ckpts',
     help='saved model checkpoints'
+)
+parser.add_argument(
+    '--output-dir',
+    default='_outputs',
+    help='saved model outputs'
 )
 parser.add_argument(
     '--log-dir',
@@ -70,22 +66,25 @@ for stage in stages:
         data_loader.set_data_list(data_list[stage])
     data_gen[stage] = DataGenerator(data_loader, generator_config[stage])
 
-# # - GPUs
-# os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
-# torch.backends.cudnn.enabled = True
+# - GPUs
+os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
+torch.backends.cudnn.enabled = True
 
 # - model
 model = Classifier(out_channels=2)
+if args.checkpoint is not None:
+    model.load_state_dict(torch.load(args.checkpoint))
+    print('Load checkpoint:', args.checkpoint)
+
+if torch.cuda.device_count() > 0:
+    model = model.cuda()
 model.zero_grad()
 
 # - optimizer
 optim = Optimizer(config['optimizer'])(model)
 optim.zero_grad()
 
-weight = torch.Tensor([0.001, 0.999])
-# weight = torch.Tensor([0.5, 0.5])
-# weight = torch.Tensor([0.99, 0.01])
-criterion = torch.nn.CrossEntropyLoss(weight=weight)
+criterion = torch.nn.CrossEntropyLoss()
 def F1_score(predis, labels):
     return 2 * torch.sum(predis * labels) / torch.sum(predis + labels)
 
@@ -108,6 +107,9 @@ init_epoch = 1
 terminated = False
 scheduler_metric = None
 stage_info = {'train': 'Training', 'valid': 'Validating'}
+best = 0.
+
+os.makedirs(args.output_dir, exist_ok=True)
 for epoch in range(init_epoch, init_epoch + config['epochs']):
 
     if terminated:
@@ -115,6 +117,8 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
     # epoch start
     epoch_info(epoch - 1, init_epoch + config['epochs'] - 1)
+
+    outputs = []
 
     for stage in stages:
         training = True if stage == 'train' else False
@@ -141,50 +145,68 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             match = 0.0
             counter = 0
 
-            training = stage == 'train'
+            training = (stage == 'train')
             if training:
                 model.train()
             else:
                 model.eval()
 
+            non_zero = False
             for data in progress_bar:
-                labels = (torch.sum(data['label'], dim=(1, 2, 3)) > 0).long()
+                # labels = (torch.sum(data['label'], dim=(1, 2, 3)) > 0).long()
                 # labels = torch.unsqueeze(labels, dim=1).float()
 
+                labels = data['label']
                 images = data['image']
+
                 if torch.sum(images) > 0:
 
-                    # label = label.cuda()
-                    # image = image.cuda()
+                    if torch.cuda.device_count() > 0:
+                        labels = labels.cuda()
+                        images = images.cuda()
 
                     with torch.set_grad_enabled(training):
-
                         logits = model(images)
-                        loss = criterion(logits, labels)
+                        loss = criterion(logits, labels.squeeze())
                         predis = torch.argmax(logits, dim=1).float()
                         accu = 1 - F.mse_loss(predis, labels)
                         # accu = precision(predis, labels)
 
-                        union += torch.sum(predis + labels)
-                        match += torch.sum(predis * labels)
+                        union += torch.sum(predis + labels).detach().cpu().item()
+                        match += torch.sum(predis * labels).detach().cpu().item()
 
                         if training:
                             loss.backward()
                             optim.step()
                             model.zero_grad()
+                        else:
+                            probas = torch.softmax(logits, dim=1)[:, 1]
+                            for i, p in enumerate(probas):
+                                if p > 0.35 and data['idx'][i] != "":
+                                    outputs.append([
+                                        data['idx'][i],
+                                        p.item(),
+                                        labels[i, 0].item(),
+                                        data['anchor'][i].tolist()
+                                    ])
 
                     avg_loss += loss.detach().cpu().item()
                     avg_accu += accu.detach().cpu().item()
                     counter += 1
 
+                    if labels.float().mean() > 0.:
+                        non_zero = True
+
                 else:
-                    loss = -1
-                    accu = -1
+                    loss = -1.
+                    accu = -1.
 
                 progress_bar.set_description(
                     '[%s] Running loss: %.5f, accu: %.5f'
                     % (stage_info[stage], loss, accu)
                 )
+
+            assert non_zero
 
 
             dice = 2 * match / union
@@ -193,7 +215,17 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                 % (stage_info[stage], avg_loss / counter, avg_accu / counter, dice)
             )
 
+            if stage == 'valid':
+                with open(os.path.join(args.output_dir, 'epoch-%03d-dice-%.3f.json' % (epoch, dice)), 'w') as f:
+                    json.dump(outputs, f, indent=2)
+
+            if stage == 'valid' and dice > best:
+                best = dice
+                torch.save(model.state_dict(), 'best.ckpt')
+                print('Save best model with dice score:', best)
+
         except KeyboardInterrupt:
+            torch.save(model.state_dict(), args.pause_ckpt)
             print('save temporary model into %s' % args.pause_ckpt)
             terminated = True
             break

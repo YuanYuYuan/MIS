@@ -14,7 +14,6 @@ from training import (
     KfacLearner,
     CheckpointHandler,
 )
-from torchcurv.optim import SecondOrderOptimizer
 from MIDP import DataLoader, DataGenerator, Reverter
 from flows import MetricFlow
 import json
