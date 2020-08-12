@@ -13,6 +13,7 @@ from tqdm import tqdm
 from utils import get_tty_columns
 import numpy as np
 import torch
+from sklearn.metrics import auc, roc_curve, plot_roc_curve
 
 
 parser = argparse.ArgumentParser()
@@ -84,15 +85,60 @@ model.zero_grad()
 optim = Optimizer(config['optimizer'])(model)
 optim.zero_grad()
 
-criterion = torch.nn.CrossEntropyLoss()
+weight = torch.tensor([0.1, 0.99])
+if torch.cuda.device_count() > 0:
+    weight = weight.cuda()
+criterion = torch.nn.CrossEntropyLoss(weight)
+
 def F1_score(predis, labels):
     return 2 * torch.sum(predis * labels) / torch.sum(predis + labels)
 
 def precision(predis, labels):
-    TP = 2 * torch.sum(predis * labels)
-    FP = torch.sum(labels) - TP
-    FN = torch.sum(predis) - TP
-    return TP / (TP + FP)
+    assert predis.shape == labels.shape, (predis.shape, labels.shape)
+    TP = torch.sum(predis * labels)
+    FN = torch.sum(labels) - TP
+    FP = torch.sum(predis) - TP
+    return TP / (TP + FN)
+
+def dice_loss(logits, labels):
+    probas = torch.softmax(logits, dim=1)[:, 1]
+    assert probas.shape == labels.shape, (probas.shape, labels.shape)
+    match = 2 * torch.sum(probas * labels)
+    union = torch.sum(probas + labels)
+    return 1. - match / union
+
+def F1_loss(logits, labels, beta=2., epsilon=1e-9):
+    probas = torch.softmax(logits, dim=1)[:, 1]
+    assert precision.shape == labels.shape
+    TP = (probas * labels).sum()
+    FP = ((1 - probas) * labels).sum()
+    FN = (probas * (1 - labels)).sum()
+    fbeta = (1 + beta**2) * TP / ((1 + beta**2) * TP + (beta**2) * FN + FP + epsilon)
+    fbeta = fbeta.clamp(min=epsilon, max=1 - epsilon)
+    return 1 - fbeta.mean()
+
+def confusion_matrix(predis, labels):
+    if predis.shape != labels.shape:
+        predis = predis.squeeze()
+        labels = labels.squeeze()
+
+    assert predis.shape == labels.shape, (predis.shape, labels.shape)
+    TP = torch.sum(predis * labels).detach().cpu().item()
+    FP = (torch.sum(predis).detach().cpu().item() - TP)
+    FN = (torch.sum(labels).detach().cpu().item() - TP)
+    TN = torch.sum((1-predis) * (1-labels)).detach().cpu().item()
+    return TP, FP, FN, TN
+
+def auc_roc(predis, labels):
+    if predis.shape != labels.shape:
+        predis = predis.squeeze()
+        labels = labels.squeeze()
+    assert predis.shape == labels.shape, (predis.shape, labels.shape)
+    predis = predis.cpu().numpy()
+    labels = labels.cpu().numpy()
+    fpr, tpr, thresholds = roc_curve(labels, probas, pos_label=1)
+    return auc(fpr, tpr)
+
 
 timer = time.time()
 start = timer
@@ -141,8 +187,10 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
             avg_loss = 0.0
             avg_accu = 0.0
-            union = 0.0
-            match = 0.0
+            TP = 0.0
+            FP = 0.0
+            FN = 0.0
+            TN = 0.0
             counter = 0
 
             training = (stage == 'train')
@@ -167,13 +215,20 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
 
                     with torch.set_grad_enabled(training):
                         logits = model(images)
-                        loss = criterion(logits, labels.squeeze())
+                        # loss = criterion(logits, labels.squeeze())
+                        # loss = dice_loss(logits, labels.squeeze())
+                        loss = F1_loss(logits, labels.squeeze())
                         predis = torch.argmax(logits, dim=1).float()
-                        accu = 1 - F.mse_loss(predis, labels)
-                        # accu = precision(predis, labels)
+                        # accu = 1 - F.mse_loss(predis, labels)
+                        # accu = precision(predis, labels.squeeze())
+                        accu = auc_roc(predis, labels.squeeze())
 
-                        union += torch.sum(predis + labels).detach().cpu().item()
-                        match += torch.sum(predis * labels).detach().cpu().item()
+                        _TP, _FP, _FN, _TN = confusion_matrix(predis, labels)
+
+                        TP += _TP
+                        FP += _FP
+                        FN += _FN
+                        TN += _TN
 
                         if training:
                             loss.backward()
@@ -209,20 +264,22 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             assert non_zero
 
 
-            dice = 2 * match / union
+            sensitivity = TP / (TP + FN)
+            specificity = TN / (TN + FP)
+            precision = TP / (TP + FP)
             print(
-                '[%s] Avg loss: %.5f, accu: %.5f, dice: %.5f'
-                % (stage_info[stage], avg_loss / counter, avg_accu / counter, dice)
+                '[%s] Avg loss: %.5f, accu: %.5f, precision: %.5f, sensitivity: %.5f, specificity: %.5f'
+                % (stage_info[stage], avg_loss / counter, avg_accu / counter, precision, sensitivity, specificity)
             )
 
             if stage == 'valid':
-                with open(os.path.join(args.output_dir, 'epoch-%03d-dice-%.3f.json' % (epoch, dice)), 'w') as f:
+                with open(os.path.join(args.output_dir, 'epoch-%03d-auc-%.3f.json' % (epoch, precision)), 'w') as f:
                     json.dump(outputs, f, indent=2)
 
-            if stage == 'valid' and dice > best:
-                best = dice
+            if stage == 'valid' and precision > best:
+                best = precision
                 torch.save(model.state_dict(), 'best.ckpt')
-                print('Save best model with dice score:', best)
+                print('Save best model with auc score:', best)
 
         except KeyboardInterrupt:
             torch.save(model.state_dict(), args.pause_ckpt)
