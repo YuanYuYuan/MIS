@@ -1,0 +1,78 @@
+gpus: 0
+epochs: 1000
+validation_frequency: 4
+early_stopping_epochs: 10
+data: data_list.yaml
+output_threshold: 0.35
+
+# ABCs-raw: [164, 194, 142]
+# ABCs-1mm: [197, 233, 170]
+
+generator:
+  train            :
+    PatchGenerator :
+      shuffle      : True
+      crop_shape   : [192, 192, -1]
+      n_workers    : 4
+      verbose      : False
+
+    Augmentor      :                  # do preprocessing and data augmentation
+      # zoom_range   : [0.8, 1.2]       # zoom the image/label with some scale in range, note that it only apply on x-y plane
+      # flip         : True             # flip the image/only on x-y plane with a fixed probability 0.5
+      # transpose    : False             # transpose the image/label on x-y plane with a fixed probability 0.5
+      noise        : True             # add a Gaussian noise with mean 0 and sigam 0.05 on the image
+      window_width : 400        # adjust the contrast with the given window width(or a range), default : 100
+      window_level : 0         # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 2                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
+
+    BatchGenerator :
+      batch_size   : 2
+      n_workers    : 2
+      verbose      : False
+
+  valid            :
+    PatchGenerator :
+      crop_shape   : [192, 192, -1]
+      shuffle      : False
+      n_workers    : 1
+      verbose      : False
+
+    Augmentor      :                  # do preprocessing and data augmentation
+      window_width : 400              # adjust the contrast with the given window width(or a range), default : 100
+      window_level : 0               # adjust the contrast with the given window level(or a range), default : 50
+      n_workers    : 1                # number of multi-thread workers
+      verbose      : False            # toggle the debug info of this generator
+
+    BatchGenerator :
+      batch_size   : 6
+      n_workers    : 1
+      verbose      : False
+
+model:
+  model_config:
+    name: 'UNet2D'
+    n_channels: 1
+    n_classes: 6
+  # checkpoint: 'ckpt.pt'
+
+optimizer:
+  name     : Adam
+  lr       : 0.001
+
+ckpt_handler:
+  checkpoint_dir: '_ckpts'
+  mode: 'improved'
+  criterion: 'max'
+
+meter: 'meter.json5'
+
+scheduler:
+  mode: max
+  warmup: 10
+  reduce_factor: 0.5
+  patience: 50
+
+early_stopper:
+  mode: max
+  patience: 10
