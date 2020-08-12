@@ -16,6 +16,7 @@ class UNet2D(nn.Module):
         # XXX: for SSO
         self.num_classes = n_classes
 
+
         self.inc1 = nn.Conv2d(n_channels, 64, kernel_size=3, padding=1)
         self.inc_bn1 = nn.BatchNorm2d(64)
         self.inc2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
@@ -63,7 +64,8 @@ class UNet2D(nn.Module):
 
         self.outc = nn.Conv2d(64, n_classes, kernel_size=1)
 
-    def forward(self, x):
+    def forward(self, inp):
+        x = inp['image'] if isinstance(x, dict) else inp
         x = self.inc1(x)
         x = self.inc_bn1(x)
         x = F.relu(x, inplace=True)
@@ -157,4 +159,8 @@ class UNet2D(nn.Module):
 
         logits = self.outc(x)
 
-        return logits
+        if isinstance(inp, dict):
+            inp['prediction'] = logits
+            return inp
+        else:
+            return logits
