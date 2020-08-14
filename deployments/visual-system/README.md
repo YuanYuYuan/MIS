@@ -14,5 +14,5 @@ Average           : 0.5005
 
 ## Usage
 
-Click [here](https://yuanyuyuan.github.io/MIS/deployment/visual-system/) to see
+Click [here](https://yuanyuyuan.github.io/MIS/deployments/visual-system/) to see
 the instruction.

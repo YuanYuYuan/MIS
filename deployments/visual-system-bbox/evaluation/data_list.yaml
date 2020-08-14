@@ -1,0 +1,26 @@
+list:
+- 0522c0555
+- 0522c0576
+- 0522c0598
+- 0522c0659
+- 0522c0661
+- 0522c0667
+- 0522c0669
+- 0522c0708
+- 0522c0727
+- 0522c0746
+- 0522c0788
+- 0522c0806
+- 0522c0845
+- 0522c0857
+- 0522c0878
+loader:
+  name: NRRDLoader
+  data_dir: ../data
+  roi_map:
+    OpticNerve_L: 1
+    OpticNerve_R: 2
+    Chiasm: 3
+  spacing: 1
+  resample: false
+  bbox: ../bbox.json
