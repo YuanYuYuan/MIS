@@ -1,4 +1,4 @@
-= Visual System Segmentation
+= Visual System Segmentation with Bounding Box
 :toc: left
 :icons: font
 :source-highlighter: rouge
@@ -7,13 +7,13 @@
 :sectlinks:
 :sectanchors:
 
-This document states how to use the example `MIS/deployments/visual-system`.
+This document states how to use the example `MIS/deployments/visual-system-bbox`.
 
 == Prerequisites
 
 === Prepare dataset
 
-Place your dataset folder in here(_MIS/deployments/visual-system_) and name it as `data`. +
+Place your dataset folder in here(_MIS/deployments/visual-system-bbox_) and name it as `data`. +
 Or you may directly create a link to the folder like this.
 
     ln -s YOUR_DATASET data
