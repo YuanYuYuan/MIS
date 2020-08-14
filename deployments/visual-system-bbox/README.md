@@ -7,9 +7,9 @@ based on preprocessed given bounding boxes.
 and is supposed to be the 2nd stage in two-stage segmentation,
 that is the data are given with corresponding bounding boxes.
 * We improve the model's performance compared with the [previous version](https://github.com/YuanYuYuan/MIS/tree/master/deployments/visual-system) by
-** restricting the ROI,
-** more data preprocessing: affine + elastic augmentation, larger contrast range, etc.
-** correct data sampling mechanism while training.
+    * restricting the ROI,
+    * more data preprocessing: affine + elastic augmentation, larger contrast range, etc.
+    * correct data sampling mechanism while training.
 
 
 ## Validation performance on PDDCA dataset
