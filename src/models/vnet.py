@@ -181,7 +181,8 @@ class VNet(nn.Module):
         self.up_layers = nn.ModuleList(up_layers)
         self.up_convs = nn.ModuleList(up_convs)
 
-    def forward(self, x):
+    def forward(self, inp):
+        x = inp['image'] if isinstance(inp, dict) else inp
         x = self.input(x)
 
         # downward
@@ -214,6 +215,10 @@ class VNet(nn.Module):
 
         # output cropping
         if self.crop_idx is not None:
-            return x[self.crop_idx]
+            x = x[self.crop_idx]
+
+        if isinstance(inp, dict):
+            inp['prediction'] = x
+            return inp
         else:
             return x

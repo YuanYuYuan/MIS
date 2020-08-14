@@ -234,7 +234,7 @@ class SegLearner(Learner):
                 crop_range(outputs['prediction'].shape[2:], shape)
             ]
 
-    def learn(self, data):
+    def learn(self, data, **kwargs):
         outputs = self._model_run(data, training=True)
         self.match_prediction_size(outputs, data)
         data.update(outputs)

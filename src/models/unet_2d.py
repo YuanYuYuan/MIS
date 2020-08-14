@@ -65,7 +65,7 @@ class UNet2D(nn.Module):
         self.outc = nn.Conv2d(64, n_classes, kernel_size=1)
 
     def forward(self, inp):
-        x = inp['image'] if isinstance(x, dict) else inp
+        x = inp['image'] if isinstance(inp, dict) else inp
         x = self.inc1(x)
         x = self.inc_bn1(x)
         x = F.relu(x, inplace=True)

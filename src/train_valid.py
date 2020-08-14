@@ -155,7 +155,8 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             result_list = runner.run(
                 data_gen[stage],
                 training=training,
-                stage=stage_info[stage]
+                stage=stage_info[stage],
+                compute_match=True
             )
 
         except KeyboardInterrupt:
