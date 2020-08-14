@@ -3,12 +3,13 @@ epochs: 1000
 validation_frequency: 4
 early_stopping_epochs: 10
 data: data_list.yaml
+output_threshold: 0.35
 
 generator:
   train            :
     PatchGenerator :
       shuffle      : True
-      crop_shape   : [196, 196, -1]
+      crop_shape   : [160, 160, -1]
       n_workers    : 4
       verbose      : False
 
@@ -29,7 +30,7 @@ generator:
 
   valid            :
     PatchGenerator :
-      crop_shape   : [196, 196, -1]
+      crop_shape   : [160, 160, -1]
       shuffle      : False
       n_workers    : 1
       verbose      : False

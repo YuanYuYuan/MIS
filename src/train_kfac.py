@@ -93,6 +93,7 @@ ckpt_handler = CheckpointHandler(model_handler, **config['ckpt_handler'])
 if 'optimizer' in config:
     optimizer = Optimizer(config['optimizer'])(model_handler.model)
 else:
+    from torchcurv.optim import SecondOrderOptimizer
     with open('./optimizer-config.json') as f:
         optim_config = json.load(f)
     optimizer = SecondOrderOptimizer(
