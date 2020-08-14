@@ -216,7 +216,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
             # revert the matching dice score to the whole one from batches
             scores = dict()
             progress_bar = tqdm(
-                reverter.on_batches(result_list),
+                reverter.on_batches(result_list, config['output_threshold']),
                 total=len(reverter.data_list),
                 dynamic_ncols=True,
                 ncols=get_tty_columns(),
@@ -305,6 +305,11 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
                 logger.add_scalar(
                     'scheduler/best_metric',
                     scheduler.best,
+                    epoch
+                )
+                logger.add_scalar(
+                    'scheduler/n_stagnation',
+                    scheduler.n_stagnation,
                     epoch
                 )
 
