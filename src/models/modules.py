@@ -81,6 +81,26 @@ class ConvBlock(nn.Module):
                 )
             )
 
+        elif dim == 'slice':
+            self.op.add_module(
+                'slice_1',
+                nn.Conv3d(
+                    in_channels=self.ch_in,
+                    out_channels=self.ch_out,
+                    kernel_size=(5, 5, 16),
+                    padding=(2, 2, 0),
+                ),
+            )
+            self.op.add_module(
+                'slice_2',
+                nn.Conv3d(
+                    in_channels=self.ch_out,
+                    out_channels=self.ch_out,
+                    kernel_size=(3, 3, 1),
+                    padding=(1, 1, 0),
+                ),
+            )
+
         if postprocess:
             self.op.add_module(
                 'postprocess_norm',
