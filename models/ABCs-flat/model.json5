@@ -1,0 +1,147 @@
+{
+  'nodes': {
+    'encoder': {
+      'inps': [0],
+      'outs': [12, 10, 8, 5],
+      'topo': {
+        // layer 1
+        '1': 'l_11',
+
+        // layer 2
+        '2': 'd_1',
+        '3': 'l_21',
+        '4': 'l_22',
+        '5': {'l_23': 4, 'l_24': 3},
+
+        // layer 3
+        '6': 'd_2',
+        '7': 'l_31',
+        '8': 'l_32',
+
+        // layer 4
+        '9': 'd_3',
+        '10': 'l_41',
+
+        // layer 5
+        '11': 'd_4',
+        '12': 'l_51',
+      },
+      'maps': {
+        // layer 1
+        'l_11': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 3, 'ch_out': 16},
+
+        // downsample
+        'd_1': {'name': 'DownSample', 'ch_in': 16},
+
+        // layer 2
+        'l_21': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 32},
+        'l_22': {'name': 'ConvBlock', 'dim': '2D', 'ch_in': 32},
+        'l_23': {'name': 'ConvBlock', 'dim': 'P3D', 'ch_in': 32},
+        'l_24': {'name': 'Identity'},
+
+        // downsample
+        'd_2': {'name': 'DownSample', 'ch_in': 32},
+
+        // layer 3
+        'l_31': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 64},
+        'l_32': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 64},
+
+        // downsample
+        'd_3': {'name': 'DownSample', 'ch_in': 64},
+
+        // layer 4
+        'l_41': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 128},
+
+        // downsample
+        'd_4': {'name': 'DownSample', 'ch_in': 128},
+
+        // layer 5
+        'l_51': {'name': 'ConvBlock', 'dim': '2D', 'ch_in': 256},
+      },
+    },
+    'decoder': {
+      'inps': [0, 2, 6, 9],
+      'outs': [17],
+      'topo': {
+        // layer 1
+        '1': 'l_11',
+
+        // layer 2
+        '3': {'l_21': 2, 'u_1': 1},
+        '4': 'l_22',
+        '5': 'l_23',
+
+        // layer 3
+        '7': {'l_31': 6, 'u_2': 5},
+        '8': 'l_32',
+
+        // layer 4
+        '10': {'l_41': 9, 'u_3': 8},
+        '11': 'l_42',
+        '12': 'l_43',
+        '13': {'l_46': 11, 'l_44': 12},
+        '14': {'l_45': 13, 'l_47': 12},
+
+        // layer 5
+        '15': 'u_4',
+        '16': 'l_51',
+        '17': 'l_52',
+      },
+      'maps': {
+        // layer 1
+        'l_11': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 256},
+
+        // upsample
+        'u_1': {'name': 'UpSample', 'ch_in': 256},
+
+        // layer 2
+        'l_21': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 128},
+        'l_22': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 128},
+        'l_23': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 128},
+
+        // upsample
+        'u_2': {'name': 'UpSample', 'ch_in': 128},
+
+        // layer 3
+        'l_31': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 64},
+        'l_32': {'name': 'ConvBlock', 'dim': 'P3D', 'ch_in': 64},
+
+        // upsample
+        'u_3': {'name': 'UpSample', 'ch_in': 64},
+
+        // layer 4
+        'l_41': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 32},
+        'l_42': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 32},
+        'l_43': {'name': 'ConvBlock', 'dim': '2D', 'ch_in': 32},
+        'l_44': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 32},
+        'l_45': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 32},
+        'l_46': {'name': 'Identity'},
+        'l_47': {'name': 'Identity'},
+
+        // upsample
+        'u_4': {'name': 'UpSample', 'ch_in': 32},
+
+        // layer 5
+        'l_51': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 16},
+        'l_52': {
+          'name': 'ConvBlock',
+          // 'dim': '3D',
+          'dim': 'slice',
+          'ch_in': 16,
+          'ch_out': 6,
+          'postprocess': false
+        },
+      },
+    },
+  },
+  'links': {
+    'inps': {'image': 0},
+    'outs': {
+      'prediction': 5,
+    },
+    'flow': {
+      'encoder': {'inps': [0], 'outs': [1, 2, 3, 4]},
+      'decoder': {'inps': [1, 2, 3, 4], 'outs': [5]},
+    }
+  }
+}
