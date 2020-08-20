@@ -147,7 +147,7 @@ for epoch in range(init_epoch, init_epoch + config['epochs']):
         training = True if stage == 'train' else False
 
         # skip validation stage by validation_frequency
-        if stage != 'train' and epoch % config['validation_frequency'] != 0:
+        if stage != 'train' and (epoch - init_epoch) % config['validation_frequency'] != 0:
             break
 
         # run on an epoch
