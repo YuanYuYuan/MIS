@@ -4,6 +4,12 @@ import math
 from medpy.metric import hd95
 
 
+def mean_sqaure_loss(logits, label):
+    predi = torch.argmax(logits, dim=1)
+    assert predi.shape == label.shape
+    return F.mse_loss(predi, label)
+
+
 def housdorff_distance_95(logits, label):
     predis = F.softmax(logits, dim=1)
     n_classes = logits.shape[1]
