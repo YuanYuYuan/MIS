@@ -4,10 +4,18 @@ import math
 from medpy.metric import hd95
 
 
-def mean_sqaure_loss(logits, label):
-    predi = torch.argmax(logits, dim=1)
-    assert predi.shape == label.shape
-    return F.mse_loss(predi, label)
+def mean_sqaure_loss(logits, labels):
+
+    n_classes = logits.shape[1]
+    probas = F.softmax(logits, dim=1)
+    n_dim = len(logits.shape[2:])
+
+    # 2D: (0, 3, 1, 2), 3D: (0, 4, 1, 2, 3)
+    permute_dim = (0, n_dim+1,) + tuple(i+1 for i in range(n_dim))
+
+    labels = F.one_hot(labels, n_classes).permute(permute_dim).float()
+    assert probas.shape == labels.shape, (probas.shape, labels.shape)
+    return F.mse_loss(probas, labels)
 
 
 def housdorff_distance_95(logits, label):

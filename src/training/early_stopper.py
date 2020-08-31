@@ -3,6 +3,7 @@ class EarlyStopper:
     def __init__(
         self,
         patience,
+        threshold=0.95,
         mode='min',
     ):
         self.patience = patience
@@ -10,14 +11,15 @@ class EarlyStopper:
         assert mode in ['min', 'max']
         self.mode = mode
         self.best = None
+        self.threshold = threshold
 
-    def check_improved(self, metric, threshold=0.95):
+    def check_improved(self, metric):
         if self.best is None:
             return True
         elif self.mode == 'min':
-            return (metric * threshold) <= self.best
+            return (metric * self.threshold) <= self.best
         else:
-            return metric >= (self.best * threshold)
+            return metric >= (self.best * self.threshold)
 
     def check(self, metric):
         early_stop_or_not = False

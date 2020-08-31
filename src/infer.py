@@ -5,11 +5,11 @@ import argparse
 import torch
 import time
 import os
+from training import ModelHandler
 
 from utils import get_tty_columns, save_nifti
 import yaml
 from MIDP import DataLoader, DataGenerator
-import models
 
 
 parser = argparse.ArgumentParser()
@@ -18,41 +18,40 @@ parser.add_argument(
     required=True,
     help='configuration for data pipeline/model'
 )
+parser.add_argument(
+    '--checkpoint',
+    default=None,
+    help='pretrained model checkpoint'
+)
+parser.add_argument(
+    '--prediction-dir',
+    default=None,
+    help='save prediction',
+)
 args = parser.parse_args()
 
 
 # load config
 with open(args.config) as f:
     config = yaml.safe_load(f)
-os.makedirs(config['output_dir'], exist_ok=True)
+generator_config = config['generator']
+with open(config['data']) as f:
+    data_config = yaml.safe_load(f)
+data_list = data_config['list']
+loader_config = data_config['loader']
 
 # - data pipeline
-loader_config = config['loader']
 loader_name = loader_config.pop('name')
-data_loader = DataLoader(
-    loader_name,
-    **loader_config
-)
-data_gen = DataGenerator(data_loader, config['generator'])
-ROIs = data_loader.ROIs
+data_loader = DataLoader(loader_name, **loader_config)
+if data_list is not None:
+    data_loader.set_data_list(data_list)
+data_gen = DataGenerator(data_loader, generator_config)
 
 # - GPUs
 os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
 
 # - model
-model_name = config['model'].pop('name')
-model = getattr(models, model_name)(**config['model'])
-print('===== Loading checkpoint %s =====' % config['model_weight'])
-checkpoint = torch.load(
-    config['model_weight'],
-    map_location=lambda storage,
-    location: storage
-)
-model.load_state_dict(checkpoint['model_state_dict'])
-if torch.cuda.device_count() > 1:
-    model = torch.nn.DataParallel(model).cuda()
-else:
-    model = model.cuda()
+model = ModelHandler(config['model'], checkpoint=args.checkpoint).model
 model.eval()
 
 timer = time.time()
@@ -113,7 +112,7 @@ with torch.set_grad_enabled(False):
             DL.save_prediction(
                 data_idx,
                 prediction.data.cpu().numpy(),
-                config['output_dir']
+                args.prediction_dir
             )
 
             # remove processed results
