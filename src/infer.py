@@ -66,6 +66,9 @@ if PG.n_workers > 1:
     assert PG.ordered
 assert BG.n_workers == 1
 
+
+assert 'output_threshold' in config
+
 # Use data list from PG since may be shuffled
 progress_bar = tqdm(
     zip(PG.data_list, PG.partition),

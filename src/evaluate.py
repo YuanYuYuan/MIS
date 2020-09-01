@@ -67,9 +67,7 @@ if data_list is not None:
 data_gen = DataGenerator(data_loader, generator_config)
 reverter = Reverter(data_gen)
 
-ROIs = None
-if ROIs is None:
-    ROIs = data_loader.ROIs
+ROIs = data_loader.ROIs
 
 # check include prediction while running
 if args.prediction_dir is not None or 'include_prediction' in config:
