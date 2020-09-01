@@ -66,10 +66,11 @@ class Runner:
             else:
                 step_accu = math.nan
 
-            progress_bar.set_description(
-                '[%s] Loss: %.5f, Avg accu: %.5f'
-                % (stage, results['loss'], step_accu)
-            )
+            if 'loss' in results:
+                progress_bar.set_description(
+                    '[%s] Loss: %.5f, Avg accu: %.5f'
+                    % (stage, results['loss'], step_accu)
+                )
 
             if self.logger is not None:
                 self.logger.add_scalar(
