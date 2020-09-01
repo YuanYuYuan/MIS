@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-import torch.nn.functional as F
-from tqdm import tqdm
 import argparse
-import torch
 import time
 import os
-from training import ModelHandler
-
-from utils import get_tty_columns, save_nifti
 import yaml
-from MIDP import DataLoader, DataGenerator
+from training import ModelHandler, Runner, SegLearner
+from MIDP import DataLoader, DataGenerator, Reverter
+from tqdm import tqdm
+import numpy as np
+from utils import get_tty_columns
+import torch
+import json
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--config',
     required=True,
-    help='configuration for data pipeline/model'
+    help='training config'
 )
 parser.add_argument(
     '--checkpoint',
@@ -29,6 +29,10 @@ parser.add_argument(
     help='save prediction',
 )
 args = parser.parse_args()
+
+timer = time.time()
+start = timer
+
 
 
 # load config
@@ -46,82 +50,68 @@ data_loader = DataLoader(loader_name, **loader_config)
 if data_list is not None:
     data_loader.set_data_list(data_list)
 data_gen = DataGenerator(data_loader, generator_config)
+reverter = Reverter(data_gen)
+
+ROIs = data_loader.ROIs
+DL = data_gen.struct['DL']
+PG = data_gen.struct['PG']
+BG = data_gen.struct['BG']
+# ensure the order
+if PG.n_workers > 1:
+    assert PG.ordered
+assert BG.n_workers == 1
+if 'AG' in data_gen.struct:
+    assert data_gen.struct['AG'].n_workers == 1
+
+assert 'output_threshold' in config
+
+if args.prediction_dir is not None:
+    os.makedirs(args.prediction_dir, exist_ok=True)
 
 # - GPUs
 os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
 
 # - model
-model = ModelHandler(config['model'], checkpoint=args.checkpoint).model
-model.eval()
-
-timer = time.time()
-start = timer
-
-DL = data_gen.struct['DL']
-PG = data_gen.struct['PG']
-BG = data_gen.struct['BG']
-
-# ensure the order
-if PG.n_workers > 1:
-    assert PG.ordered
-assert BG.n_workers == 1
-
-
-assert 'output_threshold' in config
-
-# Use data list from PG since may be shuffled
-progress_bar = tqdm(
-    zip(PG.data_list, PG.partition),
-    total=len(PG.data_list),
-    ncols=get_tty_columns(),
-    desc='[Infering] ID: '
+model_handler = ModelHandler(config['model'], checkpoint=args.checkpoint)
+runner = Runner(
+    learner=SegLearner(
+        model=model_handler.model,
+        meter=None,
+        optim=dict()
+    ),
+    logger=None,
 )
 
-partition_counter = 0
+result_list = runner.run(
+    data_gen,
+    training=False,
+    stage='Evaluating',
+    include_prediction=True,
+    compute_match=False,
+)
 
-# use with statement to make sure data_gen is clear in case interrupted
-with torch.set_grad_enabled(False):
-    results = torch.Tensor()
-    with data_gen as gen:
-        for (data_idx, partition_per_data) in progress_bar:
+for key in result_list[0].keys():
+    assert key in reverter.revertible, f'{key} is not revertible!'
 
-            # show progress
-            progress_bar.set_description('[Infering] ID: %s' % data_idx)
+with tqdm(
+    reverter.on_batches(
+        result_list,
+        output_threshold=config['output_threshold']
+    ),
+    total=len(reverter.data_list),
+    dynamic_ncols=True,
+    ncols=get_tty_columns(),
+    desc='[Data index]'
+) as progress_bar:
+    for reverted in progress_bar:
+        data_idx = reverted['idx']
+        DL.save_prediction(
+            data_idx,
+            reverted['prediction'],
+            args.prediction_dir
+        )
 
-            # loop until a partition have been covered
-            while partition_counter < partition_per_data:
-                try:
-                    batch = next(gen)
-                    logits = model(batch['image'].cuda())
-                    probas = F.softmax(logits, dim=1)
+        info = '[%s] ' % data_idx
+        progress_bar.set_description(info)
 
-                    # enhance prediction by setting a threshold
-                    for i in range(1, probas.shape[1]):
-                        probas[:, i, ...] += (probas[:, i, ...] >= config['output_threshold']).float()
-                    output = torch.argmax(probas, 1).cpu()
-
-                except StopIteration:
-                    break
-
-                # append to each torch tensor in results
-                results = output if len(results) == 0 else torch.cat([results, output])
-                partition_counter += data_gen.struct['BG'].batch_size
-
-            # save prediction
-            prediction = PG.revert(
-                data_idx,
-                results[:partition_per_data]
-            )
-            DL.save_prediction(
-                data_idx,
-                prediction.data.cpu().numpy(),
-                args.prediction_dir
-            )
-
-            # remove processed results
-            results = results[partition_per_data:]
-            partition_counter -= partition_per_data
-
-
-print('Total:', time.time()-start)
-print('Finished')
+print('Time:', time.time()-start)
