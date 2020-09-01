@@ -262,11 +262,17 @@ class SegLearner(Learner):
         outputs = self._model_run(data, training=False)
         self.match_prediction_size(outputs, data)
         data.update(outputs)
-        results = self._evaluate(data, training=False)
+
+        if self.meter is not None:
+            results = self._evaluate(data, training=False)
+        else:
+            results = {}
+
         if include_prediction:
             self._include_prediction(data, results)
         if compute_match:
             self._compute_match(data, results)
+
         return results
 
 class DetLearner(Learner):
