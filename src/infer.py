@@ -113,7 +113,8 @@ with tqdm(
                     args.prediction_dir,
                     data_idx + '.nrrd',
                 ),
-                reverted['prediction'],
+                reverted['prediction'].astype('float32'),
+                compression_level=5,
             )
 
         else:
