@@ -10,6 +10,7 @@ import numpy as np
 from utils import get_tty_columns
 import torch
 import json
+import nrrd
 
 
 parser = argparse.ArgumentParser()
@@ -105,11 +106,22 @@ with tqdm(
 ) as progress_bar:
     for reverted in progress_bar:
         data_idx = reverted['idx']
-        DL.save_prediction(
-            data_idx,
-            reverted['prediction'],
-            args.prediction_dir
-        )
+
+        if len(reverted['prediction'].shape) > 3:
+            nrrd.write(
+                os.path.join(
+                    args.prediction_dir,
+                    data_idx + '.nrrd',
+                ),
+                reverted['prediction'],
+            )
+
+        else:
+            DL.save_prediction(
+                data_idx,
+                reverted['prediction'],
+                args.prediction_dir
+            )
 
         info = '[%s] ' % data_idx
         progress_bar.set_description(info)
