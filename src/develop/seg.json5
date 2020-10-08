@@ -1,0 +1,29 @@
+{
+  'nodes': {
+    'segmentor': {
+      'inps': [0],
+      'outs': [1],
+      'topo': {
+        '1': 'l_1',
+      },
+      'maps': {
+        'l_1': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 1,
+          'ch_out': 6,
+          'postprocess': false,
+        },
+      },
+    },
+  },
+  'links': {
+    'inps': {'latent': 0},
+    'outs': {
+      'prediction': 1,
+    },
+    'flow': {
+      'segmentor': {'inps': [0], 'outs': [1]},
+    }
+  }
+}
