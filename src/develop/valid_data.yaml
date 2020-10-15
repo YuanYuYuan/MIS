@@ -11,7 +11,8 @@ list: [
   '070',
 ]
 loader:
-  data_dir: /storage/data/brain/ABCs-raw/
+  # data_dir: /storage/data/brain/ABCs-raw/
+  data_dir: /home/u/circle/storage/data/ABCs-raw
   name: ABCSLoader
   task: 3
   modalities:
