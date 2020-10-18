@@ -1,0 +1,106 @@
+# gpus: 0,1,2,3
+# gpus: 4,5,6,7
+# gpus: 5,6
+gpus: 1
+epochs: 2000
+validation_frequency: 4
+early_stopping_epochs: 10
+output_threshold: 0.5
+
+generator:
+  train            :
+    data: './_develop/train_data.yaml'
+
+    BlockGenerator :
+      block_shape  : [96, 96, 96]
+      stride       : 48
+      n_workers    : 4
+      verbose      : False
+
+    Augmentor      :
+      affine       : weak
+      noise        : 0.1
+      n_workers    : 2
+      verbose      : False
+
+    BatchGenerator :
+      batch_size   : 16
+      n_workers    : 2
+      verbose      : False
+
+  adapt_source:
+    data: './_develop/valid_data.yaml'
+
+    BlockGenerator :
+      block_shape  : [96, 96, 96]
+      stride       : 48
+      n_workers    : 4
+      verbose      : False
+
+    Augmentor      :
+      affine       : weak
+      noise        : 0.1
+      n_workers    : 2
+      verbose      : False
+
+    BatchGenerator :
+      batch_size   : 16
+      n_workers    : 2
+      verbose      : False
+
+  adapt_target:
+    data: './_develop/valid_data.yaml'
+
+    BlockGenerator :
+      block_shape  : [96, 96, 96]
+      stride       : 48
+      n_workers    : 4
+      verbose      : False
+
+    Augmentor      :
+      affine       : weak
+      noise        : 0.1
+      n_workers    : 2
+      verbose      : False
+
+    BatchGenerator :
+      batch_size   : 16
+      n_workers    : 2
+      verbose      : False
+
+  valid            :
+    data: './_develop/valid_data.yaml'
+
+    BlockGenerator :
+      block_shape  : [96, 96, 96]
+      stride       : 48
+      n_workers    : 4
+      ordered      : True
+      verbose      : False
+
+    BatchGenerator :
+      batch_size   : 48
+      n_workers    : 1
+      verbose      : False
+
+model: 'model.json5'
+meter: 'meter.json5'
+
+ckpt_handler:
+    checkpoint_dir: '_ckpts'
+    mode: 'improved'
+
+optimizer:
+  name     : Adam
+  lr       : 0.001
+
+scheduler:
+  mode: max
+  warmup: 10
+  reduce_factor: 0.5
+  patience: 20
+  threshold: 1.0
+
+early_stopper:
+  mode: max
+  patience: 10

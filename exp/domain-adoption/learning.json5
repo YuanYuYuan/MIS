@@ -1,0 +1,139 @@
+{
+  "module": {
+    "mod_enc": {
+      "config": "./modules/enc.json5",
+      // "ckpt": "enc.ckpt",
+      "optim": {"name": "Adam", "lr": 0.001},
+    },
+    "mod_seg": {
+      "config": "./modules/seg.json5",
+      // "ckpt": "seg.ckpt",
+      "optim": {"name": "Adam", "lr": 0.001},
+    },
+    "mod_dis": {
+      "config": "./modules/dis.json5",
+      // "ckpt": "dis.ckpt",
+      "optim": {"name": "Adam", "lr": 0.001},
+    },
+  },
+
+  "metric": {
+    "met_seg": "./metrics/metric_seg.json5",
+    "met_ada": "./metrics/metric_ada.json5",
+  },
+
+  "generator": {
+    "gen_train_source": {
+      "data": "./_develop/train_data.yaml",
+      "struct": {
+        "BlockGenerator": {
+          "block_shape": [96, 96, 96],
+          "stride": 48,
+          "n_workers": 4,
+        },
+        "Augmentor": {
+          "affine": "weak",
+          "noise": 0.1,
+          "n_workers": 2,
+        },
+        "BatchGenerator": {
+          "batch_size": 16,
+          "n_workers": 2,
+        },
+      },
+    },
+    "gen_adapt_source": {
+      "data": "./_develop/valid_data.yaml",
+      "struct": {
+        "BlockGenerator": {
+          "block_shape": [96, 96, 96],
+          "stride": 48,
+          "n_workers": 4,
+        },
+        "Augmentor": {
+          "affine": "weak",
+          "noise": 0.1,
+          "n_workers": 2,
+        },
+        "BatchGenerator": {
+          "batch_size": 16,
+          "n_workers": 2,
+        },
+      },
+    },
+    "gen_adapt_target": {
+      "data": "./_develop/valid_data.yaml",
+      "struct": {
+        "BlockGenerator": {
+          "block_shape": [96, 96, 96],
+          "stride": 48,
+          "n_workers": 4,
+        },
+        "Augmentor": {
+          "affine": "weak",
+          "noise": 0.1,
+          "n_workers": 2,
+        },
+        "BatchGenerator": {
+          "batch_size": 16,
+          "n_workers": 2,
+        },
+      },
+    },
+    "gen_valid_source": {
+      "data": "./_develop/valid_data.yaml",
+      "struct": {
+        "BlockGenerator": {
+          "block_shape": [96, 96, 96],
+          "stride": 48,
+          "n_workers": 4,
+        },
+        "BatchGenerator": {
+          "batch_size": 16,
+          "n_workers": 2,
+        },
+      },
+    },
+    "gen_valid_target": {
+      "data": "./_develop/valid_data.yaml",
+      "struct": {
+        "BlockGenerator": {
+          "block_shape": [96, 96, 96],
+          "stride": 48,
+          "n_workers": 4,
+        },
+        "BatchGenerator": {
+          "batch_size": 16,
+          "n_workers": 2,
+        },
+      },
+    },
+  },
+
+  "stage": {
+    "train": {
+      "generator": ["gen_train_source"],
+      "toggle": {"mod_enc": true, "mod_seg": true, "mod_dis": false},
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_seg",
+    },
+    "adapt": {
+      "generator": ["gen_adapt_source", "gen_adapt_target"],
+      "toggle": {"mod_enc": true, "mod_seg": false, "mod_dis": true},
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_ada",
+    },
+    "valid_source": {
+      "generator": ["gen_valid_source"],
+      "toggle": {"mod_enc": false, "mod_seg": false, "mod_dis": false},
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_seg",
+    },
+    "valid_target": {
+      "generator": ["gen_valid_target"],
+      "toggle": {"mod_enc": false, "mod_seg": false, "mod_dis": false},
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_seg",
+    },
+  },
+}
