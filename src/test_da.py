@@ -108,7 +108,7 @@ class Runner:
             data = dict()
             if isinstance(batch, tuple):
                 for key in batch[0]:
-                    data[key] = torch.cat(sub_batch[key] for sub_batch in batch).cuda()
+                    data[key] = torch.cat([sub_batch[key] for sub_batch in batch]).cuda()
             else:
                 assert isinstance(batch, dict)
                 for key in batch:
