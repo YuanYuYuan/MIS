@@ -205,3 +205,31 @@ class LatentReconstruction(nn.Module):
         x = self.op(x)
         x = torch.reshape(x, self.shape)
         return x
+
+class Classifier(nn.Module):
+
+    def __init__(self, in_shape=(32, 6, 6, 6), n_classes=2):
+        super().__init__()
+        in_dim = np.prod(in_shape)
+        self.op = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(in_dim, 4096),
+            nn.ReLU(inplace=True),
+
+            nn.Dropout(),
+            nn.Linear(4096, 1024),
+            nn.ReLU(inplace=True),
+
+            nn.Dropout(),
+            nn.Linear(1024, n_classes),
+        )
+        if isinstance(in_shape, list):
+            in_shape = tuple(in_shape)
+        self.in_shape = in_shape
+
+    def forward(self, x):
+        assert x.shape[1:] == self.in_shape, (x.shape, self.in_shape)
+        x = torch.flatten(x, start_dim=1)
+        return self.op(x)
+
+

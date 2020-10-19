@@ -56,6 +56,43 @@ class DiscriminatingLoss:
             return F.binary_cross_entropy_with_logits(x, self.target['fake'])
 
 
+class TwoDomainLoss:
+
+    def __init__(self, label_smooth=True):
+        self.truth = None
+        self.label_smooth = label_smooth
+
+    def __call__(self, x):
+        x = torch.squeeze(x)
+        assert x.requires_grad
+        batch_size = x.shape[0]
+        if self.truth is None or self.truth.shape != x.shape:
+            self.truth = torch.zeros(x.shape, device=x.device)
+
+            if self.label_smooth:
+                self.truth[batch_size//2:] = 0.9
+                self.truth[:batch_size//2] = 0.1
+            else:
+                self.truth[batch_size//2:] = 1.0
+
+        return F.binary_cross_entropy_with_logits(x, self.truth)
+
+
+class TwoDomainAccu:
+
+    def __init__(self):
+        self.truth = None
+
+    def __call__(self, x):
+        x = torch.squeeze(x)
+        batch_size = x.shape[0]
+        if self.truth is None or self.truth.shape != x.shape:
+            self.truth = torch.zeros(x.shape, device=x.device)
+            self.truth[batch_size//2:] = 1.0
+
+        return torch.mean(((torch.sigmoid(x) >= 0.5).float() == self.truth).float())
+
+
 class AdversarialLoss:
 
     def __init__(self, label_smooth=True):

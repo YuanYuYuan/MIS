@@ -36,5 +36,11 @@ class Flow:
             for tmp_idx, state_idx in enumerate(flow['outs']):
                 state[state_idx] = tmp[tmp_idx]
 
-        # return [state[idx] for idx in self.links['outs']]
-        return {key: state[idx] for key, idx in self.links['outs'].items()}
+        # XXX
+        # return {key: state[idx] for key, idx in self.links['outs'].items()}
+
+        # XXX
+        if 'unwrap' in self.links['outs']:
+            return state[self.links['outs']['unwrap']]
+        else:
+            return {key: state[idx] for key, idx in self.links['outs'].items()}
