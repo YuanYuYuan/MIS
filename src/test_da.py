@@ -166,7 +166,7 @@ class Trainer:
                 assert results['accu'].ndim == 1
                 empty = True
                 for acc in results['accu']:
-                    if isinstance(acc, np.float):
+                    if not np.isnan(acc):
                         empty = False
                         break
                 step_accu = math.nan if empty else np.nanmean(results['accu'])
