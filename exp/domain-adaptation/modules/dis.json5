@@ -44,7 +44,7 @@
 
         // layer 5
         "l_51": {"name": "ConvBlock", "dim": "3D", "ch_in": 256, "ch_out": 32},
-        "l_52": {"name": "Classifier", "in_shape": [32, 1, 1, 1], "n_classes": 1},
+        "l_52": {"name": "Classifier", "in_shape": [32, 6, 6, 6], "n_classes": 1},
       },
     },
   },

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import json5
+import json
 from tensorboardX import SummaryWriter
 from training import ModelHandler, Optimizer
 from flows import MetricFlow, ModuleFlow
 from tqdm import tqdm
-from utils import get_tty_columns
+from utils import get_tty_columns, epoch_info
 from metrics import match_up
 import torch
 import math
@@ -20,15 +21,18 @@ parser.add_argument(
     default='_logs',
     help='training logs'
 )
+parser.add_argument(
+    '--ckpt-dir',
+    default='_ckpts',
+    help='training checkpoints'
+)
 args = parser.parse_args()
 
-if args.log_dir is not None:
-    logger = SummaryWriter(args.log_dir)
-else:
-    logger = None
+logger = SummaryWriter(args.log_dir)
+os.makedirs(args.ckpt_dir, exist_ok=True)
 
 
-class Runner:
+class Trainer:
 
     def __init__(self, config, logger=None):
 
@@ -83,7 +87,7 @@ class Runner:
             total=n_steps,
             ncols=get_tty_columns(),
             dynamic_ncols=True,
-            desc='[%s] Loss: %.5f, Accu: %.5f'
+            desc='[%s] loss: %.5f, accu: %.5f'
             % (stage, 0.0, 0.0)
         )
 
@@ -108,11 +112,18 @@ class Runner:
             data = dict()
             if isinstance(batch, tuple):
                 for key in batch[0]:
-                    data[key] = torch.cat([sub_batch[key] for sub_batch in batch]).cuda()
+                    if torch.cuda.device_count() > 1:
+                        data[key] = torch.cat([sub_batch[key] for sub_batch in batch]).cuda()
+                    else:
+                        data[key] = torch.cat([sub_batch[key] for sub_batch in batch])
+
             else:
                 assert isinstance(batch, dict)
                 for key in batch:
-                    data[key] = batch[key].cuda()
+                    if torch.cuda.device_count() > 1:
+                        data[key] = batch[key].cuda()
+                    else:
+                        data[key] = batch[key]
 
             # feed in data and run
             for key in stage_config['forward']:
@@ -124,16 +135,10 @@ class Runner:
             # backpropagation
             if need_backward:
                 results['loss'].backward()
-
-            # XXX
-            for name, param in self.handlers['mod_enc'].model.named_parameters():
-                print(name, torch.mean(param.grad))
-
-            for key, toggle in stage_config['toggle'].items():
-                if toggle:
-                    self.optims[key].step()
-                    self.optims[key].zero_grad()
-                    # self.handlers[key].model.zero_grad()
+                for key, toggle in stage_config['toggle'].items():
+                    if toggle:
+                        self.optims[key].step()
+                        self.optims[key].zero_grad()
 
             # compute match for dice score of each case after reversion
             if stage_config['revert']:
@@ -153,14 +158,22 @@ class Runner:
             for key in results:
                 results[key] = results[key].detach().cpu().numpy()
 
-            if 'accu' in results:
-                step_accu = np.nanmean(results['accu'])
+            # average accuracy if multi-dim
+            assert 'accu' in results
+            if results['accu'].ndim == 0:
+                step_accu = math.nan if results['accu'] == math.nan else results['accu']
             else:
-                step_accu = math.nan
+                assert results['accu'].ndim == 1
+                empty = True
+                for acc in results['accu']:
+                    if isinstance(acc, np.float):
+                        empty = False
+                        break
+                step_accu = math.nan if empty else np.nanmean(results['accu'])
 
             assert 'loss' in results
             progress_bar.set_description(
-                '[%s] Loss: %.5f, Avg accu: %.5f'
+                '[%s] loss: %.5f, accu: %.5f'
                 % (stage, results['loss'], step_accu)
             )
 
@@ -194,14 +207,15 @@ class Runner:
             for reverted in progress_bar:
                 data_idx = reverted['idx']
                 scores[data_idx] = reverted['score']
-                info = '[%s] ' % data_idx
-                info += ', '.join(
-                    '%s: %.3f' % (key, val)
-                    for key, val in scores[data_idx].items()
-                )
+                # info = '[%s] ' % data_idx
+                # info += ', '.join(
+                #     '%s: %.3f' % (key, val)
+                #     for key, val in scores[data_idx].items()
+                # )
+                info = '[%s] mean score: %.3f' % (data_idx, np.mean(list(scores[data_idx].values())))
                 progress_bar.set_description(info)
 
-            # summerize score of each class
+            # summerize score of each class over data indices
             cls_scores = {
                 cls: np.mean([
                     scores[data_idx][cls] for data_idx in scores
@@ -221,7 +235,7 @@ class Runner:
         else:
             result_collection_blacklist = []
 
-        # collect results except those revertible ones, e.g., accu, losses
+        # collect results except those revertible ones, e.g., accu, loss
         summary.update({
             key: np.nanmean(
                 np.vstack([result[key] for result in result_list]),
@@ -231,24 +245,83 @@ class Runner:
             if key not in result_collection_blacklist
         })
 
+        # process 1D array accu to dictionary of each class score
+        if len(summary['accu']) > 1:
+            assert len(summary['accu']) == len(class_names)
+            summary['cls_accu'] = {
+                cls: summary['accu'][i]
+                for (i, cls) in enumerate(class_names)
+            }
+            summary['accu'] = summary['accu'].mean()
+
+        # print summary info
+        print('Average: ' + ', '.join([
+            '%s: %.3f' % (key, val)
+            for (key, val) in  summary.items()
+            if not isinstance(val, dict)
+        ]))
+
+        if 'cls_scores' in summary:
+            print('Class score: ' + ', '.join([
+                '%s: %.3f' % (key, val)
+                for (key, val) in  summary['cls_scores'].items()
+            ]))
+
         return summary
 
+    def save(self, ckpt_dir):
+        for key in self.handlers:
+            self.handlers[key].save(os.path.join(ckpt_dir, key + '.pt'))
 
 with open('./learning.json5') as f:
     config = json5.load(f)
 
 # - GPUs
-os.environ['CUDA_VISIBLE_DEVICES'] = ",".join([str(idx) for idx in config['gpus']])
-torch.backends.cudnn.enabled = True
+gpus = ",".join([str(idx) for idx in config['gpus']])
+if len(gpus) > 0:
+    os.environ['CUDA_VISIBLE_DEVICES'] = gpus
+    torch.backends.cudnn.enabled = True
 
-runner = Runner(config, logger)
+trainer = Trainer(config, logger)
 
 timer = time.time()
 start = timer
-for epoch in range(100):
-    for stage in config['stage']:
-        runner.run(stage)
+init_epoch = 1
+best = 0
+try:
+    for epoch in range(init_epoch, init_epoch + config['epochs']):
+        epoch_info(epoch - 1, init_epoch + config['epochs'] - 1)
 
-logger.close()
+        for stage in config['stage']:
+            if (epoch - init_epoch) % config['stage'][stage]['period'] != 0:
+                continue
+
+            summary = trainer.run(stage)
+
+            # handle the case of 'scores' due to dual dictionary
+            if 'scores' in summary:
+                score = summary['cls_scores']['mean']
+                file_path = os.path.join(
+                    args.log_dir,
+                    '%03d-%.5f.json' % (epoch, score)
+                )
+                with open(file_path, 'w') as f:
+                    json.dump(summary.pop('scores'), f, indent=2)
+
+                # XXX
+                if stage == 'valid_target' and score > best:
+                    best = score
+                    trainer.save(args.ckpt_dir)
+
+            for (key, val) in summary.items():
+                if isinstance(val, dict):
+                    logger.add_scalars('%s/epoch/%s' % (stage, key), val, epoch)
+                else:
+                    logger.add_scalar('%s/epoch/%s' % (stage, key), val, epoch)
+
+
+except KeyboardInterrupt:
+    logger.close()
+
 print('Total:', time.time()-start)
 print('Finished Training')

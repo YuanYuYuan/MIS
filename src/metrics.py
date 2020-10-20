@@ -179,7 +179,7 @@ def match_up(
     if not batch_wise:
         sum_dim = (0,) + sum_dim
 
-    labels = F.one_hot(labels, n_classes).permute(permute_dim).float()
+    labels = F.one_hot(labels, n_classes).permute(permute_dim).contiguous().float()
     assert probas.shape == labels.shape, (probas.shape, labels.shape)
 
     # binarize the probas according to given threshold

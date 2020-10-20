@@ -1,21 +1,22 @@
 {
-  "gpus": [0, 1],
+  "gpus": [0],
+  "epochs": 1000,
 
   "module": {
     "mod_enc": {
       "config": "./modules/enc.json5",
       // "ckpt": "enc.ckpt",
-      "optim": {"name": "Adam", "lr": 1.0},
+      "optim": {"name": "Adam", "lr": 0.001},
     },
     "mod_seg": {
       "config": "./modules/seg.json5",
       // "ckpt": "seg.ckpt",
-      "optim": {"name": "Adam", "lr": 1.0},
+      "optim": {"name": "Adam", "lr": 0.001},
     },
     "mod_dis": {
       "config": "./modules/dis.json5",
       // "ckpt": "dis.ckpt",
-      "optim": {"name": "Adam", "lr": 1.0},
+      "optim": {"name": "Adam", "lr": 0.001},
     },
   },
 
@@ -30,11 +31,29 @@
       "struct": {
         "BlockSampler": {
           "block_shape": 16,
-          "n_samples": 4,
+          "n_samples": 16,
+          "ratios": [
+            0.0, // Background
+            1.0, // Brainstem
+            5.0, // Chiasm
+            5.0, // Cochlea_L
+            5.0, // Cochlea_R
+            1.0, // Eye_L
+            1.0, // Eye_R
+            5.0, // Lacrimal_L
+            5.0, // Lacrimal_R
+            5.0, // OpticNerve_L
+            5.0, // OpticNerve_R
+            1.0, // Cerebellum
+            1.0, // Falx
+            1.0, // Sinuses
+            1.0, // Tentorium
+            1.0, // Ventricles
+          ],
           "n_workers": 4,
         },
         "Augmentor": {
-          // "affine": "weak",
+          "affine": "weak",
           "noise": 0.1,
           "n_workers": 2,
         },
@@ -48,12 +67,30 @@
       "data": "./data/adapt_source.json5",
       "struct": {
         "BlockSampler": {
-          "block_shape": 16,
-          "n_samples": 4,
+          "block_shape": 96,
+          "n_samples": 12,
+          "ratios": [
+            0.2, // Background
+            1.0, // Brainstem
+            5.0, // Chiasm
+            5.0, // Cochlea_L
+            5.0, // Cochlea_R
+            1.0, // Eye_L
+            1.0, // Eye_R
+            5.0, // Lacrimal_L
+            5.0, // Lacrimal_R
+            5.0, // OpticNerve_L
+            5.0, // OpticNerve_R
+            1.0, // Cerebellum
+            1.0, // Falx
+            1.0, // Sinuses
+            1.0, // Tentorium
+            1.0, // Ventricles
+          ],
           "n_workers": 4,
         },
         "Augmentor": {
-          // "affine": "weak",
+          "affine": "weak",
           "noise": 0.1,
           "n_workers": 2,
         },
@@ -67,12 +104,30 @@
       "data": "./data/adapt_target.json5",
       "struct": {
         "BlockSampler": {
-          "block_shape": 16,
-          "n_samples": 4,
+          "block_shape": 96,
+          "n_samples": 12,
+          "ratios": [
+            0.2, // Background
+            1.0, // Brainstem
+            5.0, // Chiasm
+            5.0, // Cochlea_L
+            5.0, // Cochlea_R
+            1.0, // Eye_L
+            1.0, // Eye_R
+            5.0, // Lacrimal_L
+            5.0, // Lacrimal_R
+            5.0, // OpticNerve_L
+            5.0, // OpticNerve_R
+            1.0, // Cerebellum
+            1.0, // Falx
+            1.0, // Sinuses
+            1.0, // Tentorium
+            1.0, // Ventricles
+          ],
           "n_workers": 4,
         },
         "Augmentor": {
-          // "affine": "weak",
+          "affine": "weak",
           "noise": 0.1,
           "n_workers": 2,
         },
@@ -86,12 +141,12 @@
       "data": "./data/valid_source.json5",
       "struct": {
         "BlockGenerator": {
-          "block_shape": 16,
+          "block_shape": 96,
           "n_workers": 4,
           "ordered": true,
         },
         "BatchGenerator": {
-          "batch_size": 32,
+          "batch_size": 64,
           "n_workers": 1,
         },
       },
@@ -100,12 +155,12 @@
       "data": "./data/valid_target.json5",
       "struct": {
         "BlockGenerator": {
-          "block_shape": 16,
+          "block_shape": 96,
           "n_workers": 4,
           "ordered": true,
         },
         "BatchGenerator": {
-          "batch_size": 32,
+          "batch_size": 64,
           "n_workers": 1,
         },
       },
@@ -113,34 +168,37 @@
   },
 
   "stage": {
-    // "train": {
-    //   "generator": ["gen_train_source"],
-    //   "toggle": {"mod_enc": true, "mod_seg": true, "mod_dis": false},
-    //   "forward": ["mod_enc", "mod_seg", "mod_dis"],
-    //   "metric": "met_seg",
-    //   "revert": false,
-    // },
+    "train": {
+      "generator": ["gen_train_source"],
+      "toggle": {"mod_enc": true, "mod_seg": true, "mod_dis": false},
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_seg",
+      "revert": false,
+      "period": 1,
+    },
     "adapt": {
       "generator": ["gen_adapt_source", "gen_adapt_target"],
-      // "toggle": {"mod_enc": true, "mod_seg": false, "mod_dis": true},
-      "toggle": {"mod_enc": true, "mod_seg": false, "mod_dis": false},
+      "toggle": {"mod_enc": true, "mod_seg": false, "mod_dis": true},
       "forward": ["mod_enc", "mod_dis"],
       "metric": "met_ada",
       "revert": false,
+      "period": 4,
     },
-    // "valid_source": {
-    //   "generator": ["gen_valid_source"],
-    //   "toggle": {"mod_enc": false, "mod_seg": false, "mod_dis": false},
-    //   "forward": ["mod_enc", "mod_seg", "mod_dis"],
-    //   "metric": "met_seg",
-    //   "revert": true,
-    // },
-    // "valid_target": {
-    //   "generator": ["gen_valid_target"],
-    //   "toggle": {"mod_enc": false, "mod_seg": false, "mod_dis": false},
-    //   "forward": ["mod_enc", "mod_seg", "mod_dis"],
-    //   "metric": "met_seg",
-    //   "revert": true,
-    // },
+    "valid_source": {
+      "generator": ["gen_valid_source"],
+      "toggle": {"mod_enc": false, "mod_seg": false, "mod_dis": false},
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_seg",
+      "revert": true,
+      "period": 4,
+    },
+    "valid_target": {
+      "generator": ["gen_valid_target"],
+      "toggle": {"mod_enc": false, "mod_seg": false, "mod_dis": false},
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_seg",
+      "revert": true,
+      "period": 4,
+    },
   },
 }
