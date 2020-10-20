@@ -112,7 +112,7 @@ class Trainer:
             data = dict()
             if isinstance(batch, tuple):
                 for key in batch[0]:
-                    if torch.cuda.device_count() > 1:
+                    if torch.cuda.device_count() >= 1:
                         data[key] = torch.cat([sub_batch[key] for sub_batch in batch]).cuda()
                     else:
                         data[key] = torch.cat([sub_batch[key] for sub_batch in batch])
@@ -120,7 +120,7 @@ class Trainer:
             else:
                 assert isinstance(batch, dict)
                 for key in batch:
-                    if torch.cuda.device_count() > 1:
+                    if torch.cuda.device_count() >= 1:
                         data[key] = batch[key].cuda()
                     else:
                         data[key] = batch[key]
