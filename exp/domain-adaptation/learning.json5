@@ -30,7 +30,7 @@
       "data": "./data/train_source.json5",
       "struct": {
         "BlockSampler": {
-          "block_shape": 16,
+          "block_shape": 96,
           "n_samples": 16,
           "ratios": [
             0.0, // Background
