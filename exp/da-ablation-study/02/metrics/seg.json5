@@ -2,32 +2,28 @@
   "nodes": {
     "loss_dice": {"name": "dice_loss"},
     "loss_ce": {"name": "cross_entropy"},
-    "loss_adv": {"name": "AdversarialLoss", "label_smooth": false},
     "accu": {"name": "dice_score", "exclude_blank": true},
     "sum": {
       "name": "sum",
-      "weight": [1., 1., 0.3]
+      "weight": [1., 1.]
     },
   },
   "links": {
     "inps": {
       "prediction": 0,
       "label": 1,
-      "classification": 2,
     },
     "outs": {
-      "loss": 7,
+      "loss": 6,
       "accu": 3,
       "DICE":4,
       "CE":5,
-      "ADV": 6,
     },
     "flow": {
       "accu": {"inps": [0, 1], "outs": [3]},
       "loss_dice": {"inps": [0, 1], "outs": [4]},
       "loss_ce": {"inps": [0, 1], "outs": [5]},
-      "loss_adv": {"inps": [2], "outs": [6]},
-      "sum": {"inps": [4, 5, 6], "outs": [7]},
+      "sum": {"inps": [4, 5], "outs": [6]},
     }
   }
 }
