@@ -17,6 +17,11 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
+    '--config',
+    default='./training.json5',
+    help='training config'
+)
+parser.add_argument(
     '--log-dir',
     default='_logs',
     help='training logs'
@@ -25,6 +30,11 @@ parser.add_argument(
     '--ckpt-dir',
     default='_ckpts',
     help='training checkpoints'
+)
+parser.add_argument(
+    '--pause-ckpt-dir',
+    default='_pause_ckpts',
+    help='pause checkpoints'
 )
 args = parser.parse_args()
 
@@ -273,7 +283,7 @@ class Trainer:
         for key in self.handlers:
             self.handlers[key].save(os.path.join(ckpt_dir, key + '.pt'))
 
-with open('./learning.json5') as f:
+with open(args.config) as f:
     config = json5.load(f)
 
 # - GPUs
@@ -321,6 +331,7 @@ try:
 
 
 except KeyboardInterrupt:
+    trainer.save(args.pause_ckpt_dir)
     logger.close()
 
 print('Total:', time.time()-start)
