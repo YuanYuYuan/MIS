@@ -97,7 +97,7 @@
       "revert": false,
       "period": 1,
     },
-    "valid_source": {
+    "train_target": {
       "generator": ["gen_train_target"],
       "toggle": {"mod_enc": true, "mod_seg": true},
       "forward": ["mod_enc", "mod_seg"],
