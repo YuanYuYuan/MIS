@@ -257,7 +257,7 @@ class Trainer:
 
         # process 1D array accu to dictionary of each class score
         if len(summary['accu']) > 1:
-            assert len(summary['accu']) == len(class_names)
+            assert len(summary['accu']) == len(class_names), (len(summary['accu']), len(class_names))
             summary['cls_accu'] = {
                 cls: summary['accu'][i]
                 for (i, cls) in enumerate(class_names)
