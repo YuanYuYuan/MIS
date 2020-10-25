@@ -34,6 +34,10 @@ train:
 	@echo "===== Training... ====="
 	$(EXECUTOR) $(SRC_DIR)/$(PROGRAM) $(TRAIN_FLAGS)
 
+test: clean
+	@echo "===== Training... ====="
+	$(EXECUTOR) $(SRC_DIR)/$(PROGRAM) $(TRAIN_FLAGS) --test
+
 log:
 	@echo "===== Launch Tensorboard ====="
 	tensorboard --logdir $(TRAIN_LOG_DIR) > /dev/null 2>&1
