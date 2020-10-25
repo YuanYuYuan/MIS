@@ -31,6 +31,8 @@ def housdorff_distance_95(logits, label):
 
     return result
 
+def domain_classification(logits):
+    return torch.mean(torch.sigmoid(logits))
 
 class DiscriminatingLoss:
 

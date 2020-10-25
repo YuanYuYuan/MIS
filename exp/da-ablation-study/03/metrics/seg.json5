@@ -4,6 +4,7 @@
     "loss_ce": {"name": "cross_entropy"},
     "loss_adv": {"name": "AdversarialLoss", "label_smooth": false},
     "accu": {"name": "dice_score", "exclude_blank": true},
+    "domain": {"name": "domain_classification"},
     "sum": {
       "name": "sum",
       "weight": [1., 1., 0.3]
@@ -21,6 +22,7 @@
       "DICE":4,
       "CE":5,
       "ADV": 6,
+      "domain": 8,
     },
     "flow": {
       "accu": {"inps": [0, 1], "outs": [3]},
@@ -28,6 +30,7 @@
       "loss_ce": {"inps": [0, 1], "outs": [5]},
       "loss_adv": {"inps": [2], "outs": [6]},
       "sum": {"inps": [4, 5, 6], "outs": [7]},
+      "domain": {"inps": [2], "outs": [8]},
     }
   }
 }
