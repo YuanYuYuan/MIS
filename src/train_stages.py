@@ -19,32 +19,39 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     '--config',
     default='./training.json5',
-    help='training config'
+    help='training config',
 )
 parser.add_argument(
     '--log-dir',
     default='_logs',
-    help='training logs'
+    help='training logs',
 )
 parser.add_argument(
     '--ckpt-dir',
     default='_ckpts',
-    help='training checkpoints'
+    help='training checkpoints',
 )
 parser.add_argument(
     '--pause-ckpt-dir',
     default='_pause_ckpts',
-    help='pause checkpoints'
+    help='pause checkpoints',
+)
+parser.add_argument(
+    '--test',
+    default=False,
+    action='store_true',
+    help='check feasibility',
 )
 args = parser.parse_args()
 
 logger = SummaryWriter(args.log_dir)
 os.makedirs(args.ckpt_dir, exist_ok=True)
+os.makedirs(args.pause_ckpt_dir, exist_ok=True)
 
 
 class Trainer:
 
-    def __init__(self, config, logger=None):
+    def __init__(self, config, logger=None, test=False):
 
         self.logger = logger
         self.step = dict()
@@ -76,6 +83,8 @@ class Trainer:
             with open(cfg['data']) as f:
                 data_config = json5.load(f)
             data_list = data_config['list']
+            if test:
+                data_list = data_list[:1]
             loader_config = data_config['loader']
             loader_name = loader_config.pop('name')
             data_loader = DataLoader(loader_name, **loader_config)
@@ -287,12 +296,15 @@ with open(args.config) as f:
     config = json5.load(f)
 
 # - GPUs
-gpus = ",".join([str(idx) for idx in config['gpus']])
+if 'gpus' in config:
+    gpus = ",".join([str(idx) for idx in config['gpus']])
+else:
+    gpus = ""
 if len(gpus) > 0:
     os.environ['CUDA_VISIBLE_DEVICES'] = gpus
     torch.backends.cudnn.enabled = True
 
-trainer = Trainer(config, logger)
+trainer = Trainer(config, logger, test=args.test)
 
 timer = time.time()
 start = timer
@@ -300,6 +312,7 @@ init_epoch = 1
 best = 0
 try:
     for epoch in range(init_epoch, init_epoch + config['epochs']):
+        print()
         epoch_info(epoch - 1, init_epoch + config['epochs'] - 1)
 
         for stage in config['stage']:
@@ -308,7 +321,7 @@ try:
 
             summary = trainer.run(stage)
 
-            # handle the case of 'scores' due to dual dictionary
+            # handle the case of 'scores' due to double dictionaries structure
             if 'scores' in summary:
                 score = summary['cls_scores']['mean']
                 file_path = os.path.join(
