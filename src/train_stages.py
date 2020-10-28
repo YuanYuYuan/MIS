@@ -140,6 +140,7 @@ class Trainer:
                 need_backward = True
 
         result_list = []
+        need_revert = 'revert' in stage_config and stage_config['revert']
         for batch in progress_bar:
 
             self.step[stage] += 1
@@ -193,7 +194,7 @@ class Trainer:
                         self.optims[key].zero_grad()
 
             # compute match for dice score of each case after reversion
-            if 'revert' in stage_config and stage_config['revert']:
+            if need_revert:
                 assert 'prediction' in data, list(data.keys())
                 assert 'label' in data, list(data.keys())
                 with torch.set_grad_enabled(False):
@@ -244,7 +245,7 @@ class Trainer:
             result_list.append(results)
 
         summary = dict()
-        if stage_config['revert']:
+        if need_revert:
             reverter = Reverter(data_gen)
             result_collection_blacklist = reverter.revertible
 
@@ -259,11 +260,6 @@ class Trainer:
             for reverted in progress_bar:
                 data_idx = reverted['idx']
                 scores[data_idx] = reverted['score']
-                # info = '[%s] ' % data_idx
-                # info += ', '.join(
-                #     '%s: %.3f' % (key, val)
-                #     for key, val in scores[data_idx].items()
-                # )
                 info = '[%s] mean score: %.3f' % (data_idx, np.mean(list(scores[data_idx].values())))
                 progress_bar.set_description(info)
 
@@ -364,11 +360,9 @@ try:
                 with open(file_path, 'w') as f:
                     json.dump(summary.pop('scores'), f, indent=2)
 
-                if all((
-                    'checkpoint' in config['stage'][stage],
-                    config['stage'][stage]['checkpoint'],
-                    score > best,
-                )):
+                if 'checkpoint' in config['stage'][stage] \
+                    and config['stage'][stage]['checkpoint'] \
+                    and score > best:
                     best = score
                     trainer.save(args.ckpt_dir)
 
