@@ -40,33 +40,37 @@ class BinaryDomainLoss:
         assert label == 1 or label == 0
         self.label = label
         self.label_smooth = label_smooth
+        self.target = None
 
     def __call__(self, x):
         x = torch.squeeze(x)
-        if self.label == 1:
-            target = torch.ones(x.shape, device=x.device)
-            if self.label_smooth:
-                target *= 0.9
-        else:
-            target = torch.zeros(x.shape, device=x.device)
-            if self.label_smooth:
-                target += 0.1
+        if self.target is None or x.shape != self.target.shape:
+            if self.label == 1:
+                self.target = torch.ones(x.shape, device=x.device)
+                if self.label_smooth:
+                    self.target *= 0.9
+            else:
+                self.target = torch.zeros(x.shape, device=x.device)
+                if self.label_smooth:
+                    self.target += 0.1
 
-        return F.binary_cross_entropy_with_logits(x, target)
+        return F.binary_cross_entropy_with_logits(x, self.target)
 
 class BinaryDomainAccu:
 
     def __init__(self, label=1):
         self.label = label
+        self.target = None
 
     def __call__(self, x):
         x = torch.squeeze(x)
-        if self.label == 1:
-            target = torch.ones(x.shape, device=x.device)
-        else:
-            target = torch.zeros(x.shape, device=x.device)
+        if self.target is None or x.shape != self.target.shape:
+            if self.label == 1:
+                self.target = torch.ones(x.shape, device=x.device)
+            else:
+                self.target = torch.zeros(x.shape, device=x.device)
 
-        return torch.mean(((torch.sigmoid(x) >= 0.5).float() == target).float())
+        return torch.mean(((torch.sigmoid(x) >= 0.5).float() == self.target).float())
 
 
 class TwoDomainLoss:
