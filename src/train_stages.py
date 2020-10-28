@@ -193,7 +193,7 @@ class Trainer:
                         self.optims[key].zero_grad()
 
             # compute match for dice score of each case after reversion
-            if stage_config['revert']:
+            if 'revert' in stage_config and stage_config['revert']:
                 assert 'prediction' in data, list(data.keys())
                 assert 'label' in data, list(data.keys())
                 with torch.set_grad_enabled(False):
@@ -364,8 +364,11 @@ try:
                 with open(file_path, 'w') as f:
                     json.dump(summary.pop('scores'), f, indent=2)
 
-                # XXX
-                if config['stage'][stage]['checkpoint'] and score > best:
+                if all((
+                    'checkpoint' in config['stage'][stage],
+                    config['stage'][stage]['checkpoint'],
+                    score > best,
+                )):
                     best = score
                     trainer.save(args.ckpt_dir)
 
