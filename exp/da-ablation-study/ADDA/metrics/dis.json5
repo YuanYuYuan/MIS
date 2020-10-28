@@ -1,0 +1,37 @@
+{
+  "nodes": {
+    // loss
+    "loss_source": {"name": "BinaryDomainLoss", "label_smooth": true, "label": 1},
+    "loss_target": {"name": "BinaryDomainLoss", "label_smooth": true, "label": 0},
+    "weighted_sum": {"name": "sum", "weight": [1., 1.]},
+
+    // accu
+    "accu_source": {"name": "BinaryDomainAccu", "label": 1},
+    "accu_target": {"name": "BinaryDomainAccu", "label": 0},
+    "accu_average": {"name": "sum", "weight": [0.5, 0.5]},
+  },
+  "links": {
+    "inps": {
+      "classification_src": 0,
+      "classification_tgt": 1,
+    },
+    "outs": {
+      "loss": 4,
+      "accu": 7,
+      "DIS": 4,
+      "ACC_SRC": 5,
+      "ACC_TGT": 6,
+    },
+    "flow": {
+      // loss
+      "loss_source": {"inps": [0], "outs": [2]},
+      "loss_target": {"inps": [1], "outs": [3]},
+      "weighted_sum": {"inps": [2, 3], "outs": [4]},
+
+      // accu
+      "accu_source": {"inps": [0], "outs": [5]},
+      "accu_target": {"inps": [1], "outs": [6]},
+      "accu_average": {"inps": [5, 6], "outs": [7]},
+    }
+  }
+}

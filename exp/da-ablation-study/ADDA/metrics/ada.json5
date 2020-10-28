@@ -1,0 +1,20 @@
+{
+  // This meter should be applied on target data
+  "nodes": {
+    "loss": {"name": "BinaryDomainLoss", "label_smooth": true, "label": 1},
+    "accu": {"name": "BinaryDomainAccu", "label": 1},
+  },
+  "links": {
+    "inps": {
+      "classification": 0,
+    },
+    "outs": {
+      "accu": 1,
+      "loss": 2,
+    },
+    "flow": {
+      "accu": {"inps": [0], "outs": [1]},
+      "loss": {"inps": [0], "outs": [2]},
+    }
+  }
+}
