@@ -91,16 +91,33 @@ class Trainer:
             data_loader.set_data_list(data_list)
             self.generators[key] = DataGenerator(data_loader, cfg['struct'])
 
+
     def run(self, stage):
         stage_config = self.config['stage'][stage]
 
-        if len(stage_config['generator']) > 1:
-            data_gen = zip(*[self.generators[gen] for gen in stage_config['generator']])
-        else:
-            data_gen = self.generators[stage_config['generator'][0]]
-        class_names = self.generators[stage_config['generator'][0]].struct['DL'].ROIs
+        # build data flow from the given data generator
+        # single data flow
+        if isinstance(stage_config['generator'], str):
+            data_gen = self.generators[stage_config['generator']]
+            class_names = data_gen.struct['DL'].ROIs
+            n_steps = len(data_gen)
+            gen_tags = None
 
-        n_steps = min([len(self.generators[gen]) for gen in stage_config['generator']])
+        # multiple data flows
+        elif isinstance(stage_config['generator'], dict):
+            gens = [self.generators[cfg] for cfg in stage_config['generator'].values()]
+            data_gen = zip(*gens)
+            class_names = gens[0].struct['DL'].ROIs
+            n_steps = min([len(g) for g in gens])
+            gen_tags = list(stage_config['generator'].keys())
+
+            # the forward config should match the multiple data flows
+            assert isinstance(stage_config['forward'], dict)
+            assert gen_tags == list(stage_config['forward'].keys())
+
+        else:
+            raise TypeError('generator of type %s is not supported.' % type(stage_config['generator']))
+
         progress_bar = tqdm(
             data_gen,
             total=n_steps,
@@ -127,26 +144,42 @@ class Trainer:
 
             self.step[stage] += 1
 
-            # prepare data, merge batch from multiple generator if needed
-            data = dict()
-            if isinstance(batch, tuple):
-                for key in batch[0]:
-                    if torch.cuda.device_count() >= 1:
-                        data[key] = torch.cat([sub_batch[key] for sub_batch in batch]).cuda()
-                    else:
-                        data[key] = torch.cat([sub_batch[key] for sub_batch in batch])
-
-            else:
+            # single data flow
+            if gen_tags is None:
                 assert isinstance(batch, dict)
+
+                # insert batch to data
+                data = dict()
                 for key in batch:
                     if torch.cuda.device_count() >= 1:
                         data[key] = batch[key].cuda()
                     else:
                         data[key] = batch[key]
 
-            # feed in data and run
-            for key in stage_config['forward']:
-                data.update(self.handlers[key].model(data))
+                # forward
+                for key in stage_config['forward']:
+                    data.update(self.handlers[key].model(data))
+
+            # multiple data flows
+            else:
+                assert isinstance(batch, tuple)
+                data = dict()
+                for (tag, tag_batch) in zip(gen_tags, batch):
+                    tag_data = dict()
+
+                    # insert batch to data
+                    for key in tag_batch:
+                        if torch.cuda.device_count() >= 1:
+                            tag_data[key] = tag_batch[key].cuda()
+                        else:
+                            tag_data[key] = tag_batch[key]
+
+                    # forward
+                    for key in stage_config['forward'][tag]:
+                        tag_data.update(self.handlers[key].model(tag_data))
+
+                    # insert tag data back to the data
+                    data.update({'%s_%s' % (key, tag): tag_data[key] for key in tag_data})
 
             # compute loss and accuracy
             results = self.metrics[stage_config['metric']](data)

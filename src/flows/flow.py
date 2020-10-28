@@ -22,6 +22,7 @@ class Flow:
 
         state = [None] * self.n_states
         for key, idx in self.links['inps'].items():
+            assert key in x, (key, list(x.keys()))
             state[idx] = x[key]
 
         # if not isinstance(x, list):

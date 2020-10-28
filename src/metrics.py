@@ -34,28 +34,39 @@ def housdorff_distance_95(logits, label):
 def domain_classification(logits):
     return torch.mean(torch.sigmoid(logits))
 
-class DiscriminatingLoss:
+class BinaryDomainLoss:
 
-    def __init__(self, label_smooth=True):
-        self.target = {}
+    def __init__(self, label_smooth=True, label=1):
+        assert label == 1 or label == 0
+        self.label = label
         self.label_smooth = label_smooth
 
-    def __call__(self, x, truth):
-        assert isinstance(truth, bool)
+    def __call__(self, x):
         x = torch.squeeze(x)
-        if not self.target or self.target['truth'].shape != x.shape:
-            self.target = {
-                'truth': torch.ones(x.shape, device=x.device),
-                'fake': torch.zeros(x.shape, device=x.device)
-            }
+        if self.label == 1:
+            target = torch.ones(x.shape, device=x.device)
             if self.label_smooth:
-                self.target['truth'] *= 0.9
-                self.target['fake'] += 0.1
-
-        if truth:
-            return F.binary_cross_entropy_with_logits(x, self.target['truth'])
+                target *= 0.9
         else:
-            return F.binary_cross_entropy_with_logits(x, self.target['fake'])
+            target = torch.zeros(x.shape, device=x.device)
+            if self.label_smooth:
+                target += 0.1
+
+        return F.binary_cross_entropy_with_logits(x, target)
+
+class BinaryDomainAccu:
+
+    def __init__(self, label=1):
+        self.label = label
+
+    def __call__(self, x):
+        x = torch.squeeze(x)
+        if self.label == 1:
+            target = torch.ones(x.shape, device=x.device)
+        else:
+            target = torch.zeros(x.shape, device=x.device)
+
+        return torch.mean(((torch.sigmoid(x) >= 0.5).float() == target).float())
 
 
 class TwoDomainLoss:
