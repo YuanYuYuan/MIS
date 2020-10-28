@@ -191,6 +191,7 @@
       "forward": ["mod_enc_tgt", "mod_seg", "mod_dis"],
       "metric": "met_seg",
       "revert": true,
+      "checkpoint": true,
       "period": 4,
     },
   },
