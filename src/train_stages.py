@@ -365,7 +365,7 @@ try:
                     json.dump(summary.pop('scores'), f, indent=2)
 
                 # XXX
-                if stage == 'valid_target' and score > best:
+                if config['stage'][stage]['checkpoint'] and score > best:
                     best = score
                     trainer.save(args.ckpt_dir)
 

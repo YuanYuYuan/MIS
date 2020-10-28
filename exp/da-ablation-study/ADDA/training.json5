@@ -5,17 +5,17 @@
   "module": {
     "mod_enc_src": {
       "config": "./modules/enc.json5",
-      "ckpt": "enc_src.ckpt",
+      "ckpt": "enc_src.pt",
       "optim": {"name": "Adam", "lr": 0.001},
     },
     "mod_enc_tgt": {
       "config": "./modules/enc.json5",
-      "ckpt": "enc_tgt.ckpt",
+      "ckpt": "enc_tgt.pt",
       "optim": {"name": "Adam", "lr": 0.001},
     },
     "mod_seg": {
       "config": "./modules/seg.json5",
-      "ckpt": "seg.ckpt",
+      "ckpt": "seg.pt",
       "optim": {"name": "Adam", "lr": 0.001},
     },
     "mod_dis": {
