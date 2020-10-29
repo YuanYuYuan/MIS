@@ -1,0 +1,65 @@
+{
+  "nodes": {
+    "discriminator": {
+      "inps": [0, 1, 2, 3],
+      "outs": [9],
+      "topo": {
+        // layer 1
+        "4": {"l_1": 0},
+
+        // layer 2
+        "5": {"l_2": 1, "d_1": 4},
+
+        // layer 3
+        "6": {"l_3": 2, "d_2": 5},
+
+        // layer 4
+        "7": {"l_4": 3, "d_3": 6},
+
+        // layer 5
+        "8": "l_51",
+        "9": "l_52",
+      },
+      "maps": {
+        // layer 1
+        "l_1": {"name": "ConvBlock", "dim": "3D", "ch_in": 32},
+
+        // downsample
+        "d_1": {"name": "DownSample", "ch_in": 32},
+
+        // layer 2
+        "l_2": {"name": "ConvBlock", "dim": "3D", "ch_in": 64},
+
+        // downsample
+        "d_2": {"name": "DownSample", "ch_in": 64},
+
+        // layer 3
+        "l_3": {"name": "ConvBlock", "dim": "3D", "ch_in": 128},
+
+        // downsample
+        "d_3": {"name": "DownSample", "ch_in": 128},
+
+        // layer 4
+        "l_4": {"name": "ConvBlock", "dim": "3D", "ch_in": 256},
+
+        // layer 5
+        "l_51": {"name": "ConvBlock", "dim": "3D", "ch_in": 256, "ch_out": 32},
+        "l_52": {"name": "Classifier", "in_shape": [32, 6, 6, 6], "n_classes": 1},
+      },
+    },
+  },
+  "links": {
+    "inps": {
+      "h_1": 0,
+      "h_2": 1,
+      "h_3": 2,
+      "h_4": 3,
+    },
+    "outs": {
+      "classification": 4,
+    },
+    "flow": {
+      "discriminator": {"inps": [0, 1, 2, 3], "outs": [4]},
+    }
+  }
+}
