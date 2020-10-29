@@ -3,6 +3,7 @@
   "nodes": {
     "loss": {"name": "BinaryDomainLoss", "label_smooth": true, "label": 1},
     "accu": {"name": "BinaryDomainAccu", "label": 1},
+    "domain": {"name": "domain_classification"},
   },
   "links": {
     "inps": {
@@ -11,10 +12,12 @@
     "outs": {
       "accu": 1,
       "loss": 2,
+      "DOMAIN": 3,
     },
     "flow": {
       "accu": {"inps": [0], "outs": [1]},
       "loss": {"inps": [0], "outs": [2]},
+      "domain": {"inps": [0], "outs": [3]},
     }
   }
 }

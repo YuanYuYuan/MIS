@@ -9,6 +9,10 @@
     "accu_source": {"name": "BinaryDomainAccu", "label": 1},
     "accu_target": {"name": "BinaryDomainAccu", "label": 0},
     "accu_average": {"name": "sum", "weight": [0.5, 0.5]},
+
+    // domain
+    "domain_source": {"name": "domain_classification"},
+    "domain_target": {"name": "domain_classification"},
   },
   "links": {
     "inps": {
@@ -23,6 +27,8 @@
       "DIS": 4,
       "ACCU_SRC": 5,
       "ACCU_TGT": 6,
+      "DOMAIN_SRC": 8,
+      "DOMAIN_TGT": 9,
     },
     "flow": {
       // loss
@@ -34,6 +40,10 @@
       "accu_source": {"inps": [0], "outs": [5]},
       "accu_target": {"inps": [1], "outs": [6]},
       "accu_average": {"inps": [5, 6], "outs": [7]},
+
+      // domain
+      "domain_source": {"inps": [0], "outs": [8]},
+      "domain_target": {"inps": [1], "outs": [9]},
     }
   }
 }
