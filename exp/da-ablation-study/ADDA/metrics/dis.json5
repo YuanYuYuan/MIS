@@ -3,7 +3,7 @@
     // loss
     "loss_source": {"name": "BinaryDomainLoss", "label_smooth": true, "label": 1},
     "loss_target": {"name": "BinaryDomainLoss", "label_smooth": true, "label": 0},
-    "weighted_sum": {"name": "sum", "weight": [1., 1.]},
+    "loss_average": {"name": "sum", "weight": [0.5, 0.5]},
 
     // accu
     "accu_source": {"name": "BinaryDomainAccu", "label": 1},
@@ -18,15 +18,17 @@
     "outs": {
       "loss": 4,
       "accu": 7,
+      "LOSS_SRC": 2,
+      "LOSS_TGT": 3,
       "DIS": 4,
-      "ACC_SRC": 5,
-      "ACC_TGT": 6,
+      "ACCU_SRC": 5,
+      "ACCU_TGT": 6,
     },
     "flow": {
       // loss
       "loss_source": {"inps": [0], "outs": [2]},
       "loss_target": {"inps": [1], "outs": [3]},
-      "weighted_sum": {"inps": [2, 3], "outs": [4]},
+      "loss_average": {"inps": [2, 3], "outs": [4]},
 
       // accu
       "accu_source": {"inps": [0], "outs": [5]},
