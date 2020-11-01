@@ -40,7 +40,7 @@ test: clean
 
 log:
 	@echo "===== Launch Tensorboard ====="
-	tensorboard --logdir $(TRAIN_LOG_DIR) > /dev/null 2>&1
+	tensorboard --logdir $(LOG_DIR) > /dev/null 2>&1
 
 clean:
 	@echo "===== Cleaning... ====="
