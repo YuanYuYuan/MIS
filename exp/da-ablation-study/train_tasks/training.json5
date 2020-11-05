@@ -129,7 +129,6 @@
     "train_src": {
       "task": ["task_train_seg"],
       "generator": "gen_train_source",
-      "period": 1,
     },
     "adaptation": {
       "task": ["task_train_dis", "task_align_enc"],
@@ -137,19 +136,18 @@
         "src": "gen_adapt_source",
         "tgt": "gen_adapt_target"
       },
-      "period": 1,
     },
     "valid_src": {
       "task": ["task_valid_src"],
       "generator": "gen_valid_source",
       "revert": true,
-      "period": 1,
+      "period": 4,
     },
     "valid_tgt": {
       "task": ["task_valid_tgt"],
       "generator": "gen_valid_target",
       "revert": true,
-      "period": 1,
+      "period": 4,
     },
   },
 
@@ -176,7 +174,7 @@
         "tgt": ["mod_enc_tgt", "mod_seg", "mod_dis"],
       },
       "metric": "met_dis",
-      "period": 4,
+      "period": 20,
     },
     "task_align_enc": {
       "toggle": {

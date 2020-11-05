@@ -1,1 +1,1 @@
-../../../templates/train-stages/Makefile
+../../../templates/train_stages/Makefile

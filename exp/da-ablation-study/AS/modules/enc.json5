@@ -28,7 +28,7 @@
       },
       "maps": {
         // layer 1
-        "l_11": {"name": "ConvBlock", "dim": "3D", "ch_in": 1, "ch_out": 16},
+        "l_11": {"name": "ConvBlock", "dim": "3D", "ch_in": 2, "ch_out": 16},
 
         // downsample
         "d_1": {"name": "DownSample", "ch_in": 16},

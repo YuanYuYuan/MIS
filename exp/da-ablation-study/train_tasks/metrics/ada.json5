@@ -10,8 +10,8 @@
       "classification_tgt": 0,
     },
     "outs": {
-      "accu": 1,
       "loss": 2,
+      "accu": 1,
       "DOMAIN": 3,
     },
     "flow": {
