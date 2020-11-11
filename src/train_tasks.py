@@ -40,7 +40,7 @@ parser.add_argument(
     '--test',
     default=False,
     action='store_true',
-    help='check feasibility',
+    help='check for feasibility',
 )
 args = parser.parse_args()
 
