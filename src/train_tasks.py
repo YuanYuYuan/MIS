@@ -122,8 +122,9 @@ class Trainer:
                     continue
                 modules_to_run = task_config['forward'][tag]
 
-            for mod in modules_to_run:
-                tag_data.update(self.handlers[mod].model(tag_data))
+            with torch.set_grad_enabled(task_config['need_backward']):
+                for mod in modules_to_run:
+                    tag_data.update(self.handlers[mod].model(tag_data))
 
             if tag == NO_TAG:
                 data.update(tag_data)
@@ -179,7 +180,6 @@ class Trainer:
             class_names = gens[0].struct['DL'].ROIs
             n_steps = min([len(g) for g in gens])
             gen_tags = list(stage_config['generator'].keys())
-
 
         else:
             raise TypeError('generator of type %s is not supported.' % type(stage_config['generator']))
@@ -287,6 +287,9 @@ class Trainer:
         # summarize the  result list
         task_summary = dict()
         for (task_name, result_list) in task_result_list.items():
+
+            if len(result_list) == 0:
+                continue
 
             summary = dict()
 
