@@ -124,7 +124,14 @@ class Trainer:
 
             with torch.set_grad_enabled(task_config['need_backward']):
                 for mod in modules_to_run:
-                    tag_data.update(self.handlers[mod].model(tag_data))
+                    if isinstance(mod, dict):
+                        tag_data.update(self.handlers[mod['name']].model(
+                            tag_data,
+                            **{key: mod[key] for key in mod if key != 'name'},
+                        ))
+                    else:
+                        assert mod in self.handlers
+                        tag_data.update(self.handlers[mod].model(tag_data))
 
             if tag == NO_TAG:
                 data.update(tag_data)
@@ -224,6 +231,7 @@ class Trainer:
             for task_name in stage_config['task']:
                 task_config = self.tasks[task_name]
 
+                # skip the task periodically
                 if 'period' in task_config \
                     and self.step[stage] % task_config['period'] != 0:
                     continue
@@ -399,7 +407,20 @@ try:
         epoch_info(epoch - 1, init_epoch + config['epochs'] - 1)
 
         for stage in config['stage']:
-            if 'period' in config['stage'][stage] and (epoch - init_epoch) % config['stage'][stage]['period'] != 0:
+
+            # skip this stage if have been ended
+            if 'end' in config['stage'][stage] \
+                and (epoch - init_epoch) + 1 >= config['stage'][stage]['end']:
+                continue
+
+            # skip this stage if haven't been started
+            if 'start' in config['stage'][stage] \
+                and (epoch - init_epoch) + 1 < config['stage'][stage]['start']:
+                continue
+
+            # skip this stage periodically
+            if 'period' in config['stage'][stage] \
+                and (epoch - init_epoch) % config['stage'][stage]['period'] != 0:
                 continue
 
             for (task, summary) in trainer.run(stage).items():
@@ -448,6 +469,8 @@ try:
                     # if n_stagnation > config['checkpoint']['lr_decay'] and \
                     #     n_stagnation % config['checkpoint']['lr_decay'] == 1:
                     #     print('Learnging rate decayed.')
+
+            print()
 
 
         for (key, opt) in trainer.optims.items():
