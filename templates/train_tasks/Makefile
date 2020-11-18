@@ -1,5 +1,6 @@
 SRC_DIR := $$(pwd | sed 's/\(.*\)exp\/.*/\1src/')
-PROGRAM = "train_tasks.py"
+TRAIN_PROGRAM = "train_tasks.py"
+INFER_PROGRAM = "infer_v2.py"
 
 # Verbose
 VERBOSE=0
@@ -16,32 +17,45 @@ else
 endif
 
 # Configs
-CONFIG = './training.json5'
+TRAIN_CONFIG = './training.json5'
+INFER_CONFIG = './inference.json5'
 LOG_DIR   = './_logs'
 CKPT_DIR  = './_ckpts'
 PAUSE_CKPT_DIR = './_pause_ckpts'
+OUTPUT_DIR = './_outputs'
 
 # train
-TRAIN_FLAGS += --config $(CONFIG)
+TRAIN_FLAGS += --config $(TRAIN_CONFIG)
 TRAIN_FLAGS += --log-dir $(LOG_DIR)
 TRAIN_FLAGS += --ckpt-dir $(CKPT_DIR)
 TRAIN_FLAGS += --pause-ckpt-dir $(PAUSE_CKPT_DIR)
 
+# infer
+INFER_FLAGS += --config $(INFER_CONFIG)
+INFER_FLAGS += --output $(OUTPUT_DIR)
 
 run: clean train
 
 train:
 	@echo "===== Training... ====="
-	$(EXECUTOR) $(SRC_DIR)/$(PROGRAM) $(TRAIN_FLAGS)
+	$(EXECUTOR) $(SRC_DIR)/$(TRAIN_PROGRAM) $(TRAIN_FLAGS)
 
 test: clean
 	@echo "===== Training... ====="
-	$(EXECUTOR) $(SRC_DIR)/$(PROGRAM) $(TRAIN_FLAGS) --test
+	$(EXECUTOR) $(SRC_DIR)/$(TRAIN_PROGRAM) $(TRAIN_FLAGS) --test
+
+infer:
+	@echo "===== Inferring... ====="
+	$(EXECUTOR) $(SRC_DIR)/$(INFER_PROGRAM) $(INFER_FLAGS)
 
 log:
 	@echo "===== Launch Tensorboard ====="
 	tensorboard --logdir $(LOG_DIR) > /dev/null 2>&1
 
 clean:
-	@echo "===== Cleaning... ====="
-	rm -rvf $(CKPT_DIR) $(LOG_DIR) $(PAUSE_CKPT_DIR)
+	@echo "===== Cleaning all... ====="
+	rm -rvf $(CKPT_DIR) $(LOG_DIR) $(PAUSE_CKPT_DIR) $(OUTPUT_DIR)
+
+clean_outputs:
+	@echo "===== Cleaning outputs... ====="
+	rm -rvf $(OUTPUT_DIR)
