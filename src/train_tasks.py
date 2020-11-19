@@ -397,6 +397,23 @@ best = 0
 best_epoch = 0
 n_stagnation = 0
 
+# early_stop config
+if 'early_stop' in config['checkpoint']:
+    is_valid = lambda x: isinstance(x, int) and x >= 1
+    cfg = config['checkpoint']['early_stop']
+    if 'start' in cfg:
+        es_start_epoch = cfg['start']
+        assert is_valid(es_start_epoch)
+    else:
+        es_start_epoch = 1
+
+    assert 'patience' in cfg
+    es_patience = cfg['patience']
+    assert is_valid(es_patience)
+
+else:
+    es_start_epoch = -1
+
 try:
     for epoch in range(init_epoch, init_epoch + config['epochs']):
 
@@ -461,10 +478,15 @@ try:
                         n_stagnation += 1
                         print('Best: %.3f at epoch %03d, stagnation: %d.' % (best, best_epoch, n_stagnation))
 
-                    if n_stagnation > config['checkpoint']['early_stop']:
-                        print('Early stopped.')
-                        terminated = True
-                        break
+                    # early stop
+                    if es_start_epoch > 0:
+                        if (epoch - init_epoch) + 1 == es_start_epoch:
+                            n_stagnation = 0
+                        elif (epoch - init_epoch) + 1 > es_start_epoch:
+                            if n_stagnation > es_patience:
+                                print('Early stopped.')
+                                terminated = True
+                                break
 
                     # if n_stagnation > config['checkpoint']['lr_decay'] and \
                     #     n_stagnation % config['checkpoint']['lr_decay'] == 1:
