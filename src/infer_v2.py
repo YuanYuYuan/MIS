@@ -64,11 +64,16 @@ assert BG.n_workers == 1
 if 'AG' in data_gen.struct:
     assert data_gen.struct['AG'].n_workers == 1
 
-# GPUs
+# - GPUs
 if 'gpus' in config:
-    gpus = ",".join([str(idx) for idx in config['gpus']])
+    if isinstance(config['gpus'], list):
+        gpus = ','.join([str(idx) for idx in config['gpus']])
+    else:
+        assert isinstance(config['gpus'], str)
+        with open(config['gpus']) as f:
+            gpus = f.read().strip()
 else:
-    gpus = ""
+    gpus = ''
 if len(gpus) > 0:
     os.environ['CUDA_VISIBLE_DEVICES'] = gpus
     torch.backends.cudnn.enabled = True

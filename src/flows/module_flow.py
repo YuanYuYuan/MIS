@@ -13,5 +13,5 @@ class ModuleFlow(nn.Module):
         self.flow = Flow(config, Chain)
         self.sub_modules = nn.ModuleDict(self.flow.nodes)
 
-    def forward(self, x):
-        return self.flow(x, nodes=self.sub_modules)
+    def forward(self, x, **kwargs):
+        return self.flow(x, nodes=self.sub_modules, **kwargs)

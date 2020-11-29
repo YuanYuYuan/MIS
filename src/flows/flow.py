@@ -3,7 +3,7 @@ class Flow:
     def __init__(self, config: dict, cls: type):
         self.nodes = {
             node_name: cls(**node_config)
-            for node_name, node_config in config['nodes'].items()
+            for (node_name, node_config) in config['nodes'].items()
         }
 
         for node in config['nodes']:
@@ -15,13 +15,14 @@ class Flow:
         else:
             self.n_states = max(self.links['outs']) + 1
 
-    def __call__(self, x, nodes=None):
+    def __call__(self, x, nodes=None, remap=dict()):
 
         if nodes is None:
             nodes = self.nodes
 
         state = [None] * self.n_states
-        for key, idx in self.links['inps'].items():
+        for (key, idx) in self.links['inps'].items():
+            key = remap[key] if key in remap else key
             assert key in x, (key, list(x.keys()))
             state[idx] = x[key]
 
@@ -32,9 +33,9 @@ class Flow:
         # for idx in self.links['inps']:
         #     state[idx] = x[idx]
 
-        for node, flow in self.links['flow'].items():
+        for (node, flow) in self.links['flow'].items():
             tmp = nodes[node]([state[idx] for idx in flow['inps']])
-            for tmp_idx, state_idx in enumerate(flow['outs']):
+            for (tmp_idx, state_idx) in enumerate(flow['outs']):
                 state[state_idx] = tmp[tmp_idx]
 
         # XXX
@@ -44,4 +45,7 @@ class Flow:
         if 'unwrap' in self.links['outs']:
             return state[self.links['outs']['unwrap']]
         else:
-            return {key: state[idx] for key, idx in self.links['outs'].items()}
+            return {
+                remap[key] if key in remap else key: state[idx]
+                for (key, idx) in self.links['outs'].items()
+            }

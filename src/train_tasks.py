@@ -387,7 +387,7 @@ timer = time.time()
 start = timer
 init_epoch = 1
 terminated = False
-best = 0
+best = None
 best_epoch = 0
 n_stagnation = 0
 
@@ -455,7 +455,10 @@ try:
                 # XXX should not check twice in different task
                 if 'checkpoint' in config and stage == config['checkpoint']['stage']:
                     new_score = summary[config['checkpoint']['metric']]
-                    if config['checkpoint']['mode'] == 'ascending':
+                    if best is None:
+                        improved = True
+                        best = new_score
+                    elif config['checkpoint']['mode'] == 'ascending':
                         improved  = new_score > best
                     elif config['checkpoint']['mode'] == 'descending':
                         improved  = new_score < best
