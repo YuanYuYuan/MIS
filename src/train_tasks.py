@@ -6,7 +6,6 @@ from training import ModelHandler, Optimizer
 from flows import MetricFlow, ModuleFlow
 from tqdm import tqdm
 from utils import get_tty_columns, epoch_info
-from metrics import match_up
 import torch
 import math
 import numpy as np
@@ -151,19 +150,9 @@ class Trainer:
                     if key in self.lr_schedulers:
                         self.lr_schedulers[key].step()
 
-        # compute match for dice score of each case after reversion
         if need_revert:
             assert 'prediction' in data, list(data.keys())
-            assert 'label' in data, list(data.keys())
-            with torch.set_grad_enabled(False):
-                match, total = match_up(
-                    data['prediction'],
-                    data['label'],
-                    needs_softmax=True,
-                    batch_wise=True,
-                    threshold=-1,
-                )
-                results.update({'match': match, 'total': total})
+            results['prediction'] = data['prediction']
 
         return results
 
@@ -315,7 +304,7 @@ class Trainer:
                 )
                 for reverted in progress_bar:
                     data_idx = reverted['idx']
-                    scores[data_idx] = reverted['score']
+                    scores[data_idx] = data_gen.struct['DL'].evaluate(data_idx, reverted['prediction'])
                     info = '[%s] mean score: %.3f' % (data_idx, np.mean(list(scores[data_idx].values())))
                     progress_bar.set_description(info)
 
