@@ -233,3 +233,13 @@ class Classifier(nn.Module):
         return self.op(x)
 
 
+class FCClassifier(nn.Module):
+    def __init__(self, ch_in=256, n_classes=1):
+        super().__init__()
+        self.dense = nn.Linear(ch_in, n_classes)
+
+    def forward(self, x):
+        # Global Average Pooling
+        x = x.mean(dim=(2, 3, 4))
+        x = self.dense(x)
+        return x
