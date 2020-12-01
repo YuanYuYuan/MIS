@@ -169,7 +169,7 @@ def mixed_dice_loss(logits, labels, *args):
 def match_up(
     logits,
     labels,
-    mask=None,
+    # mask=None,
     needs_softmax=True,
     batch_wise=False,
     threshold=0.
@@ -208,18 +208,21 @@ def match_up(
     elif threshold == -1:
         probas = (probas > 1/n_classes).float()
 
-    if mask is None:
-        match = torch.sum(probas * labels, sum_dim)
-        total = torch.sum(probas + labels, sum_dim)
-    else:
-        for idx, (s1, s2) in enumerate(zip(
-            mask.shape,
-            probas.shape
-        )):
-            if idx != 1:
-                assert s1 == s2, (mask.shape, probas.shape)
-        match = torch.sum(probas * labels * mask, sum_dim)
-        total = torch.sum((probas + labels) * mask, sum_dim)
+    # if mask is None:
+    #     match = torch.sum(probas * labels, sum_dim)
+    #     total = torch.sum(probas + labels, sum_dim)
+    # else:
+    #     for idx, (s1, s2) in enumerate(zip(
+    #         mask.shape,
+    #         probas.shape
+    #     )):
+    #         if idx != 1:
+    #             assert s1 == s2, (mask.shape, probas.shape)
+    #     match = torch.sum(probas * labels * mask, sum_dim)
+    #     total = torch.sum((probas + labels) * mask, sum_dim)
+
+    match = torch.sum(probas * labels, sum_dim)
+    total = torch.sum(probas + labels, sum_dim)
     return match, total
 
 
@@ -233,8 +236,9 @@ def dice_score(
     logits,
     labels,
     smooth=1e-9,
-    mask=None,
+    # mask=None,
     exclude_background=True,
+    needs_softmax=True,
     threshold=0.,
     exclude_blank=False,
     batch_wise=False,
@@ -246,10 +250,10 @@ def dice_score(
         match, total = match_up(
             logits,
             labels,
-            needs_softmax=True,
+            needs_softmax=needs_softmax,
             threshold=threshold,
             batch_wise=batch_wise,
-            mask=mask,
+            # mask=mask,
         )
         multi_class_score = compute_dice(match, total, smooth=smooth)
         if batch_wise:
@@ -265,7 +269,9 @@ def dice_loss(
     logits,
     labels,
     weight=None,
+    mask=None,
     exclude_background=True,
+    needs_softmax=True,
     batch_wise=False,
     smooth=1e-9,
 ):
@@ -273,17 +279,27 @@ def dice_loss(
         logits,
         labels,
         exclude_background=exclude_background,
+        needs_softmax=needs_softmax,
         batch_wise=batch_wise,
         smooth=smooth,
     )
 
-    # TODO: implement it, and weight by frequency
-    # if weight is not None:
-    #     assert len(score) == len(weight), (len(score), len(weight))
-    #     score *= weight
+    if weight is not None:
+        assert isinstance(weight, (list, tuple))
+        assert len(score) == len(weight), (len(score), len(weight))
+        weight = torch.tensor(weight).to(logits.device)
+        score *= weight
 
-    return 1 - score.mean()
 
+    if mask is not None:
+        assert isinstance(mask, (list, tuple))
+        assert len(score) == len(mask), (len(score), len(mask))
+        assert set(mask) == {0, 1}
+        mask = torch.tensor(mask).to(logits.device)
+        score *= mask
+        return 1 - score.sum() / torch.count_nonzero(mask)
+    else:
+        return 1 - score.mean()
 
 def pseudo_label(logits):
     return torch.argmax(logits, dim=1)
@@ -296,7 +312,7 @@ def confidence_mask(confidence_map, threshold=0.3, need_sigmoid=False):
         return (confidence_map >= threshold).float()
 
 
-def masked_dice_loss(
+def spatial_masked_dice_loss(
     logits,
     labels,
     mask,
@@ -315,7 +331,20 @@ def masked_dice_loss(
     return 1 - score.mean()
 
 
-def masked_cross_entropy(
+def mask_predition(prediction, mask):
+    return prediction * mask[None, :, None, None, None]
+
+def masked_cross_entropy(logits, labels, mask=None):
+    assert isinstance(mask, (list, tuple))
+    assert set(mask) == {1, 0}
+    assert logits.shape[1] == len(mask)
+    mask = torch.Tensor(mask).to(logits.device)
+    return F.cross_entropy(
+        logits * mask[None, :, None, None, None],
+        labels,
+    )
+
+def spatil_masked_cross_entropy(
     logits,
     labels,
     mask,
