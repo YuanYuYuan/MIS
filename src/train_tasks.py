@@ -494,7 +494,9 @@ try:
 
         for (key, opt) in trainer.optims.items():
             logger.add_scalar('lr_rate/%s' % key, opt.param_groups[0]['lr'], epoch)
-        logger.add_scalar('best', best, epoch)
+
+        if best is not None:
+            logger.add_scalar('best', best, epoch)
 
 except KeyboardInterrupt:
     print('Paused the training.')
