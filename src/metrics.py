@@ -3,6 +3,12 @@ import torch.nn.functional as F
 import math
 from medpy.metric import hd95
 
+def wasserstein_distance(fake, real):
+    return torch.mean(fake - real)
+
+def wgan_generator_loss(fake):
+    return -torch.mean(fake)
+
 
 def mean_sqaure_loss(logits, labels):
 
@@ -30,6 +36,7 @@ def housdorff_distance_95(logits, label):
         ))
 
     return result
+
 
 def domain_classification(logits):
     return torch.mean(torch.sigmoid(logits))

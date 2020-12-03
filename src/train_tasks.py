@@ -70,6 +70,7 @@ class Trainer:
         self.handlers = dict()
         self.optims = dict()
         self.lr_schedulers = dict()
+        self.weight_clip = dict()
         for (key, cfg) in self.config['module'].items():
             if 'ckpt' in cfg:
                 ckpt = cfg['ckpt']
@@ -79,6 +80,13 @@ class Trainer:
                 cfg['config'],
                 checkpoint=ckpt,
             )
+            if 'weight_clip' in cfg:
+                assert isinstance(cfg['weight_clip'], (tuple, list))
+                assert len(cfg['weight_clip']) == 2
+                assert cfg['weight_clip'][0] < cfg['weight_clip'][1]
+                print('Weight clip {} on the model {}'.format(cfg['weight_clip'], key))
+                self.weight_clip[key] = cfg['weight_clip']
+
             self.optims[key] = Optimizer(cfg['optim'])(self.handlers[key].model)
             self.optims[key].zero_grad()
             if 'lr_scheduler' in cfg:
@@ -149,6 +157,11 @@ class Trainer:
                     self.optims[key].zero_grad()
                     if key in self.lr_schedulers:
                         self.lr_schedulers[key].step()
+
+                    if key in self.weight_clip:
+                        (lower_bound, upper_bound) = self.weight_clip[key]
+                        for p in self.handlers[key].model.parameters():
+                            p.data.clamp_(lower_bound, upper_bound)
 
         if need_revert:
             assert 'prediction' in data, list(data.keys())
