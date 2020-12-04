@@ -222,6 +222,7 @@ class Classifier(nn.Module):
 
             nn.Dropout(),
             nn.Linear(1024, n_classes),
+            nn.LeakyReLU(0.2, inplace=True),
         )
         if isinstance(in_shape, list):
             in_shape = tuple(in_shape)
@@ -236,10 +237,13 @@ class Classifier(nn.Module):
 class FCClassifier(nn.Module):
     def __init__(self, ch_in=256, n_classes=1):
         super().__init__()
-        self.dense = nn.Linear(ch_in, n_classes)
+        self.op = nn.Sequential(
+            nn.Linear(ch_in, n_classes),
+            nn.LeakyReLU(0.2, inplace=True),
+        )
 
     def forward(self, x):
         # Global Average Pooling
         x = x.mean(dim=(2, 3, 4))
-        x = self.dense(x)
+        x = self.op(x)
         return x
