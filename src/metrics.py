@@ -148,6 +148,9 @@ def VAE_KLD(latent_dist):
     return torch.mean(mean**2 + std_square - torch.log(1e-10+std_square) - 1)
 
 
+def L2_norm(x, y):
+    return torch.mean((x - y)**2)
+
 def VAE_L2(images, reconstructions):
     return torch.mean((images - reconstructions)**2)
 
