@@ -404,6 +404,9 @@ best = None
 best_epoch = 0
 n_stagnation = 0
 
+# sanity check
+assert config['checkpoint']['stage'] in config['stage']
+
 # early_stop config
 if 'early_stop' in config['checkpoint']:
     is_valid = lambda x: isinstance(x, int) and x >= 1

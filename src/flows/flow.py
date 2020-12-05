@@ -7,7 +7,7 @@ class Flow:
         }
 
         for node in config['nodes']:
-            assert node in config['links']['flow']
+            assert node in config['links']['flow'], (node, config['links']['flow'])
         self.links = config['links']
 
         if isinstance(self.links['outs'], dict):
