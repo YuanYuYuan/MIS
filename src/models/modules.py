@@ -3,6 +3,13 @@ import torch
 import numpy as np
 
 
+def acti(name):
+    assert name in ('relu', 'leaky_relu')
+    if name  == 'relu':
+        return nn.ReLU(inplace=True)
+    else:
+        return nn.LeakyReLU(0.2, inplace=True)
+
 class ConvBlock(nn.Module):
 
     def __init__(
@@ -29,11 +36,7 @@ class ConvBlock(nn.Module):
                 nn.InstanceNorm3d(self.ch_in, affine=True)
             )
             # FIXME
-            self.op.add_module(
-                'preprocess_acti',
-                nn.ReLU(inplace=True) if activation == 'relu'
-                else nn.LeakyReLU(negative_slope=0.2, inplace=True)
-            )
+            self.op.add_module('preprocess_acti', acti(activation))
 
         if dim == '2D':
             self.op.add_module(
@@ -107,11 +110,7 @@ class ConvBlock(nn.Module):
                 nn.InstanceNorm3d(self.ch_out, affine=True)
             )
             # FIXME
-            self.op.add_module(
-                'postprocess_acti',
-                nn.ReLU(inplace=True) if activation == 'relu'
-                else nn.LeakyReLU(negative_slope=0.2, inplace=True)
-            )
+            self.op.add_module('postprocess_acti', acti(activation))
 
     def forward(self, x):
         assert x.shape[1] == self.ch_in, (self.dim, x.shape, self.ch_in, self.ch_out, self.tag)
@@ -208,21 +207,25 @@ class LatentReconstruction(nn.Module):
 
 class Classifier(nn.Module):
 
-    def __init__(self, in_shape=(32, 6, 6, 6), n_classes=2):
+    def __init__(
+        self,
+        in_shape=(32, 6, 6, 6),
+        n_classes=2,
+        activation='leaky_relu',
+    ):
         super().__init__()
         in_dim = np.prod(in_shape)
         self.op = nn.Sequential(
             nn.Dropout(),
             nn.Linear(in_dim, 4096),
-            nn.ReLU(inplace=True),
+            acti(activation),
 
             nn.Dropout(),
             nn.Linear(4096, 1024),
-            nn.ReLU(inplace=True),
+            acti(activation),
 
             nn.Dropout(),
             nn.Linear(1024, n_classes),
-            nn.LeakyReLU(0.2, inplace=True),
         )
         if isinstance(in_shape, list):
             in_shape = tuple(in_shape)
@@ -235,12 +238,13 @@ class Classifier(nn.Module):
 
 
 class FCClassifier(nn.Module):
-    def __init__(self, ch_in=256, n_classes=1):
+    def __init__(
+        self,
+        ch_in=256,
+        n_classes=1,
+    ):
         super().__init__()
-        self.op = nn.Sequential(
-            nn.Linear(ch_in, n_classes),
-            nn.LeakyReLU(0.2, inplace=True),
-        )
+        self.op = nn.Linear(ch_in, n_classes)
 
     def forward(self, x):
         # Global Average Pooling
