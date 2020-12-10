@@ -59,9 +59,9 @@ avg = scores.mean()
 cls_avg = scores.mean(axis=0)
 for (i, soi) in enumerate([
     'Brainstem',
+    'Optic Chiasm',
     'Left Optic Nerve',
     'Right Optic Nerve',
-    'Optic Chiasm',
 ]):
     print('%s: %.3f' % (soi, cls_avg[i]))
 print('Average: %.3f' % avg)
