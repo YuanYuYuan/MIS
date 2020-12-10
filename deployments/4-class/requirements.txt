@@ -1,0 +1,7 @@
+scipy
+tqdm
+pynrrd
+nibabel
+numpy
+json5
+git+https://github.com/YuanYuYuan/MIDP@master
