@@ -5,3 +5,6 @@ nibabel
 numpy
 json5
 git+https://github.com/YuanYuYuan/MIDP@master
+prettytable
+pathos
+psutil
