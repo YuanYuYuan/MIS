@@ -65,4 +65,4 @@ for (i, soi) in enumerate([
 ]):
     print('%s: %.3f' % (soi, cls_avg[i]))
 print('Average: %.3f' % avg)
-print('Case average:', scores.mean(axis=1))
+print('\nCase average:', scores.mean(axis=1))
