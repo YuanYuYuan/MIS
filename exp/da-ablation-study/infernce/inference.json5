@@ -14,7 +14,7 @@
   },
 
   "generator": {
-    "data": "./data/target.json5",
+    "data": "./data/target_valid.json5",
     "struct": {
       "BlockGenerator": {
         "block_shape": 96,

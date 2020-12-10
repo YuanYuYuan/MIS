@@ -187,9 +187,16 @@
       },
       "forward": ["mod_enc_tgt", "mod_seg", "mod_dis"],
       "metric": "met_seg",
-      "checkpoint": true,
       "revert": true,
       "period": 4,
     },
   },
+
+  "checkpoint": {
+    "stage": "valid_tgt",
+    "metric": "cls_mean",
+    "mode": "ascending",
+    "lr_decay": 10,
+    "early_stop": 20,
+  }
 }

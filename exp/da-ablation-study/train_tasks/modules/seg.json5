@@ -68,7 +68,7 @@
           "name": "ConvBlock",
           "dim": "3D",
           "ch_in": 16,
-          "ch_out": 16,
+          "ch_out": 6,
           "postprocess": false
         },
       },

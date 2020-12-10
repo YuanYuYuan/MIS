@@ -132,96 +132,15 @@
         },
       },
     },
-    'regularizer' :{
-      'inps': [0],
-      'outs': [2, 17],
-      'topo': {
-        // layer 1
-        '1': 'reduce',
-        '2': 'lrp',
-        '3': 'lrc',
-        '4': 'expand',
-
-        // layer 2
-        '5': 'u_1',
-        '6': 'l_21',
-        '7': {'l_22': 6, 'l_23': 5},
-
-        // layer 3
-        '8': 'u_2',
-        '9': 'l_31',
-        '10': {'l_32': 9, 'l_33': 8},
-
-        // layer 4
-        '11': 'u_3',
-        '12': 'l_41',
-        '13': {'l_42': 12, 'l_43': 11},
-
-        // layer 5
-        '14': 'u_4',
-        '15': 'l_51',
-        '16': {'l_52': 15, 'l_53': 14},
-        '17': 'l_54'
-      },
-      'maps': {
-        // layer 1
-        'reduce': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 256, 'ch_out': 16},
-        'lrp': {'name': 'LatentReparametrization', 'in_shape': [16, 4, 4, 4]},
-        'lrc': {'name': 'LatentReconstruction', 'out_shape': [16, 4, 4, 4]},
-        'expand': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 16, 'ch_out': 256},
-
-        // upsample
-        'u_1': {'name': 'UpSample', 'ch_in': 256},
-
-        // layer 2
-        'l_21': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 128},
-        'l_22': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 128},
-        'l_23': {'name': 'Identity'},
-
-        // upsample
-        'u_2': {'name': 'UpSample', 'ch_in': 128},
-
-        // layer 3
-        'l_31': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 64},
-        'l_32': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 64},
-        'l_33': {'name': 'Identity'},
-
-        // upsample
-        'u_3': {'name': 'UpSample', 'ch_in': 64},
-
-        // layer 4
-        'l_41': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 32},
-        'l_42': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 32},
-        'l_43': {'name': 'Identity'},
-
-        // upsample
-        'u_4': {'name': 'UpSample', 'ch_in': 32},
-
-        // layer 5
-        'l_51': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 16},
-        'l_52': {'name': 'ConvBlock', 'dim': '3D', 'ch_in': 16},
-        'l_53': {'name': 'Identity'},
-        'l_54': {
-          'name': 'ConvBlock',
-          'dim': '3D',
-          'ch_in': 16,
-          'ch_out': 1,
-          'postprocess': false
-        },
-      },
-    }
   },
   'links': {
     'inps': {'image': 0},
     'outs': {
       'prediction': 5,
-      'latent': 6,
-      'reconstruction': 7
     },
     'flow': {
       'encoder': {'inps': [0], 'outs': [1, 2, 3, 4]},
       'decoder': {'inps': [1, 2, 3, 4], 'outs': [5]},
-      'regularizer': {'inps': [1], 'outs': [6, 7]},
     }
   }
 }

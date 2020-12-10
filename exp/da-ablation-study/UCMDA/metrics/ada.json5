@@ -7,7 +7,7 @@
   },
   "links": {
     "inps": {
-      "classification": 0,
+      "classification_tgt": 0,
     },
     "outs": {
       "accu": 1,

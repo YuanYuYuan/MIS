@@ -17,7 +17,7 @@ endif
 
 # Configs
 CONFIG = './inference.json5'
-OUTPUT_DIR = './outputs'
+OUTPUT_DIR = './_outputs'
 
 # flags
 FLAGS += --config $(CONFIG)
