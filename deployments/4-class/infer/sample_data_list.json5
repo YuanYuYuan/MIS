@@ -5,8 +5,8 @@
     "0522c0576",
   ],
   "loader": {
-    "image_dir": "./data/images",
-    "label_dir": "./data/labels",
+    "image_dir": "../data/images",
+    "label_dir": "../data/labels",
     "name": "MSDLoader",
     "roi_map": {
       "Brainstem": 1,

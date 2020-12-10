@@ -107,7 +107,6 @@ def convert(data_idx, order=2):
         os.path.join(args.output_dir, 'labels', data_idx + '.nii.gz')
     )
 
-data_list = data_list[:2]
 with Pool(os.cpu_count()) as pool:
     list(tqdm(pool.imap(convert, data_list), total=len(data_list)))
 
