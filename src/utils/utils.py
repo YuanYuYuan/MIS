@@ -1,6 +1,6 @@
 import numpy as np
 from tqdm import tqdm
-from pathos.multiprocessing import ProcessingPool as Pool
+# from pathos.multiprocessing import ProcessingPool as Pool
 import os
 import nibabel as nib
 from prettytable import from_csv
@@ -141,22 +141,22 @@ def epoch_info(epoch, total_epochs, sep='-'):
     print(info)
 
 
-def compute_weights(npz_dir, data_list):
-    def count(data_idx):
-        npz_file = os.path.join(npz_dir, data_idx + '.npz')
-        label = np.load(npz_file, mmap_mode='r')['label']
-        label = label.reshape((-1, label.shape[-1]))
+# def compute_weights(npz_dir, data_list):
+#     def count(data_idx):
+#         npz_file = os.path.join(npz_dir, data_idx + '.npz')
+#         label = np.load(npz_file, mmap_mode='r')['label']
+#         label = label.reshape((-1, label.shape[-1]))
 
-        # counts of each class
-        return np.sum(label, axis=0)
+#         # counts of each class
+#         return np.sum(label, axis=0)
 
-    with Pool() as pool:
-        counts = list(tqdm(pool.imap(count, data_list), total=len(data_list)))
+#     with Pool() as pool:
+#         counts = list(tqdm(pool.imap(count, data_list), total=len(data_list)))
 
-    counts = np.mean(np.asarray(counts), axis=0)
-    s = np.sum(counts)
-    weights = [s/c for c in counts]
-    return weights
+#     counts = np.mean(np.asarray(counts), axis=0)
+#     s = np.sum(counts)
+#     weights = [s/c for c in counts]
+#     return weights
 
 
 def categorical_dice_score(label, pred):
