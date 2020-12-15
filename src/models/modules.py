@@ -1,4 +1,5 @@
 from torch import nn
+import torch.nn.functional as F
 import torch
 import numpy as np
 
@@ -235,6 +236,30 @@ class Classifier(nn.Module):
         assert x.shape[1:] == self.in_shape, (x.shape, self.in_shape)
         x = torch.flatten(x, start_dim=1)
         return self.op(x)
+
+
+class IntoProb(nn.Module):
+    def __init__(self, n_classes=6, add_noise=False):
+        super().__init__()
+        self.n_classes = n_classes
+
+        # TODO
+        self.add_noise = add_noise
+
+    def forward(self, x):
+        raw_shape = x.shape
+
+        # prediction
+        if len(raw_shape) == 5:
+            assert raw_shape[1] == self.n_classes
+            return F.softmax(x, dim=1)
+
+        # ground truth
+        else:
+            assert len(raw_shape) == 4
+            x = F.one_hot(x, self.n_classes).permute((0, 4, 1, 2, 3)).float()
+
+        return x
 
 
 class FCClassifier(nn.Module):
