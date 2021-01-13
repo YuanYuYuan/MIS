@@ -86,6 +86,7 @@ for (key, cfg) in config['module'].items():
     else:
         ckpt = None
     model_handlers[key] = ModelHandler(cfg['config'], checkpoint=ckpt)
+    model_handlers[key].model.eval()
 
     # toggle off all trainable parameters of each module
     for param in model_handlers[key].model.parameters():
