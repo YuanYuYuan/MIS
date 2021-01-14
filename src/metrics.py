@@ -131,6 +131,33 @@ class AdversarialLoss:
                 self.truth *= 0.9
         return F.binary_cross_entropy_with_logits(x, self.truth)
 
+class FocalLoss:
+
+    def __init__(self, gamma=2.0):
+        self.gamma = gamma
+
+    def __call__(self, logits, labels):
+        # check logits: [B, C, H, W(, D)], labels: [B, H, W(, D)]
+        assert len(logits.shape) == len(labels.shape) + 1
+        assert logits.shape[0] == labels.shape[0]
+        assert logits.shape[2:] == labels.shape[1:]
+
+        # [B, H, W(, D)] => [B, 1, X]
+        labels = labels.view(labels.shape[0], 1, -1)
+
+        # [B, C, H, W(, D)] => [B, C, X]
+        logits = logits.view(logits.shape[0], logits.shape[1], -1)
+        log_probas = F.log_softmax(logits, dim=1)
+
+        # [B, C, X] => [B, X]
+        log_probas = torch.gather(F.log_softmax(logits, dim=1), 1, labels)
+
+        # [B, X] => [1]
+        probas = torch.exp(log_probas)
+        weight = torch.pow(1. - probas, self.gamma)
+        loss = -torch.mean(weight * log_probas)
+
+        return loss
 
 # this loss assumes the input is after sigomid
 def adversarial_loss(x):
