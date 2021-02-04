@@ -1,0 +1,29 @@
+{
+  "nodes": {
+    "discriminator": {
+      "inps": [0],
+      "outs": [3],
+      "topo": {
+        "1": "l_1",
+        "2": "l_2",
+        "3": "l_3",
+      },
+      "maps": {
+        "l_1": {"name": "ConvBlock", "dim": "3D", "ch_in": 256, "ch_out": 128, "activation": "leaky_relu"},
+        "l_2": {"name": "ConvBlock", "dim": "3D", "ch_in": 128, "ch_out": 32, "activation": "leaky_relu"},
+        "l_3": {"name": "Classifier", "in_shape": [32, 6, 6, 6], "n_classes": 1, "activation": "leaky_relu"},
+      },
+    },
+  },
+  "links": {
+    "inps": {
+      "h_4": 0,
+    },
+    "outs": {
+      "classification": 1,
+    },
+    "flow": {
+      "discriminator": {"inps": [0], "outs": [1]},
+    }
+  }
+}
