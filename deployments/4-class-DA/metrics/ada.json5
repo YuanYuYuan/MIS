@@ -1,0 +1,35 @@
+{
+  // This metric is used for segmentation with adversarial learning and
+  // the input data should from the source and pretend it's from target
+  "nodes": {
+    "loss_dice": {"name": "dice_loss"},
+    "loss_ce": {"name": "cross_entropy"},
+    "loss_adv": {"name": "BinaryDomainLoss", "label_smooth": true, "label": 0},
+    "accu": {"name": "dice_score", "exclude_blank": true},
+    "domain": {"name": "domain_classification"},
+    "weighted_sum": {"name": "sum", "weight": [1., 1., 0.2]},
+  },
+  "links": {
+    "inps": {
+      "prediction_src": 0,
+      "label_src": 1,
+      "classification_src": 2,
+    },
+    "outs": {
+      "loss": 7,
+      "accu": 3,
+      "DICE": 4,
+      "CE": 5,
+      "ADV": 6,
+      "DOMAIN": 8,
+    },
+    "flow": {
+      "accu": {"inps": [0, 1], "outs": [3]},
+      "loss_dice": {"inps": [0, 1], "outs": [4]},
+      "loss_ce": {"inps": [0, 1], "outs": [5]},
+      "loss_adv": {"inps": [2], "outs": [6]},
+      "weighted_sum": {"inps": [4, 5, 6], "outs": [7]},
+      "domain": {"inps": [2], "outs": [8]},
+    }
+  }
+}
