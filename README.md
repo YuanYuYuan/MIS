@@ -27,4 +27,5 @@ See [here](https://github.com/YuanYuYuan/MIDP#prepare-data) for more details.
 2. [Brainstem Parotids segmentation v2](https://yuanyuyuan.github.io/MIS/deployments/bs-ptd-v2/)
 3. [Visual System segmentation](https://yuanyuyuan.github.io/MIS/deployments/visual-system/)
 4. [4-class Segmentation](./deployments/4-class/README.md)
+5. [4-class Domain Adaptation](./deployments/4-class-DA/README.md)
 
