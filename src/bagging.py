@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import torch.nn.functional as F
 import argparse
 import time
 import os
@@ -23,13 +24,17 @@ parser.add_argument(
     '--checkpoints',
     nargs='+',
     default=None,
-    type=list,
     help='pretrained model checkpoint'
 )
 parser.add_argument(
     '--prediction-dir',
-    default=None,
+    default='outputs',
     help='save prediction',
+)
+parser.add_argument(
+    '--keep-ch',
+    default=False,
+    action='store_true'
 )
 args = parser.parse_args()
 
@@ -75,73 +80,68 @@ if args.prediction_dir is not None:
 os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpus'])
 
 # - model
+print(args.checkpoints)
 model_handlers = [
     ModelHandler(config['model'], checkpoint=ckpt)
     for ckpt in args.checkpoints
 ]
 
-testing_data = torch.rand(12, 3, 96, 96, 96)
-
 result = []
-for mh in model_handlers:
-    with torch.set_grad_enabled(False):
-        mh.model.eval()
-        result.append(mh.model(testing_data)['prediction'])
+
+n_models = len(model_handlers)
+batches = []
+for batch in tqdm(data_gen):
+    for key in batch:
+        batch[key] = batch[key].cuda()
+
+    prob = None
+    for mh in model_handlers:
+        with torch.set_grad_enabled(False):
+            mh.model.eval()
+            pred = mh.model(batch)['prediction']
+            if prob is None:
+                prob = F.softmax(pred, dim=1).detach().cpu().numpy()
+            else:
+                prob += F.softmax(pred, dim=1).detach().cpu().numpy()
+
+    prob /= n_models
+    batches.append({'prediction': prob})
 
 
-# runners = [
-#     Runner(
-#         learner=SegLearner(
-#             model=mh.model,
-#             meter=None,
-#             optim=dict()
-#         ),
-#         logger=None,
-#     ) for mh in model_handlers
-# ]
+for key in batches[0].keys():
+    assert key in reverter.revertible, f'{key} is not revertible!'
 
-# result_list = runner.run(
-#     data_gen,
-#     training=False,
-#     stage='Evaluating',
-#     include_prediction=True,
-#     compute_match=False,
-# )
+with tqdm(
+    reverter.on_batches(
+        batches,
+        output_threshold=config['output_threshold']
+    ),
+    total=len(reverter.data_list),
+    dynamic_ncols=True,
+    ncols=get_tty_columns(),
+    desc='[Data index]'
+) as progress_bar:
+    for reverted in progress_bar:
+        data_idx = reverted['idx']
 
-# for key in result_list[0].keys():
-#     assert key in reverter.revertible, f'{key} is not revertible!'
+        if len(reverted['prediction'].shape) > 3:
+            nrrd.write(
+                os.path.join(
+                    args.prediction_dir,
+                    data_idx + '.nrrd',
+                ),
+                reverted['prediction'].astype('float32'),
+                compression_level=5,
+            )
 
-# with tqdm(
-#     reverter.on_batches(
-#         result_list,
-#         output_threshold=config['output_threshold']
-#     ),
-#     total=len(reverter.data_list),
-#     dynamic_ncols=True,
-#     ncols=get_tty_columns(),
-#     desc='[Data index]'
-# ) as progress_bar:
-#     for reverted in progress_bar:
-#         data_idx = reverted['idx']
+        else:
+            DL.save_prediction(
+                data_idx,
+                reverted['prediction'],
+                args.prediction_dir
+            )
 
-#         if len(reverted['prediction'].shape) > 3:
-#             nrrd.write(
-#                 os.path.join(
-#                     args.prediction_dir,
-#                     data_idx + '.nrrd',
-#                 ),
-#                 reverted['prediction'].astype('float32'),
-#                 compression_level=5,
-#             )
+        info = '[%s] ' % data_idx
+        progress_bar.set_description(info)
 
-#         else:
-#             DL.save_prediction(
-#                 data_idx,
-#                 reverted['prediction'],
-#                 args.prediction_dir
-#             )
-
-#         info = '[%s] ' % data_idx
-#         progress_bar.set_description(info)
-
-# print('Time:', time.time()-start)
+print('Time:', time.time()-start)
