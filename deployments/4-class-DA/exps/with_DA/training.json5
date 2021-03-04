@@ -1,0 +1,230 @@
+{
+  "gpus": [0],
+  "epochs": 2000,
+
+  "module": {
+    "mod_enc": {
+      "config": "../../modules/enc.json5",
+      "optim": {"name": "Adam", "lr": 0.001},
+    },
+    "mod_seg": {
+      "config": "../../modules/seg.json5",
+      "optim": {"name": "Adam", "lr": 0.001},
+    },
+    "mod_dis": {
+      "config": "../../modules/dis_leaky_relu.json5",
+      "optim": {"name": "Adam", "lr": 0.001},
+      "weight_clip": [-0.01, 0.01],
+    },
+  },
+
+  "metric": {
+    "met_seg": "../../metrics/seg.json5",
+    "met_dis": "../../metrics/dis_wgan.json5",
+    "met_ada": "../../metrics/ada_wgan.json5",
+  },
+
+  "generator": {
+    "gen_train_source": {
+      "data": "../../data_lists/source_train.json5",
+      "struct": {
+        "BlockSampler": {
+          "shuffle": true,
+          "block_shape": 96,
+          "n_samples": 16,
+          "ratios": 0.5,
+          "n_workers": 4,
+        },
+        "Augmentor": {
+          "window_width": 400,
+          "window_level": 0,
+          "affine": "weak",
+          "noise": 0.1,
+          "n_workers": 2,
+        },
+        "BatchGenerator": {
+          "batch_size": 12,
+          "n_workers": 2,
+        },
+      },
+    },
+    "gen_adapt_source": {
+      "data": "../../data_lists/source_train.json5",
+      "struct": {
+        "BlockSampler": {
+          "shuffle": true,
+          "block_shape": 96,
+          "n_samples": 16,
+          // "ratios": 0.5,
+          "n_workers": 4,
+        },
+        "Augmentor": {
+          "window_width": 400,
+          "window_level": 0,
+          "affine": "weak",
+          "noise": 0.1,
+          "n_workers": 2,
+        },
+        "BatchGenerator": {
+          "batch_size": 12,
+          "n_workers": 2,
+        },
+      },
+    },
+    "gen_adapt_target": {
+      "data": "../../data_lists/target.json5",
+      "struct": {
+        "BlockSampler": {
+          "shuffle": true,
+          "block_shape": 96,
+          "n_samples": 16,
+          // "ratios": 0.5,
+          "n_workers": 4,
+        },
+        "Augmentor": {
+          "window_width": 400,
+          "window_level": 0,
+          "affine": "weak",
+          "noise": 0.1,
+          "n_workers": 2,
+        },
+        "BatchGenerator": {
+          "batch_size": 12,
+          "n_workers": 2,
+        },
+      },
+    },
+    "gen_valid_source": {
+      "data": "../../data_lists/source_valid.json5",
+      "struct": {
+        "BlockGenerator": {
+          "block_shape": 96,
+          "stride": 48,
+          "n_workers": 4,
+          "ordered": true,
+        },
+        "Augmentor": {
+          "window_width": 400,
+          "window_level": 0,
+          "n_workers": 1,
+        },
+        "BatchGenerator": {
+          "batch_size": 48,
+          "n_workers": 1,
+        },
+      },
+    },
+    "gen_valid_target": {
+      "data": "../../data_lists/target.json5",
+      "struct": {
+        "BlockGenerator": {
+          "block_shape": 96,
+          "stride": 48,
+          "n_workers": 4,
+          "ordered": true,
+        },
+        "Augmentor": {
+          "window_width": 400,
+          "window_level": 0,
+          "n_workers": 1,
+        },
+        "BatchGenerator": {
+          "batch_size": 48,
+          "n_workers": 1,
+        },
+      },
+    },
+  },
+
+  "task": {
+    "task_train_seg": {
+      "toggle": {
+        "mod_enc": true,
+        "mod_seg": true,
+        "mod_dis": false,
+      },
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_seg",
+    },
+    "task_train_dis": {
+      "toggle": {
+        "mod_enc": false,
+        "mod_seg": false,
+        "mod_dis": true,
+      },
+      "forward": {
+        "src": ["mod_enc", "mod_seg", "mod_dis"],
+        "tgt": ["mod_enc", "mod_seg", "mod_dis"],
+      },
+      "metric": "met_dis",
+      "period": 20,
+    },
+    "task_align_seg": {
+      "toggle": {
+        "mod_enc": true,
+        "mod_seg": true,
+        "mod_dis": false,
+      },
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_ada",
+    },
+    "task_valid_src": {
+      "toggle": {
+        "mod_enc": false,
+        "mod_seg": false,
+        "mod_dis": false,
+      },
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_seg",
+    },
+    "task_valid_tgt": {
+      "toggle": {
+        "mod_enc": false,
+        "mod_seg": false,
+        "mod_dis": false,
+      },
+      "forward": ["mod_enc", "mod_seg", "mod_dis"],
+      "metric": "met_seg",
+    },
+  },
+
+  "stage": {
+    "valid_src": {
+      "task": ["task_valid_src"],
+      "generator": "gen_valid_source",
+      "revert": true,
+      "period": 4,
+    },
+    "valid_tgt": {
+      "task": ["task_valid_tgt"],
+      "generator": "gen_valid_target",
+      "revert": true,
+      "period": 4,
+    },
+
+    // // Without DA
+    // "train": {
+    //   "task": ["task_train_seg"],
+    //   "generator": "gen_train_source",
+    // },
+
+    // With DA
+    "adapt": {
+      "task": ["task_train_dis", "task_align_seg"],
+      "generator": {
+        "src": "gen_adapt_source",
+        "tgt": "gen_adapt_target",
+      },
+    },
+  },
+
+  "checkpoint": {
+    "stage": "valid_src",
+    "metric": "cls_mean",
+    "mode": "ascending",
+    "early_stop": {
+      "patience": 30,
+    },
+  },
+
+}

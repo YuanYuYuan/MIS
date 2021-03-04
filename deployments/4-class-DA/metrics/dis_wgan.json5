@@ -1,0 +1,43 @@
+{
+  "nodes": {
+    // loss
+    "loss_dis": {"name": "wasserstein_distance"},
+
+    // accu
+    "accu_source": {"name": "BinaryDomainAccu", "label": 1},
+    "accu_target": {"name": "BinaryDomainAccu", "label": 0},
+    "accu_average": {"name": "sum", "weight": [0.5, 0.5]},
+
+    // domain
+    "domain_source": {"name": "domain_classification"},
+    "domain_target": {"name": "domain_classification"},
+  },
+  "links": {
+    "inps": {
+      "classification_src": 0,  // fake
+      "classification_tgt": 1,  // real
+    },
+    "outs": {
+      "loss": 2,
+      "accu": 5,
+      "DIS": 2,
+      "ACCU_SRC": 3,
+      "ACCU_TGT": 4,
+      "DOMAIN_SRC": 6,
+      "DOMAIN_TGT": 7,
+    },
+    "flow": {
+      // loss
+      "loss_dis": {"inps": [0, 1], "outs": [2]},
+
+      // accu
+      "accu_source": {"inps": [0], "outs": [3]},
+      "accu_target": {"inps": [1], "outs": [4]},
+      "accu_average": {"inps": [3, 4], "outs": [5]},
+
+      // domain
+      "domain_source": {"inps": [0], "outs": [6]},
+      "domain_target": {"inps": [1], "outs": [7]},
+    }
+  }
+}

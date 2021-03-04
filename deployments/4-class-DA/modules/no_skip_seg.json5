@@ -1,0 +1,92 @@
+{
+  "nodes": {
+    "segmentor": {
+      "inps": [0],
+      "outs": [14, 11, 6, 4, 1],
+      "topo": {
+        // layer 1
+        "1": "l_11",
+
+        // layer 2
+        "2": "u_1",
+        "3": "l_22",
+        "4": "l_23",
+
+        // layer 3
+        "5": "u_2",
+        "6": "l_32",
+
+        // layer 4
+        "7": "u_3",
+        "8": "l_42",
+        "9": "l_43",
+        "10": {"l_46": 8, "l_44": 9},
+        "11": {"l_45": 10, "l_47": 9},
+
+        // layer 5
+        "12": "u_4",
+        "13": "l_51",
+        "14": "l_52",
+      },
+      "maps": {
+        // layer 1
+        "l_11": {"name": "ConvBlock", "dim": "3D", "ch_in": 256},
+
+        // upsample
+        "u_1": {"name": "UpSample", "ch_in": 256},
+
+        // layer 2
+        // "l_21": {"name": "ConvBlock", "dim": "3D", "ch_in": 128},
+        "l_22": {"name": "ConvBlock", "dim": "3D", "ch_in": 128},
+        "l_23": {"name": "ConvBlock", "dim": "3D", "ch_in": 128},
+
+        // upsample
+        "u_2": {"name": "UpSample", "ch_in": 128},
+
+        // layer 3
+        // "l_31": {"name": "ConvBlock", "dim": "3D", "ch_in": 64},
+        "l_32": {"name": "ConvBlock", "dim": "P3D", "ch_in": 64},
+
+        // upsample
+        "u_3": {"name": "UpSample", "ch_in": 64},
+
+        // layer 4
+        // "l_41": {"name": "ConvBlock", "dim": "3D", "ch_in": 32},
+        "l_42": {"name": "ConvBlock", "dim": "3D", "ch_in": 32},
+        "l_43": {"name": "ConvBlock", "dim": "2D", "ch_in": 32},
+        "l_44": {"name": "ConvBlock", "dim": "3D", "ch_in": 32},
+        "l_45": {"name": "ConvBlock", "dim": "3D", "ch_in": 32},
+        "l_46": {"name": "Identity"},
+        "l_47": {"name": "Identity"},
+
+        // upsample
+        "u_4": {"name": "UpSample", "ch_in": 32},
+
+        // layer 5
+        "l_51": {"name": "ConvBlock", "dim": "3D", "ch_in": 16},
+        "l_52": {
+          "name": "ConvBlock",
+          "dim": "3D",
+          "ch_in": 16,
+          "ch_out": 5,
+          "postprocess": false
+        },
+      },
+    },
+  },
+  "links": {
+    "inps": {
+      "bottom": 0,
+    },
+    "outs": {
+      "prediction": 1,
+      "h_1": 2,
+      "h_2": 3,
+      "h_3": 4,
+      "h_4": 5,
+    },
+    "flow": {
+      "segmentor": {"inps": [0], "outs": [1, 2, 3, 4, 5]},
+    }
+  }
+}

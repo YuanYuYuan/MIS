@@ -1,9 +1,20 @@
 # 4 OARs Segmentation on CT H&N Data
 
+This document describes how to use the MIS to segment 4 organ-at-risks (OARs) on CT head-and-neck(H&N) data.
+The anatomical structures to be learned to segment are *brainstem*, *optic chiasm*, *bilateral optic nerves*.
+
+Here are some steps for the inference.
+
+1. Prepare a proper dataset, which should be resampled and converted to NIfTI images.
+2. Set the data list to specify the cases to be processed.
+3. Load the trained deep learning model and run the inference.
+
+Let's get started!
+
 ## Prepare dataset
 
-The data pipeline before the model require the data been converted to NIfTI format.
-The following example show how to convert the PDDCA like dataset to meet the requirement.
+The data pipeline before the model requires the data been converted to NIfTI format.
+The following example shows how to convert the PDDCA like dataset to meet the requirement.
 
 ### File hierarchy
 
@@ -12,7 +23,7 @@ Since the model aims to the segmentation on *brainstem*, *optic chiasm*, *bilate
 there must be corresponding files with the keyword name _Brainstem_, _Chiasm_, _OpticNerve\_L_, _OpticNerve\_R_
 inside the data folder.
 
-```bash
+```txt
 data                             // data folder
 ├── 0522c0555                    // case name
 │   ├── img.nrrd                 // image file (NRRD)
@@ -25,7 +36,7 @@ data                             // data folder
 
 ### Prerequisite
 
-Please install the required library so that you can run the following scripts
+Please install the required libraries so that you can run the following scripts
 to preprocess the dataset.
 
 ```bash
@@ -35,10 +46,10 @@ pip install -r requirements.txt
 
 ### Step 1: Convert NRRD to NIfTI
 
-Since the model was trained on ABCs dataset, we need to resample the image to the spacing of 1.2 mm.
+Since the model was trained on [ABCs](https://abcs.mgh.harvard.edu/) dataset, we need to resample the image to the spacing of 1.2 mm.
 Assume the folder containing the data wanted to process is named _data_.
-Run the following script can process all data inside the folder. You may wait a moment sine the resampling
-on images may take some time.
+Running the following script can process all data inside the folder. You may wait a moment sine the resampling
+of 3D images may take some time.
 
 > Run
 
@@ -54,7 +65,7 @@ Ouputs have been stored in nifti.
 ```
 
 The following steps are optional, which are used to speed up the testing and development.
-One may directly run the inference and check there're some faults on the area outside the
+One may directly run the inference and check if there're some faults on the area outside the
 region of interest.
 
 ### Step 2 (optional): Find the bounding boxes
@@ -105,7 +116,7 @@ Here are some views of the cropped data.
 
 ## Run the inference
 
-Move to the directory _infer_ and follow the steps below to run the inference.
+Move to the directory _infer_ and follow the below steps to run the inference.
 
 ### Download pretrained model
 
@@ -117,7 +128,7 @@ make download_model
 
 > Log
 
-```bash
+```txt
 ckpts.tar.gz            [               <=> ]  20.89M  2.40MB/s    in 9.8s
 
 2020-12-09 10:48:30 (2.12 MB/s) - ‘ckpts.tar.gz’ saved [21909602]
