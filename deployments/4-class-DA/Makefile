@@ -1,7 +1,9 @@
 ROOT_DIR := $$(pwd | sed 's/\(.*\)deployments\/.*/\1/')
 SRC_DIR=$(ROOT_DIR)/src
-TRAIN_PROGRAM = "train_tasks.py"
-INFER_PROGRAM = "infer_v2.py"
+# TRAIN_PROGRAM = "train_tasks.py"
+# INFER_PROGRAM = "infer_v2.py"
+TRAIN_PROGRAM = "train_tasks_v2.py"
+INFER_PROGRAM = "infer_v3.py"
 
 # Verbose
 VERBOSE=0
