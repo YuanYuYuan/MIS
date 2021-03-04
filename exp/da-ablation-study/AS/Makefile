@@ -1,0 +1,1 @@
+../../../templates/train_tasks/Makefile

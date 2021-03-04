@@ -1,0 +1,30 @@
+{
+  "nodes": {
+    "loss_dice": {"name": "dice_loss"},
+    "loss_ce": {"name": "cross_entropy"},
+    "accu": {"name": "dice_score", "exclude_blank": true},
+    "domain": {"name": "domain_classification"},
+    "weighted_sum": {"name": "sum", "weight": [1., 1.]},
+  },
+  "links": {
+    "inps": {
+      "prediction": 0,
+      "label": 1,
+      "classification": 2,
+    },
+    "outs": {
+      "loss": 6,
+      "accu": 3,
+      "DICE": 4,
+      "CE": 5,
+      "DOMAIN": 7,
+    },
+    "flow": {
+      "accu": {"inps": [0, 1], "outs": [3]},
+      "loss_dice": {"inps": [0, 1], "outs": [4]},
+      "loss_ce": {"inps": [0, 1], "outs": [5]},
+      "weighted_sum": {"inps": [4, 5], "outs": [6]},
+      "domain": {"inps": [2], "outs": [7]},
+    }
+  }
+}

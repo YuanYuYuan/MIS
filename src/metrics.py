@@ -3,6 +3,12 @@ import torch.nn.functional as F
 import math
 from medpy.metric import hd95
 
+def wasserstein_distance(fake, real):
+    return torch.mean(fake - real)
+
+def wgan_generator_loss(fake):
+    return -torch.mean(fake)
+
 
 def mean_sqaure_loss(logits, labels):
 
@@ -32,28 +38,83 @@ def housdorff_distance_95(logits, label):
     return result
 
 
-class DiscriminatingLoss:
+def domain_classification(logits):
+    return torch.mean(torch.sigmoid(logits))
+
+class BinaryDomainLoss:
+
+    def __init__(self, label_smooth=True, label=1):
+        assert label == 1 or label == 0
+        self.label = label
+        self.label_smooth = label_smooth
+        self.target = None
+
+    def __call__(self, x):
+        x = torch.squeeze(x)
+        if self.target is None or x.shape != self.target.shape:
+            if self.label == 1:
+                self.target = torch.ones(x.shape, device=x.device)
+                if self.label_smooth:
+                    self.target *= 0.9
+            else:
+                self.target = torch.zeros(x.shape, device=x.device)
+                if self.label_smooth:
+                    self.target += 0.1
+
+        return F.binary_cross_entropy_with_logits(x, self.target)
+
+class BinaryDomainAccu:
+
+    def __init__(self, label=1):
+        self.label = label
+        self.target = None
+
+    def __call__(self, x):
+        x = torch.squeeze(x)
+        if self.target is None or x.shape != self.target.shape:
+            if self.label == 1:
+                self.target = torch.ones(x.shape, device=x.device)
+            else:
+                self.target = torch.zeros(x.shape, device=x.device)
+
+        return torch.mean(((torch.sigmoid(x) >= 0.5).float() == self.target).float())
+
+
+class TwoDomainLoss:
 
     def __init__(self, label_smooth=True):
-        self.target = {}
+        self.truth = None
         self.label_smooth = label_smooth
 
-    def __call__(self, x, truth):
-        assert isinstance(truth, bool)
+    def __call__(self, x):
         x = torch.squeeze(x)
-        if not self.target or self.target['truth'].shape != x.shape:
-            self.target = {
-                'truth': torch.ones(x.shape, device=x.device),
-                'fake': torch.zeros(x.shape, device=x.device)
-            }
-            if self.label_smooth:
-                self.target['truth'] *= 0.9
-                self.target['fake'] += 0.1
+        assert x.requires_grad
+        batch_size = x.shape[0]
+        if self.truth is None or self.truth.shape != x.shape:
+            self.truth = torch.zeros(x.shape, device=x.device)
 
-        if truth:
-            return F.binary_cross_entropy_with_logits(x, self.target['truth'])
-        else:
-            return F.binary_cross_entropy_with_logits(x, self.target['fake'])
+            if self.label_smooth:
+                self.truth[batch_size//2:] = 0.9
+                self.truth[:batch_size//2] = 0.1
+            else:
+                self.truth[batch_size//2:] = 1.0
+
+        return F.binary_cross_entropy_with_logits(x, self.truth)
+
+
+class TwoDomainAccu:
+
+    def __init__(self):
+        self.truth = None
+
+    def __call__(self, x):
+        x = torch.squeeze(x)
+        batch_size = x.shape[0]
+        if self.truth is None or self.truth.shape != x.shape:
+            self.truth = torch.zeros(x.shape, device=x.device)
+            self.truth[batch_size//2:] = 1.0
+
+        return torch.mean(((torch.sigmoid(x) >= 0.5).float() == self.truth).float())
 
 
 class AdversarialLoss:
@@ -70,6 +131,33 @@ class AdversarialLoss:
                 self.truth *= 0.9
         return F.binary_cross_entropy_with_logits(x, self.truth)
 
+class FocalLoss:
+
+    def __init__(self, gamma=2.0):
+        self.gamma = gamma
+
+    def __call__(self, logits, labels):
+        # check logits: [B, C, H, W(, D)], labels: [B, H, W(, D)]
+        assert len(logits.shape) == len(labels.shape) + 1
+        assert logits.shape[0] == labels.shape[0]
+        assert logits.shape[2:] == labels.shape[1:]
+
+        # [B, H, W(, D)] => [B, 1, X]
+        labels = labels.view(labels.shape[0], 1, -1)
+
+        # [B, C, H, W(, D)] => [B, C, X]
+        logits = logits.view(logits.shape[0], logits.shape[1], -1)
+        log_probas = F.log_softmax(logits, dim=1)
+
+        # [B, C, X] => [B, X]
+        log_probas = torch.gather(F.log_softmax(logits, dim=1), 1, labels)
+
+        # [B, X] => [1]
+        probas = torch.exp(log_probas)
+        weight = torch.pow(1. - probas, self.gamma)
+        loss = -torch.mean(weight * log_probas)
+
+        return loss
 
 # this loss assumes the input is after sigomid
 def adversarial_loss(x):
@@ -86,6 +174,9 @@ def VAE_KLD(latent_dist):
     std_square = std**2
     return torch.mean(mean**2 + std_square - torch.log(1e-10+std_square) - 1)
 
+
+def L2_norm(x, y):
+    return torch.mean((x - y)**2)
 
 def VAE_L2(images, reconstructions):
     return torch.mean((images - reconstructions)**2)
@@ -115,7 +206,7 @@ def mixed_dice_loss(logits, labels, *args):
 def match_up(
     logits,
     labels,
-    mask=None,
+    # mask=None,
     needs_softmax=True,
     batch_wise=False,
     threshold=0.
@@ -142,7 +233,7 @@ def match_up(
     if not batch_wise:
         sum_dim = (0,) + sum_dim
 
-    labels = F.one_hot(labels, n_classes).permute(permute_dim).float()
+    labels = F.one_hot(labels, n_classes).permute(permute_dim).contiguous().float()
     assert probas.shape == labels.shape, (probas.shape, labels.shape)
 
     # binarize the probas according to given threshold
@@ -154,18 +245,21 @@ def match_up(
     elif threshold == -1:
         probas = (probas > 1/n_classes).float()
 
-    if mask is None:
-        match = torch.sum(probas * labels, sum_dim)
-        total = torch.sum(probas + labels, sum_dim)
-    else:
-        for idx, (s1, s2) in enumerate(zip(
-            mask.shape,
-            probas.shape
-        )):
-            if idx != 1:
-                assert s1 == s2, (mask.shape, probas.shape)
-        match = torch.sum(probas * labels * mask, sum_dim)
-        total = torch.sum((probas + labels) * mask, sum_dim)
+    # if mask is None:
+    #     match = torch.sum(probas * labels, sum_dim)
+    #     total = torch.sum(probas + labels, sum_dim)
+    # else:
+    #     for idx, (s1, s2) in enumerate(zip(
+    #         mask.shape,
+    #         probas.shape
+    #     )):
+    #         if idx != 1:
+    #             assert s1 == s2, (mask.shape, probas.shape)
+    #     match = torch.sum(probas * labels * mask, sum_dim)
+    #     total = torch.sum((probas + labels) * mask, sum_dim)
+
+    match = torch.sum(probas * labels, sum_dim)
+    total = torch.sum(probas + labels, sum_dim)
     return match, total
 
 
@@ -179,8 +273,9 @@ def dice_score(
     logits,
     labels,
     smooth=1e-9,
-    mask=None,
+    # mask=None,
     exclude_background=True,
+    needs_softmax=True,
     threshold=0.,
     exclude_blank=False,
     batch_wise=False,
@@ -192,10 +287,10 @@ def dice_score(
         match, total = match_up(
             logits,
             labels,
-            needs_softmax=True,
+            needs_softmax=needs_softmax,
             threshold=threshold,
             batch_wise=batch_wise,
-            mask=mask,
+            # mask=mask,
         )
         multi_class_score = compute_dice(match, total, smooth=smooth)
         if batch_wise:
@@ -211,7 +306,9 @@ def dice_loss(
     logits,
     labels,
     weight=None,
+    mask=None,
     exclude_background=True,
+    needs_softmax=True,
     batch_wise=False,
     smooth=1e-9,
 ):
@@ -219,17 +316,27 @@ def dice_loss(
         logits,
         labels,
         exclude_background=exclude_background,
+        needs_softmax=needs_softmax,
         batch_wise=batch_wise,
         smooth=smooth,
     )
 
-    # TODO: implement it, and weight by frequency
-    # if weight is not None:
-    #     assert len(score) == len(weight), (len(score), len(weight))
-    #     score *= weight
+    if weight is not None:
+        assert isinstance(weight, (list, tuple))
+        assert len(score) == len(weight), (len(score), len(weight))
+        weight = torch.tensor(weight).to(logits.device)
+        score *= weight
 
-    return 1 - score.mean()
 
+    if mask is not None:
+        assert isinstance(mask, (list, tuple))
+        assert len(score) == len(mask), (len(score), len(mask))
+        assert set(mask) == {0, 1}
+        mask = torch.tensor(mask).to(logits.device)
+        score *= mask
+        return 1 - score.sum() / torch.count_nonzero(mask)
+    else:
+        return 1 - score.mean()
 
 def pseudo_label(logits):
     return torch.argmax(logits, dim=1)
@@ -242,7 +349,7 @@ def confidence_mask(confidence_map, threshold=0.3, need_sigmoid=False):
         return (confidence_map >= threshold).float()
 
 
-def masked_dice_loss(
+def spatial_masked_dice_loss(
     logits,
     labels,
     mask,
@@ -261,7 +368,20 @@ def masked_dice_loss(
     return 1 - score.mean()
 
 
-def masked_cross_entropy(
+def mask_predition(prediction, mask):
+    return prediction * mask[None, :, None, None, None]
+
+def masked_cross_entropy(logits, labels, mask=None):
+    assert isinstance(mask, (list, tuple))
+    assert set(mask) == {1, 0}
+    assert logits.shape[1] == len(mask)
+    mask = torch.Tensor(mask).to(logits.device)
+    return F.cross_entropy(
+        logits * mask[None, :, None, None, None],
+        labels,
+    )
+
+def spatil_masked_cross_entropy(
     logits,
     labels,
     mask,

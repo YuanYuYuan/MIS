@@ -1,0 +1,18 @@
+{
+  "amount": 2,
+  "list": [
+    "0522c0555",
+    "0522c0576",
+  ],
+  "loader": {
+    "image_dir": "../data/images",
+    "label_dir": "../data/labels",
+    "name": "MSDLoader",
+    "roi_map": {
+      "Brainstem": 1,
+      "Chiasm": 2,
+      "OpticNerve_L": 3,
+      "OpticNerve_R": 4,
+    },
+  },
+}

@@ -1,0 +1,36 @@
+{
+  // "gpus": [0],
+  "epochs": 1000,
+
+  "module": {
+    "mod_enc": {
+      "config": "./modules/enc.json5",
+      // "ckpt": "mod_enc.pt",
+    },
+    "mod_seg": {
+      "config": "./modules/seg.json5",
+      // "ckpt": "mod_seg.pt",
+    },
+  },
+
+  "generator": {
+    "data": "./data/target_valid.json5",
+    "struct": {
+      "BlockGenerator": {
+        "block_shape": 96,
+        "stride": 48,
+        "n_workers": 4,
+        "ordered": true,
+      },
+      "BatchGenerator": {
+        "batch_size": 48,
+        "n_workers": 1,
+      },
+    },
+  },
+
+  "infer": {
+    "forward": ["mod_enc", "mod_seg"],
+    "threshold": 0.5,
+  },
+}

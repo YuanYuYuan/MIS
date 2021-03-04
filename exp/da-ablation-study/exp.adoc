@@ -1,0 +1,11 @@
+= Ablation Study
+
+== Experiments
+
+[options="header", frame="topbot", grid="none"]
+|===
+| No. | Task
+| 01  | DA from CT to T1 on ABCs task 1
+| 02  | No mod_dis, train CT and T1 alternatingly
+| 03  | Task 1, CT+T1 -> CT+T2
+|===

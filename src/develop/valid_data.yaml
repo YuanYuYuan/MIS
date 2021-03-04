@@ -1,0 +1,22 @@
+amount: 9
+list: [
+  '051',
+  '044',
+  '042',
+  '009',
+  '006',
+  '030',
+  '039',
+  '020',
+  '070',
+]
+loader:
+  # data_dir: /storage/data/brain/ABCs-raw/
+  data_dir: /home/u/circle/storage/data/ABCs-raw
+  name: ABCSLoader
+  task: 3
+  modalities:
+  - ct
+  - t1
+  - t2
+  preprocess: True

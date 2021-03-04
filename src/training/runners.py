@@ -101,7 +101,6 @@ class Runner:
 
         return result_list
 
-
 # TODO: simplify the implementation by class inheritance
 class AdvRunner:
 
@@ -209,3 +208,5 @@ class AdvRunner:
             result_list.append(results)
 
         return result_list
+
+

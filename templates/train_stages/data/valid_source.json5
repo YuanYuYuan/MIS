@@ -1,0 +1,21 @@
+{
+  "amount": 9,
+  "list": [
+    "051",
+    "044",
+    "042",
+    "009",
+    "006",
+    "030",
+    "039",
+    "020",
+    "070",
+  ],
+  "loader": {
+    "data_dir": "../data",
+    "name": "ABCSLoader",
+    "task": 3,
+    "modalities": ["ct"],
+    "preprocess": true,
+  },
+}

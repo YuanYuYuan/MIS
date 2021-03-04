@@ -1,7 +1,15 @@
 from torch import nn
+import torch.nn.functional as F
 import torch
 import numpy as np
 
+
+def acti(name):
+    assert name in ('relu', 'leaky_relu')
+    if name  == 'relu':
+        return nn.ReLU(inplace=True)
+    else:
+        return nn.LeakyReLU(0.2, inplace=True)
 
 class ConvBlock(nn.Module):
 
@@ -29,11 +37,7 @@ class ConvBlock(nn.Module):
                 nn.InstanceNorm3d(self.ch_in, affine=True)
             )
             # FIXME
-            self.op.add_module(
-                'preprocess_acti',
-                nn.ReLU(inplace=True) if activation == 'relu'
-                else nn.LeakyReLU(negative_slope=0.2, inplace=True)
-            )
+            self.op.add_module('preprocess_acti', acti(activation))
 
         if dim == '2D':
             self.op.add_module(
@@ -107,11 +111,7 @@ class ConvBlock(nn.Module):
                 nn.InstanceNorm3d(self.ch_out, affine=True)
             )
             # FIXME
-            self.op.add_module(
-                'postprocess_acti',
-                nn.ReLU(inplace=True) if activation == 'relu'
-                else nn.LeakyReLU(negative_slope=0.2, inplace=True)
-            )
+            self.op.add_module('postprocess_acti', acti(activation))
 
     def forward(self, x):
         assert x.shape[1] == self.ch_in, (self.dim, x.shape, self.ch_in, self.ch_out, self.tag)
@@ -204,4 +204,75 @@ class LatentReconstruction(nn.Module):
 
         x = self.op(x)
         x = torch.reshape(x, self.shape)
+        return x
+
+class Classifier(nn.Module):
+
+    def __init__(
+        self,
+        in_shape=(32, 6, 6, 6),
+        n_classes=2,
+        activation='leaky_relu',
+    ):
+        super().__init__()
+        in_dim = np.prod(in_shape)
+        self.op = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(in_dim, 4096),
+            acti(activation),
+
+            nn.Dropout(),
+            nn.Linear(4096, 1024),
+            acti(activation),
+
+            nn.Dropout(),
+            nn.Linear(1024, n_classes),
+        )
+        if isinstance(in_shape, list):
+            in_shape = tuple(in_shape)
+        self.in_shape = in_shape
+
+    def forward(self, x):
+        assert x.shape[1:] == self.in_shape, (x.shape, self.in_shape)
+        x = torch.flatten(x, start_dim=1)
+        return self.op(x)
+
+
+class IntoProb(nn.Module):
+    def __init__(self, n_classes=6, add_noise=False):
+        super().__init__()
+        self.n_classes = n_classes
+
+        # TODO
+        self.add_noise = add_noise
+
+    def forward(self, x):
+        raw_shape = x.shape
+
+        # prediction
+        if len(raw_shape) == 5:
+            assert raw_shape[1] == self.n_classes
+            return F.softmax(x, dim=1)
+
+        # ground truth
+        else:
+            assert len(raw_shape) == 4
+            x = F.one_hot(x, self.n_classes).permute((0, 4, 1, 2, 3)).float()
+
+        return x
+
+
+class FCClassifier(nn.Module):
+    def __init__(
+        self,
+        ch_in=256,
+        n_classes=1,
+    ):
+        super().__init__()
+        self.op = nn.Linear(ch_in, n_classes)
+
+    def forward(self, x):
+        # Global Average Pooling
+        x = x.mean(dim=(2, 3, 4))
+        x = self.op(x)
         return x

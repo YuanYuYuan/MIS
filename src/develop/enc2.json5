@@ -1,0 +1,28 @@
+{
+  'nodes': {
+    'encoder': {
+      'inps': [0],
+      'outs': [1],
+      'topo': {
+        '1': 'l_1',
+      },
+      'maps': {
+        'l_1': {
+          'name': 'ConvBlock',
+          'dim': '3D',
+          'ch_in': 1,
+          'ch_out': 1,
+        },
+      },
+    },
+  },
+  'links': {
+    'inps': {'image': 0},
+    'outs': {
+      'latent': 1,
+    },
+    'flow': {
+      'encoder': {'inps': [0], 'outs': [1]},
+    }
+  }
+}

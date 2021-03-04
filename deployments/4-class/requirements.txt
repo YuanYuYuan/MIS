@@ -1,0 +1,14 @@
+scipy
+tqdm
+pynrrd
+nibabel
+numpy
+json5
+git+https://github.com/YuanYuYuan/MIDP@master
+prettytable
+pathos
+psutil
+torch==1.7.0
+opencv-python==4.2.0.32
+torchio==0.17.0
+medpy==0.4.0

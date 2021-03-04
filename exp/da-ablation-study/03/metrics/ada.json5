@@ -1,0 +1,23 @@
+{
+  "nodes": {
+    "loss_dis": {"name": "TwoDomainLoss", "label_smooth": false},
+    "accu": {"name": "TwoDomainAccu"},
+    "domain": {"name": "domain_classification"},
+  },
+  "links": {
+    "inps": {
+      "classification": 0,
+    },
+    "outs": {
+      "loss": 2,
+      "accu": 1,
+      "DIS": 2,
+      "domain": 3,
+    },
+    "flow": {
+      "accu": {"inps": [0], "outs": [1]},
+      "loss_dis": {"inps": [0], "outs": [2]},
+      "domain": {"inps": [0], "outs": [3]},
+    }
+  }
+}

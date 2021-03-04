@@ -71,7 +71,7 @@ class Chain(nn.Module):
                     else:
                         new = self.ops[map_idx](state[state_in_idx])
                         if mode == 'sum':
-                            assert tmp.shape == new.shape
+                            assert tmp.shape == new.shape, (tmp.shape, new.shape)
                             tmp = tmp + new
                         elif mode == 'cat':
                             assert tmp.shape[2:] == new.shape[2:]
