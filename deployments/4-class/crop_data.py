@@ -40,7 +40,8 @@ if crop_size == (0, 0, 0):
 else:
     print('Use the crop_size:', crop_size)
 
-def crop(data, center, shape):
+def crop(data, center, shape, dtype='image'):
+    assert dtype in ['image', 'label']
     assert len(center) == len(shape)
     crop_idx = {'left': [], 'right': []}
     padding = {'left': [], 'right': []}
@@ -71,7 +72,10 @@ def crop(data, center, shape):
 
     if need_padding:
         zeros_shape = shape
-        output = np.zeros(zeros_shape)
+        if dtype == 'image':
+            output = np.ones(zeros_shape) * -1024
+        else:
+            output = np.zeros(zeros_shape)
         output[tuple(
             slice(lp, s - rp) for (lp, rp, s)
             in zip(padding['left'], padding['right'], shape)
@@ -94,7 +98,7 @@ def process(idx):
         'images',
         idx + '.nii.gz',
     )).dataobj)
-    image = crop(image, bbox[idx]['center'], crop_size)
+    image = crop(image, bbox[idx]['center'], crop_size, dtype='image')
     nib.save(
         nib.Nifti1Image(image, affine=np.eye(4)),
         os.path.join(args.output_dir, 'images', idx + '.nii.gz')
@@ -106,7 +110,7 @@ def process(idx):
         'labels',
         idx + '.nii.gz',
     )).dataobj)
-    label = crop(label, bbox[idx]['center'], crop_size)
+    label = crop(label, bbox[idx]['center'], crop_size, dtype='label')
     nib.save(
         nib.Nifti1Image(label, affine=np.eye(4)),
         os.path.join(args.output_dir, 'labels', idx + '.nii.gz')
