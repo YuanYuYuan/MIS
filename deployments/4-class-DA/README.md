@@ -106,8 +106,13 @@ make train
 
 The model will automatically save the best checkpoint of model based on the
 performance of source validation set.
-We can run the following command in each experiment directory to produce the segmentation.
+We can run the following commands in each experiment directory to produce the segmentation.
 
 ```bash
+cd exps/with_DA  # or cd exps/without_DA
 make infer
 ```
+
+### Evaluate the performance
+
+Please refer to [here](https://github.com/YuanYuYuan/MIS/tree/master/deployments/4-class#evaluate-the-performance).

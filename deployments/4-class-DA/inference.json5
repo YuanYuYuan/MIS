@@ -1,5 +1,5 @@
 {
-  "gpus": [2],
+  "gpus": [0],
 
   "module": {
     "mod_enc": {
